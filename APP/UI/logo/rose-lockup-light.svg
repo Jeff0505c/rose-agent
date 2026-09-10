@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ROSE · 横向组合标志（浅色底）：背景与线条反相，玫瑰红改用深一档（#B23A55）保证浅底对比度。
+  适配说明：品牌标志在深浅主题下**都必须显式指定颜色**，不能依赖 currentColor——
+  否则浅色主题里文字色是深色，深色线条画在深色方片上会直接看不见。
+-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 320" width="900" height="320" role="img" aria-label="ROSE AI">
+  <rect width="900" height="320" fill="#F7F5F1"/>
+  <g transform="translate(48 60) scale(0.3906)" fill="none" stroke="#14141A" stroke-width="32" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M200 146 V366"/>
+    <path d="M200 146 A58 58 0 0 1 200 262"/>
+  </g>
+  <path d="M200 262 L308 366" transform="translate(48 60) scale(0.3906)" fill="none" stroke="#B23A55" stroke-width="32" stroke-linecap="round"/>
+  <text x="300" y="196" font-family="'Helvetica Neue', Inter, 'Segoe UI', Arial, sans-serif"
+        font-size="112" font-weight="600" letter-spacing="16" fill="#14141A">ROSE</text>
+  <line x1="686" y1="128" x2="686" y2="192" stroke="#D8D4CC" stroke-width="2"/>
+  <text x="722" y="184" font-family="'Helvetica Neue', Inter, 'Segoe UI', Arial, sans-serif"
+        font-size="44" font-weight="500" letter-spacing="10" fill="#B23A55">AI</text>
+</svg>

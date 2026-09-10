@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ROSE · 应用图标母版（≥48px 使用）
+  近黑圆角方 + 象牙白单字 R（斜腿玫瑰红）。小尺寸请用 rose-tile-small.svg。
+-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" role="img" aria-label="ROSE">
+  <defs>
+    <linearGradient id="tile-r" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#17171C"/>
+      <stop offset="1" stop-color="#0A0A0D"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="116" fill="url(#tile-r)"/>
+  <g fill="none" stroke="#F4F1EA" stroke-width="32" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M200 146 V366"/>
+    <path d="M200 146 A58 58 0 0 1 200 262"/>
+  </g>
+  <path d="M200 262 L308 366" fill="none" stroke="#D16A80" stroke-width="32" stroke-linecap="round"/>
+</svg>

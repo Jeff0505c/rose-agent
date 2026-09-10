@@ -1,0 +1,91 @@
+{
+  "name": "rose-desktop",
+  "private": true,
+  "version": "0.24.0",
+  "main": "main.js",
+  "scripts": {
+    "install-deps": "node ../scripts/install.mjs --app .",
+    "setup": "node ../scripts/setup.mjs",
+    "doctor": "node ../scripts/doctor.mjs",
+    "start": "electron .",
+    "dist": "npm run setup && electron-builder",
+    "dist:mac": "npm run setup && electron-builder --mac",
+    "dist:win": "npm run setup && electron-builder --win"
+  },
+  "build": {
+    "appId": "com.rose.desktop",
+    "productName": "ROSE",
+    "asar": true,
+    "files": [
+      "main.js",
+      "preload.js",
+      "services.js",
+      "core/**/*",
+      "UI/**/*",
+      "package.json",
+      "!core/.codex-home/**",
+      "!core/vendor/**",
+      "!**/*.map",
+      "build/icon.png",
+      "!UI/logo/png/**",
+      "!UI/logo/options/**"
+    ],
+    "extraResources": [
+      {
+        "from": "../defaults",
+        "to": "defaults"
+      },
+      {
+        "from": "core/vendor",
+        "to": "vendor"
+      },
+      {
+        "from": "../tools",
+        "to": "tools"
+      }
+    ],
+    "mac": {
+      "target": [
+        "dmg"
+      ],
+      "category": "public.app-category.productivity",
+      "icon": "build/icon.icns"
+    },
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "artifactName": "${productName}-${version}-win-x64.${ext}",
+      "icon": "build/icon.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": true,
+      "allowElevation": true,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "ROSE",
+      "uninstallDisplayName": "ROSE",
+      "deleteAppDataOnUninstall": false,
+      "runAfterFinish": true,
+      "installerLanguages": [
+        "zh_CN",
+        "en_US"
+      ],
+      "language": "2052"
+    },
+    "dmg": {
+      "title": "ROSE"
+    }
+  },
+  "devDependencies": {
+    "electron": "^37.0.0",
+    "electron-builder": "^26.0.0"
+  }
+}

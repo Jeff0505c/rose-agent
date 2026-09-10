@@ -1,0 +1,15 @@
+{
+  "name": "rose",
+  "private": true,
+  "version": "0.23.0",
+  "description": "自包含的本地多角色 AI 智能体桌面应用（Electron + codex app-server）",
+  "scripts": {
+    "install": "node scripts/install.mjs",
+    "setup": "node scripts/setup.mjs",
+    "doctor": "node scripts/doctor.mjs",
+    "start": "npm --prefix APP start"
+  },
+  "engines": {
+    "node": ">=22.15"
+  }
+}

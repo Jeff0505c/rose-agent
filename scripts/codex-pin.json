@@ -1,0 +1,28 @@
+{
+  "codexVersion": "0.152.1",
+  "releaseTag": "rust-v0.152.1",
+  "releaseRepo": "openai/codex",
+  "mirrorBase": "",
+  "note": "锁版本：升级 = 改本文件（版本号 + 各资产名 + pins）后重跑 npm run setup。pins 为空表示首次 TOFU，脚本会打印计算出的 SHA256，粘回来即完成锁定。",
+  "targets": {
+    "darwin-arm64": {
+      "assets": {
+        "codex-aarch64-apple-darwin.zst": "codex-aarch64-apple-darwin"
+      },
+      "required": ["codex-aarch64-apple-darwin"]
+    },
+    "win32-x64": {
+      "assets": {
+        "codex-x86_64-pc-windows-msvc.exe.zst": "codex.exe",
+        "codex-windows-sandbox-setup-x86_64-pc-windows-msvc.exe.zst": "codex-windows-sandbox-setup.exe",
+        "codex-command-runner-x86_64-pc-windows-msvc.exe.zst": "codex-command-runner.exe"
+      },
+      "required": ["codex.exe", "codex-windows-sandbox-setup.exe", "codex-command-runner.exe"]
+    }
+  },
+  "pins": {
+    "codex-x86_64-pc-windows-msvc.exe.zst": "06405fe4ac6e1ede4c6fcf4c89d111263c3551d8d8909a70c57b0b25341e6418",
+    "codex-windows-sandbox-setup-x86_64-pc-windows-msvc.exe.zst": "8bdcd2387b367531b6c3dcaf9315ea24b3b17ebcf9aa7c555697a29ec29467fa",
+    "codex-command-runner-x86_64-pc-windows-msvc.exe.zst": "d755b45c9ea04871a6dc98b78eba294fbde8a4aff09a3d76d5e4a63242e5032c"
+  }
+}

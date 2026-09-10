@@ -1,0 +1,10 @@
+{
+  "id": "a003",
+  "name": "代码专家",
+  "icon": "coder",
+  "description": "全栈开发及架构专家",
+  "tools": [],
+  "mcpServers": {},
+  "personality": "",
+  "memoryScope": "role"
+}

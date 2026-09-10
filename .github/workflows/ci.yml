@@ -1,0 +1,41 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Syntax checks (all .js / .mjs)
+        run: |
+          fail=0
+          for f in $(git ls-files '*.js' '*.mjs'); do
+            node --check "$f" || fail=1
+          done
+          exit $fail
+
+      - name: JSON sanity
+        run: |
+          node -e "for (const f of ['package.json','APP/package.json','scripts/codex-pin.json','defaults/registries/skills-registry.json','defaults/registries/mcp-registry.json']) { JSON.parse(require('fs').readFileSync(f,'utf8')); console.log('OK ' + f); }"
+
+      - name: No binaries committed
+        run: |
+          if git ls-files | grep -E '\.(exe|dll|dylib|so|zip|zst|dmg|node)$'; then
+            echo 'FAIL: repo must not contain binaries'; exit 1
+          fi
+          echo 'OK: no binaries'
+
+      - name: No personal data committed
+        run: |
+          for p in roles skills work APP/core/vendor APP/node_modules; do
+            if git ls-files | grep -q "^$p/"; then echo "FAIL: must not commit $p"; exit 1; fi
+          done
+          echo 'OK: no personal data'

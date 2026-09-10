@@ -1,0 +1,48 @@
+# 依赖与运行状态（勿入库；data/ 已并入 work/data/，由 work/ 规则覆盖）
+node_modules/
+vendor/
+.codex-home/
+tools/
+work/
+skills/
+
+# 运行配置含本地保存的 API Key，不入库；模板见 roles/_global/settings.example.json
+roles/_global/settings.json
+
+# 角色运行时数据与规划文档（按约定不入库，避免误提交）
+roles/*/role.json
+roles/*/soul.md
+roles/*/AGENTS.md
+roles/*/MEMORY.md
+.zcode/
+
+# 系统与编辑
+.DS_Store
+*.log
+nohup.out
+
+# 设计原型历史版本可选择性入库；如需留档可去掉下行注释
+# !design/
+
+# 出厂默认数据（随包只读基线，必须入库）——放行被上方 skills/ 与 roles/* 规则误伤的目录
+!defaults/
+!defaults/roles/
+!defaults/skills/
+!defaults/registries/
+!defaults/**
+
+# 播种哨兵与开发态数据目录（运行时，不入库）
+.seeded
+.data/
+
+# 系统垃圾须置于上方放行规则之后（否则被 !defaults/** 重新纳入）
+.DS_Store
+**/.DS_Store
+
+# Electron 打包产物
+APP/dist/
+dist/
+
+# 取包缓存（scripts/fetch-codex.mjs）
+.cache/
+

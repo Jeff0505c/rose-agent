@@ -1,0 +1,494 @@
+{
+  "skills": [
+    {
+      "id": "skill-creator",
+      "name": "skill-creator",
+      "description": "Create or update a Codex skill with appropriately scoped instructions and any needed supporting resources.",
+      "scope": "global",
+      "roleId": null,
+      "active": true,
+      "dir": "skills/skill-creator",
+      "origin": "imported"
+    },
+    {
+      "id": "brainstorming",
+      "name": "brainstorming",
+      "description": "You MUST use this before any creative work - creating features, building components, adding functionality, or modifying behavior. Explores user intent, requirements and design before implementation.",
+      "scope": "global",
+      "roleId": null,
+      "active": true,
+      "dir": "skills/brainstorming",
+      "origin": "imported"
+    },
+    {
+      "id": "doc-coauthoring",
+      "name": "doc-coauthoring",
+      "description": "Guide users through a structured workflow for co-authoring documentation. Use when user wants to write documentation, proposals, technical specs, decision docs, or similar structured content. This workflow helps users efficiently transfer context, refine content through iteration, and verify the doc works for readers. Trigger when user mentions writing docs, creating proposals, drafting specs, or similar documentation tasks.",
+      "scope": "role",
+      "roleId": "a001",
+      "active": true,
+      "dir": "skills/doc-coauthoring",
+      "origin": "imported"
+    },
+    {
+      "id": "frontend-design",
+      "name": "frontend-design",
+      "description": "Guidance for distinctive, intentional visual design when building new UI or reshaping an existing one. Helps with aesthetic direction, typography, and making choices that don't read as templated defaults.",
+      "scope": "role",
+      "roleId": "a003",
+      "active": true,
+      "dir": "skills/frontend-design",
+      "origin": "imported"
+    },
+    {
+      "id": "receiving-code-review",
+      "name": "receiving-code-review",
+      "description": "Use when receiving code review feedback, before implementing suggestions, especially if feedback seems unclear or technically questionable - requires technical rigor and verification, not performative agreement or blind implementation",
+      "scope": "role",
+      "roleId": "a003",
+      "active": true,
+      "dir": "skills/receiving-code-review",
+      "origin": "imported"
+    },
+    {
+      "id": "systematic-debugging",
+      "name": "systematic-debugging",
+      "description": "Use when encountering any bug, test failure, or unexpected behavior, before proposing fixes",
+      "scope": "role",
+      "roleId": "a003",
+      "active": true,
+      "dir": "skills/systematic-debugging",
+      "origin": "imported"
+    },
+    {
+      "id": "test-driven-development",
+      "name": "test-driven-development",
+      "description": "Use when implementing any feature or bugfix, before writing implementation code",
+      "scope": "role",
+      "roleId": "a003",
+      "active": true,
+      "dir": "skills/test-driven-development",
+      "origin": "imported"
+    },
+    {
+      "id": "using-git-worktrees",
+      "name": "using-git-worktrees",
+      "description": "Use when starting feature work that needs isolation from current workspace or before executing implementation plans - ensures an isolated workspace exists via native tools or git worktree fallback",
+      "scope": "role",
+      "roleId": "a003",
+      "active": true,
+      "dir": "skills/using-git-worktrees",
+      "origin": "imported"
+    },
+    {
+      "id": "verification-before-completion",
+      "name": "verification-before-completion",
+      "description": "Use when about to claim work is complete, fixed, or passing, before committing or creating PRs - requires running verification commands and confirming output before making any success claims; evidence before assertions always",
+      "scope": "role",
+      "roleId": "a003",
+      "active": true,
+      "dir": "skills/verification-before-completion",
+      "origin": "imported"
+    },
+    {
+      "id": "writing-plans",
+      "name": "writing-plans",
+      "description": "Use when you have a spec or requirements for a multi-step task, before touching code",
+      "scope": "role",
+      "roleId": "a003",
+      "active": true,
+      "dir": "skills/writing-plans",
+      "origin": "imported"
+    },
+    {
+      "id": "agent-introspection-debugging",
+      "name": "agent-introspection-debugging",
+      "description": "Structured self-debugging workflow for AI agent failures using capture, diagnosis, contained recovery, and introspection reports. Use when an agent run fails and you need a reproducible diagnosis instead of a retry.",
+      "scope": "role",
+      "roleId": "a003",
+      "active": true,
+      "dir": "skills/agent-introspection-debugging",
+      "origin": "ecc"
+    },
+    {
+      "id": "agent-sort",
+      "name": "agent-sort",
+      "description": "Build an evidence-backed ECC install plan for a specific repo by sorting skills, commands, rules, hooks, and extras into DAILY vs LIBRARY buckets using parallel repo-aware review passes. Use when ECC should be trimmed to what a project actually needs instead of loading the full bundle.",
+      "scope": "global",
+      "roleId": null,
+      "active": true,
+      "dir": "skills/agent-sort",
+      "origin": "ecc"
+    },
+    {
+      "id": "api-design",
+      "name": "api-design",
+      "description": "REST API design patterns including resource naming, status codes, pagination, filtering, error responses, versioning, and rate limiting for production APIs. Use when designing or reviewing REST endpoints, resource names, status codes, pagination, or versioning.",
+      "scope": "role",
+      "roleId": "a003",
+      "active": true,
+      "dir": "skills/api-design",
+      "origin": "ecc"
+    },
+    {
+      "id": "article-writing",
+      "name": "article-writing",
+      "description": "Write articles, guides, blog posts, tutorials, newsletter issues, and other long-form content in a distinctive voice derived from supplied examples or brand guidance. Use when the user wants polished written content longer than a paragraph, especially when voice consistency, structure, and credibility matter.",
+      "scope": "global",
+      "roleId": null,
+      "active": true,
+      "dir": "skills/article-writing",
+      "origin": "ecc"
+    },
+    {
+      "id": "backend-patterns",
+      "name": "backend-patterns",
+      "description": "Backend architecture patterns, API design, database optimization, and server-side best practices for Node.js, Express, and Next.js API routes. Use when building or reviewing Node.js, Express, or Next.js API routes and their data access.",
+      "scope": "role",
+      "roleId": "a003",
+      "active": true,
+      "dir": "skills/backend-patterns",
+      "origin": "ecc"
+    },
+    {
+      "id": "benchmark-methodology",
+      "name": "benchmark-methodology",
+      "description": ">-",
+      "scope": "global",
+      "roleId": null,
+      "active": true,
+      "dir": "skills/benchmark-methodology",
+      "origin": "ecc"
+    },
+    {
+      "id": "brand-discovery",
+      "name": "brand-discovery",
+      "description": ">-",
+      "scope": "global",
+      "roleId": null,
+      "active": true,
+      "dir": "skills/brand-discovery",
+      "origin": "ecc"
+    },
+    {
+      "id": "brand-voice",
+      "name": "brand-voice",
+      "description": "Build a source-derived writing style profile from real posts, essays, launch notes, docs, or site copy, then reuse that profile across content, outreach, and social workflows. Use when the user wants voice consistency without generic AI writing tropes.",
+      "scope": "global",
+      "roleId": null,
+      "active": true,
+      "dir": "skills/brand-voice",
+      "origin": "ecc"
+    },
+    {
+      "id": "bun-runtime",
+      "name": "bun-runtime",
+      "description": "Bun as runtime, package manager, bundler, and test runner. When to choose Bun vs Node, migration notes, and Vercel support.",
+      "scope": "role",
+      "roleId": "a003",
+      "active": true,
+      "dir": "skills/bun-runtime",
+      "origin": "ecc"
+    },
+    {
+      "id": "coding-standards",
+      "name": "coding-standards",
+      "description": "Baseline cross-project coding conventions for naming, readability, immutability, and code-quality review. Use detailed frontend or backend skills for framework-specific patterns. Use when reviewing code quality or naming with no framework-specific skill that applies.",
+      "scope": "role",
+      "roleId": "a003",
+      "active": true,
+      "dir": "skills/coding-standards",
+      "origin": "ecc"
+    },
+    {
+      "id": "competitive-platform-analysis",
+      "name": "competitive-platform-analysis",
+      "description": ">-",
+      "scope": "global",
+      "roleId": null,
+      "active": true,
+      "dir": "skills/competitive-platform-analysis",
+      "origin": "ecc"
+    },
+    {
+      "id": "competitive-report-structure",
+      "name": "competitive-report-structure",
+      "description": ">-",
+      "scope": "global",
+      "roleId": null,
+      "active": true,
+      "dir": "skills/competitive-report-structure",
+      "origin": "ecc"
+    },
+    {
+      "id": "content-engine",
+      "name": "content-engine",
+      "description": "Create platform-native content systems for X, LinkedIn, TikTok, YouTube, newsletters, and repurposed multi-platform campaigns. Use when the user wants social posts, threads, scripts, content calendars, or one source asset adapted cleanly across platforms.",
+      "scope": "global",
+      "roleId": null,
+      "active": true,
+      "dir": "skills/content-engine",
+      "origin": "ecc"
+    },
+    {
+      "id": "crosspost",
+      "name": "crosspost",
+      "description": "Multi-platform content distribution across X, LinkedIn, Threads, and Bluesky. Adapts content per platform using content-engine patterns. Never posts identical content cross-platform. Use when the user wants to distribute content across social platforms.",
+      "scope": "global",
+      "roleId": null,
+      "active": true,
+      "dir": "skills/crosspost",
+      "origin": "ecc"
+    },
+    {
+      "id": "deep-research",
+      "name": "deep-research",
+      "description": "Multi-source deep research using firecrawl and exa MCPs. Searches the web, synthesizes findings, and delivers cited reports with source attribution. Use when the user wants thorough research on any topic with evidence and citations.",
+      "scope": "global",
+      "roleId": null,
+      "active": true,
+      "dir": "skills/deep-research",
+      "origin": "ecc"
+    },
+    {
+      "id": "dmux-workflows",
+      "name": "dmux-workflows",
+      "description": "Multi-agent orchestration using dmux (tmux pane manager for AI agents). Patterns for parallel agent workflows across Claude Code, Codex, OpenCode, and other harnesses. Use when running multiple agent sessions in parallel or coordinating multi-agent development workflows.",
+      "scope": "role",
+      "roleId": "a003",
+      "active": true,
+      "dir": "skills/dmux-workflows",
+      "origin": "ecc"
+    },
+    {
+      "id": "documentation-lookup",
+      "name": "documentation-lookup",
+      "description": "Use up-to-date library and framework docs via Context7 MCP instead of training data. Activates for setup questions, API references, code examples, or when the user names a framework (e.g. React, Next.js, Prisma).",
+      "scope": "role",
+      "roleId": "a003",
+      "active": true,
+      "dir": "skills/documentation-lookup",
+      "origin": "ecc"
+    },
+    {
+      "id": "e2e-testing",
+      "name": "e2e-testing",
+      "description": "Playwright E2E testing patterns, Page Object Model, configuration, CI/CD integration, artifact management, and flaky test strategies. Use when writing Playwright tests, structuring page objects, or fixing flaky E2E runs in CI.",
+      "scope": "role",
+      "roleId": "a003",
+      "active": true,
+      "dir": "skills/e2e-testing",
+      "origin": "ecc"
+    },
+    {
+      "id": "eval-harness",
+      "name": "eval-harness",
+      "description": "Formal evaluation framework for Claude Code sessions implementing eval-driven development (EDD) principles. Use when a Claude Code workflow needs a formal eval before it is trusted or changed.",
+      "scope": "role",
+      "roleId": "a003",
+      "active": true,
+      "dir": "skills/eval-harness",
+      "origin": "ecc"
+    },
+    {
+      "id": "everything-claude-code",
+      "name": "everything-claude-code",
+      "description": "Development conventions and patterns for everything-claude-code. JavaScript project with conventional commits.",
+      "scope": "global",
+      "roleId": null,
+      "active": true,
+      "dir": "skills/everything-claude-code",
+      "origin": "ecc"
+    },
+    {
+      "id": "exa-search",
+      "name": "exa-search",
+      "description": "Neural search via Exa MCP for web, code, and company research. Use when the user needs web search, code examples, company intel, people lookup, or AI-powered deep research with Exa's neural search engine.",
+      "scope": "global",
+      "roleId": null,
+      "active": true,
+      "dir": "skills/exa-search",
+      "origin": "ecc"
+    },
+    {
+      "id": "fal-ai-media",
+      "name": "fal-ai-media",
+      "description": "Unified media generation via fal.ai MCP — image, video, and audio. Covers text-to-image (Nano Banana), text/image-to-video (Seedance, Kling, Veo 3), text-to-speech (CSM-1B), and video-to-audio (ThinkSound). Use when the user wants to generate images, videos, or audio with AI.",
+      "scope": "global",
+      "roleId": null,
+      "active": true,
+      "dir": "skills/fal-ai-media",
+      "origin": "ecc"
+    },
+    {
+      "id": "frontend-patterns",
+      "name": "frontend-patterns",
+      "description": "Frontend development patterns for React, Next.js, state management, performance optimization, and UI best practices. Use when building or reviewing React or Next.js components, state, or render performance.",
+      "scope": "role",
+      "roleId": "a003",
+      "active": true,
+      "dir": "skills/frontend-patterns",
+      "origin": "ecc"
+    },
+    {
+      "id": "frontend-slides",
+      "name": "frontend-slides",
+      "description": "Create stunning, animation-rich HTML presentations from scratch or by converting PowerPoint files. Use when the user wants to build a presentation, convert a PPT/PPTX to web, or create slides for a talk/pitch. Helps non-designers discover their aesthetic through visual exploration rather than abstract choices.",
+      "scope": "global",
+      "roleId": null,
+      "active": true,
+      "dir": "skills/frontend-slides",
+      "origin": "ecc"
+    },
+    {
+      "id": "investor-materials",
+      "name": "investor-materials",
+      "description": "Create and update pitch decks, one-pagers, investor memos, accelerator applications, financial models, and fundraising materials. Use when the user needs investor-facing documents, projections, use-of-funds tables, milestone plans, or materials that must stay internally consistent across multiple fundraising assets.",
+      "scope": "global",
+      "roleId": null,
+      "active": true,
+      "dir": "skills/investor-materials",
+      "origin": "ecc"
+    },
+    {
+      "id": "investor-outreach",
+      "name": "investor-outreach",
+      "description": "Draft cold emails, warm intro blurbs, follow-ups, update emails, and investor communications for fundraising. Use when the user wants outreach to angels, VCs, strategic investors, or accelerators and needs concise, personalized, investor-facing messaging.",
+      "scope": "global",
+      "roleId": null,
+      "active": true,
+      "dir": "skills/investor-outreach",
+      "origin": "ecc"
+    },
+    {
+      "id": "market-research",
+      "name": "market-research",
+      "description": "Conduct market research, competitive analysis, investor due diligence, and industry intelligence with source attribution and decision-oriented summaries. Use when the user wants market sizing, competitor comparisons, fund research, technology scans, or research that informs business decisions.",
+      "scope": "global",
+      "roleId": null,
+      "active": true,
+      "dir": "skills/market-research",
+      "origin": "ecc"
+    },
+    {
+      "id": "mcp-server-patterns",
+      "name": "mcp-server-patterns",
+      "description": "Build MCP servers with Node/TypeScript SDK — tools, resources, prompts, Zod validation, stdio vs Streamable HTTP. Use Context7 or official MCP docs for latest API. Use when building or debugging an MCP server — tools, resources, prompts, validation, or transport choice.",
+      "scope": "role",
+      "roleId": "a003",
+      "active": true,
+      "dir": "skills/mcp-server-patterns",
+      "origin": "ecc"
+    },
+    {
+      "id": "mle-workflow",
+      "name": "mle-workflow",
+      "description": "Production machine-learning engineering workflow for data contracts, reproducible training, model evaluation, deployment, monitoring, and rollback. Use when building, reviewing, or hardening ML systems beyond one-off notebooks.",
+      "scope": "role",
+      "roleId": "a003",
+      "active": true,
+      "dir": "skills/mle-workflow",
+      "origin": "ecc"
+    },
+    {
+      "id": "nextjs-turbopack",
+      "name": "nextjs-turbopack",
+      "description": "Next.js 16+ and Turbopack — incremental bundling, FS caching, dev speed, and when to use Turbopack vs webpack.",
+      "scope": "role",
+      "roleId": "a003",
+      "active": true,
+      "dir": "skills/nextjs-turbopack",
+      "origin": "ecc"
+    },
+    {
+      "id": "plan-canvas",
+      "name": "plan-canvas",
+      "description": "Open plans and HTML artifacts in a local browser canvas where the human annotates elements, chats, and approves or requests changes without leaving the page. Use when presenting a plan for review, or when feedback like \"move this, change that\" is easier pointed at than typed.",
+      "scope": "global",
+      "roleId": null,
+      "active": true,
+      "dir": "skills/plan-canvas",
+      "origin": "ecc"
+    },
+    {
+      "id": "product-capability",
+      "name": "product-capability",
+      "description": "Translate PRD intent, roadmap asks, or product discussions into an implementation-ready capability plan that exposes constraints, invariants, interfaces, and unresolved decisions before multi-service work starts. Use when the user needs an ECC-native PRD-to-SRS lane instead of vague planning prose.",
+      "scope": "global",
+      "roleId": null,
+      "active": true,
+      "dir": "skills/product-capability",
+      "origin": "ecc"
+    },
+    {
+      "id": "security-review",
+      "name": "security-review",
+      "description": "Use this skill when adding authentication, handling user input, working with secrets, creating API endpoints, or implementing payment/sensitive features. Provides comprehensive security checklist and patterns.",
+      "scope": "role",
+      "roleId": "a003",
+      "active": true,
+      "dir": "skills/security-review",
+      "origin": "ecc"
+    },
+    {
+      "id": "strategic-compact",
+      "name": "strategic-compact",
+      "description": "Suggests manual context compaction at logical intervals to preserve context through task phases rather than arbitrary auto-compaction. Use when a session is approaching a context limit and a task phase is a natural place to compact.",
+      "scope": "global",
+      "roleId": null,
+      "active": true,
+      "dir": "skills/strategic-compact",
+      "origin": "ecc"
+    },
+    {
+      "id": "tdd-workflow",
+      "name": "tdd-workflow",
+      "description": "Use this skill when writing new features, fixing bugs, or refactoring code. Enforces test-driven development with 80%+ coverage including unit, integration, and E2E tests.",
+      "scope": "role",
+      "roleId": "a003",
+      "active": true,
+      "dir": "skills/tdd-workflow",
+      "origin": "ecc"
+    },
+    {
+      "id": "unified-memory",
+      "name": "unified-memory",
+      "description": "Share durable, inspectable context and handoffs between Claude, Codex, Hermes, Cursor, OpenCode, and other agents through the local ECC Memory Vault. Use when an agent must save work state, transfer context, resume another agent's task, or search shared project knowledge.",
+      "scope": "global",
+      "roleId": null,
+      "active": true,
+      "dir": "skills/unified-memory",
+      "origin": "ecc"
+    },
+    {
+      "id": "verification-loop",
+      "name": "verification-loop",
+      "description": "A comprehensive verification system for Claude Code sessions. Use when verifying a Claude Code session's work before claiming it is complete.",
+      "scope": "role",
+      "roleId": "a003",
+      "active": true,
+      "dir": "skills/verification-loop",
+      "origin": "ecc"
+    },
+    {
+      "id": "video-editing",
+      "name": "video-editing",
+      "description": "AI-assisted video editing workflows for cutting, structuring, and augmenting real footage. Covers the full pipeline from raw capture through FFmpeg, Remotion, ElevenLabs, fal.ai, and final polish in Descript or CapCut. Use when the user wants to edit video, cut footage, create vlogs, or build video content.",
+      "scope": "global",
+      "roleId": null,
+      "active": true,
+      "dir": "skills/video-editing",
+      "origin": "ecc"
+    },
+    {
+      "id": "x-api",
+      "name": "x-api",
+      "description": "X/Twitter API integration for posting tweets, threads, reading timelines, search, and analytics. Covers OAuth auth patterns, rate limits, and platform-native content posting. Use when the user wants to interact with X programmatically.",
+      "scope": "global",
+      "roleId": null,
+      "active": true,
+      "dir": "skills/x-api",
+      "origin": "ecc"
+    }
+  ]
+}

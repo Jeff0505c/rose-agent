@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ROSE · 横向组合标志（深色底）：标志 + ROSE 字标 + AI 注记
+  用法：README 顶部、关于页、启动画面。最小使用宽度 240px（见 assets/logo/README.md）。
+-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 320" width="900" height="320" role="img" aria-label="ROSE AI">
+  <rect width="900" height="320" fill="#0A0A0D"/>
+  <g transform="translate(48 60) scale(0.3906)" fill="none" stroke="#F4F1EA" stroke-width="32" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M200 146 V366"/>
+    <path d="M200 146 A58 58 0 0 1 200 262"/>
+  </g>
+  <path d="M200 262 L308 366" transform="translate(48 60) scale(0.3906)" fill="none" stroke="#D16A80" stroke-width="32" stroke-linecap="round"/>
+  <!-- 字标 -->
+  <text x="300" y="196" font-family="'Helvetica Neue', Inter, 'Segoe UI', Arial, sans-serif"
+        font-size="112" font-weight="600" letter-spacing="16" fill="#F4F1EA">ROSE</text>
+  <!-- 分隔线 + AI 注记（唯一彩色文字） -->
+  <line x1="686" y1="128" x2="686" y2="192" stroke="#3A3A42" stroke-width="2"/>
+  <text x="722" y="184" font-family="'Helvetica Neue', Inter, 'Segoe UI', Arial, sans-serif"
+        font-size="44" font-weight="500" letter-spacing="10" fill="#D16A80">AI</text>
+</svg>

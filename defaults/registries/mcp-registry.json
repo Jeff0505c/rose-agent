@@ -1,0 +1,125 @@
+{
+  "servers": [
+    {
+      "id": "mcp-a1c78eb6",
+      "name": "fetch",
+      "command": "uvx",
+      "args": [
+        "mcp-server-fetch"
+      ],
+      "env": {},
+      "scope": "global",
+      "roleId": null,
+      "active": true,
+      "createdAt": 1788582434926
+    },
+    {
+      "id": "mcp-ac692f79",
+      "name": "memory",
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-memory"
+      ],
+      "env": {
+        "MEMORY_FILE_PATH": "${ROSE_ROOT}/work/data/memory.json"
+      },
+      "scope": "global",
+      "roleId": null,
+      "active": true,
+      "createdAt": 1788582434965
+    },
+    {
+      "id": "mcp-e1224b32",
+      "name": "filesystem",
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-filesystem",
+        "${ROSE_ROOT}/work"
+      ],
+      "env": {},
+      "scope": "global",
+      "roleId": null,
+      "active": true,
+      "createdAt": 1788582434988
+    },
+    {
+      "id": "mcp-509145b0",
+      "name": "time",
+      "command": "uvx",
+      "args": [
+        "mcp-server-time"
+      ],
+      "env": {},
+      "scope": "global",
+      "roleId": null,
+      "active": true,
+      "createdAt": 1788582435020
+    },
+    {
+      "id": "mcp-a5886d3c",
+      "name": "sequential-thinking",
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-sequential-thinking"
+      ],
+      "env": {},
+      "scope": "global",
+      "roleId": null,
+      "active": true,
+      "createdAt": 1788582435047
+    },
+    {
+      "id": "mcp-e6c68d61",
+      "name": "playwright",
+      "command": "npx",
+      "args": [
+        "@playwright/mcp"
+      ],
+      "env": {},
+      "scope": "global",
+      "roleId": null,
+      "active": true,
+      "createdAt": 1788582435075
+    },
+    {
+      "id": "mcp-20849af6",
+      "name": "github",
+      "command": "github-mcp-server",
+      "args": [
+        "stdio"
+      ],
+      "env": {
+        "GITHUB_PERSONAL_ACCESS_TOKEN": ""
+      },
+      "scope": "role",
+      "roleId": "a003",
+      "active": true,
+      "createdAt": 1788582435104
+    },
+    {
+      "id": "mcp-f5765fb2",
+      "type": "http",
+      "name": "gaode-map",
+      "scope": "role",
+      "roleId": "a001",
+      "active": true,
+      "createdAt": 1788791725636,
+      "url": "https://mcpmarket.cn/mcp/07d1a7a34bc4c5aced689e9a",
+      "headers": {}
+    },
+    {
+      "id": "mcp-be589884",
+      "type": "http",
+      "name": "麦麦",
+      "scope": "role",
+      "roleId": "a001",
+      "active": true,
+      "createdAt": 1788836887729,
+      "url": "https://mcpmarket.cn/mcp/d39e487b05e4cb04c617c799",
+      "headers": {}
+    }
+  ]
+}

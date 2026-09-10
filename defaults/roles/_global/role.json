@@ -1,0 +1,7 @@
+{
+  "id": "_global",
+  "name": "全局",
+  "icon": "global",
+  "description": "所有角色共享的全局层：AGENTS.md 指令、设置、记忆",
+  "hidden": true
+}

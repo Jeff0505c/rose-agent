@@ -1,0 +1,8 @@
+{
+  "global": {
+    "language": "zh-CN",
+    "enabledModels": [],
+    "note": "启用模型集；主界面发送框旁下拉只列这些，新会话默认第一项。全新安装为空——请先在「设置 → 模型配置」新增 Provider 并填入 API Key，再获取/启用模型。"
+  },
+  "providers": {}
+}

@@ -1,0 +1,25 @@
+# 跨平台文本/二进制属性：避免 Windows 检出时把 LF 转成 CRLF 破坏 shell 脚本
+* text=auto
+*.sh text eol=lf
+*.mjs text eol=lf
+*.js text eol=lf
+*.json text eol=lf
+*.md text eol=lf
+*.toml text eol=lf
+*.ps1 text eol=crlf
+
+# 二进制（不要做换行/编码转换）
+*.exe binary
+*.dll binary
+*.dmg binary
+*.zst binary
+*.gz binary
+*.zip binary
+*.pdf binary
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.woff binary
+*.woff2 binary

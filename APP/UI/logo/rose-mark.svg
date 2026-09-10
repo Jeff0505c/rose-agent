@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ROSE · 主标志（几何单字 R）
+
+  构成：竖笔 + 碗（上半圆）+ 斜腿。斜腿用玫瑰红 —— 全标志唯一的彩色。
+  设计约束：元素越少越高级；字母标是识别成本最低的方案（一眼念得出 ROSE）。
+  线条用 currentColor 便于复用；**但界面里必须显式指定颜色**（见 assets/logo/README.md）。
+-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" role="img" aria-label="ROSE">
+  <g fill="none" stroke="currentColor" stroke-width="32" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M200 146 V366"/>
+    <path d="M200 146 A58 58 0 0 1 200 262"/>
+  </g>
+  <path d="M200 262 L308 366" fill="none" stroke="#D16A80" stroke-width="32" stroke-linecap="round"/>
+</svg>

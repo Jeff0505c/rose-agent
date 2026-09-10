@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ROSE · 应用图标母版（**小尺寸专用，≤32px**）
+
+  32/512 的线宽缩到 16px 只有 1px，抗锯齿后偏淡；这里把笔画加粗到 56
+  （16px 下约 1.75px），并略微放大字面，保证小尺寸仍看得出是个 R。
+-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" role="img" aria-label="ROSE">
+  <defs>
+    <linearGradient id="tile-rs" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#17171C"/>
+      <stop offset="1" stop-color="#0A0A0D"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="116" fill="url(#tile-rs)"/>
+  <g fill="none" stroke="#F4F1EA" stroke-width="56" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M196 138 V374"/>
+    <path d="M196 138 A64 64 0 0 1 196 266"/>
+  </g>
+  <path d="M196 266 L316 374" fill="none" stroke="#D16A80" stroke-width="56" stroke-linecap="round"/>
+</svg>
