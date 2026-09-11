@@ -12,7 +12,7 @@ const I18N = {
     'usage.loading':'加载中…','usage.totalTokens':'累计 Tokens','usage.totalTurns':'累计轮次','usage.today':'今日轮次','usage.week':'近 7 天轮次','usage.input':'输入','usage.output':'输出','usage.cached':'其中缓存命中','usage.byModel':'按模型分布','usage.trend':'近 14 天趋势','usage.byRole':'按角色','usage.none':'暂无数据',
     'prompt.title':'全局提示词 AGENTS-GLOBAL.md','prompt.desc':'对所有角色生效；保存后同步到每个运行实例，新对话生效。',
     'common.save':'保存','common.ok':'知道了','common.saveOk':'✓ 已保存','common.loading':'加载中…','common.none':'暂无数据','common.polish':'AI 润色',
-    'model.enabledTitle':'已启用模型 · 发送框下拉只展示这些；新会话沿用该角色上次使用的模型','model.enabledHint':'在下方展开 Provider，点「获取模型」后勾选需要的模型（可跨 Provider）。保存后生效。','model.providersTitle':'模型来源 · Provider','model.addProvider':'新增模型配置','model.badgeLocal':'本地·无需Key','model.badgeSet':'已配Key','model.badgeUnset':'无Key','model.delProvider':'删除该 Provider','model.nameLabel':'供应商名称（显示名，可自定义）','model.apiKey':'API Key','model.noKey':'本地模型，无需 API Key','model.keepBlank':'••••••••（留空保持不变）','model.fetch':'获取模型','model.fetchHint':'拉取该 endpoint 的可用模型','model.cachedHas':'已缓存 {n} 个模型','model.metaHas':'{m} 个模型 · {e} 个已启用','model.unset':'未配置','model.filter':'过滤模型…','model.save':'保存模型配置','model.noneEnabled':'尚未启用任何模型','model.remove':'移除','model.choosePh':'（请选择模型）','model.pruned':'已移除 {n} 个失效模型','model.pickTitle':'请选择模型','model.pickMsg':'这个会话还没有选择模型。请在发送框旁的模型下拉里选择本次对话要用的模型。',
+    'model.enabledTitle':'已启用模型 · 发送框下拉只展示这些；新会话沿用该角色上次使用的模型','model.enabledHint':'在下方展开 Provider，点「获取模型」后勾选需要的模型（可跨 Provider）。保存后生效。','model.providersTitle':'模型来源 · Provider','model.addProvider':'新增模型配置','model.badgeLocal':'本地·无需Key','model.badgeSet':'已配Key','model.badgeUnset':'无Key','model.delProvider':'删除该 Provider','model.nameLabel':'供应商名称（显示名，可自定义）','model.apiKey':'API Key','model.noKey':'本地模型，无需 API Key','model.keepBlank':'••••••••（留空保持不变）','model.fetch':'获取模型','model.fetchHint':'拉取该 endpoint 的可用模型','model.cachedHas':'已缓存 {n} 个模型','model.metaHas':'{m} 个模型 · {e} 个已启用','model.unset':'未配置','model.filter':'过滤模型…','model.save':'保存模型配置','model.noneEnabled':'尚未启用任何模型','model.remove':'移除','model.choosePh':'（请选择模型）','model.reqName':'请求名称','model.editReqHint':'点击可修改发给供应商的请求名称（model）','model.reqNameHint':'请求名称＝发给供应商的 model 字段（名称下排小字）。列表里没有的模型可在此直接添加：别名、自建网关、预览版都适用。','model.reqNamePh':'例如 deepseek-chat','model.addReq':'添加','model.dupReq':'该请求名称「{n}」已在此供应商下启用','model.reqAdded':'已添加 {n} —— 记得点下方「保存模型配置」','model.pruned':'已移除 {n} 个失效模型','model.pickTitle':'请选择模型','model.pickMsg':'这个会话还没有选择模型。请在发送框旁的模型下拉里选择本次对话要用的模型。',
     'dlg.close':'关闭','dlg.closeDeny':'关闭（视为拒绝）','dlg.closeSkip':'关闭（跳过，不回答）','ask.title':'需要你的选择','ask.submit':'提交回答','appr.deny':'拒绝','appr.allow':'允许','mcpUI.title':'新增 MCP 服务器','mcpUI.type':'服务器类型','mcpUI.typeStdio':'本地进程（stdio：uvx / npx / node 命令）','mcpUI.typeHttp':'远程 · Streamable HTTP（填 URL）','mcpUI.typeSse':'远程 · SSE（旧式 HTTP+SSE，填 URL）','mcpUI.name':'名称（唯一）','mcpUI.namePh':'例如 my-server','mcpUI.args':'参数（空格分隔，可空）','mcpUI.env':'环境变量（每行 KEY=VALUE，可空）','mcpUI.headers':'请求头（每行 Key: Value，可空；鉴权如 Authorization: Bearer xxx）','mcpUI.scope':'绑定范围','mcpUI.test':'测试连接',
 
     'skill.bar':'技能 · 全局通用 / 角色专用',
@@ -64,7 +64,7 @@ const I18N = {
     'usage.loading':'Loading…','usage.totalTokens':'Cumulative Tokens','usage.totalTurns':'Cumulative Turns','usage.today':'Turns Today','usage.week':'Last 7 Days','usage.input':'Input','usage.output':'Output','usage.cached':'of which cached','usage.byModel':'By Model','usage.trend':'Last 14 Days','usage.byRole':'By Role','usage.none':'No data',
     'prompt.title':'Global Prompt — AGENTS-GLOBAL.md','prompt.desc':'Applies to all roles; synced to every running instance, effective on new chats.',
     'common.save':'Save','common.ok':'Got it','common.saveOk':'✓ Saved','common.loading':'Loading…','common.none':'No data','common.polish':'AI Polish',
-    'model.enabledTitle':'Enabled Models — shown in the send box; a new chat reuses the model that role used last','model.enabledHint':'Expand a provider below, tap "Fetch models" then tick what you need (can span providers). Takes effect after saving.','model.providersTitle':'Model Sources · Providers','model.addProvider':'Add provider','model.badgeLocal':'Local · no key','model.badgeSet':'Key set','model.badgeUnset':'No key','model.delProvider':'Delete this provider','model.nameLabel':'Provider name (display, editable)','model.apiKey':'API Key','model.noKey':'Local model — no API key needed','model.keepBlank':'•••••••• (blank keeps current)','model.fetch':'Fetch models','model.fetchHint':'Load available models from this endpoint','model.cachedHas':'{n} model(s) cached','model.metaHas':'{m} models · {e} enabled','model.unset':'Not configured','model.filter':'Filter models…','model.save':'Save model config','model.noneEnabled':'No models enabled yet','model.remove':'Remove','model.choosePh':'(choose a model)','model.pruned':'removed {n} stale model(s)','model.pickTitle':'Choose a model','model.pickMsg':'This session has no model selected yet. Pick one from the model dropdown next to the send box.',
+    'model.enabledTitle':'Enabled Models — shown in the send box; a new chat reuses the model that role used last','model.enabledHint':'Expand a provider below, tap "Fetch models" then tick what you need (can span providers). Takes effect after saving.','model.providersTitle':'Model Sources · Providers','model.addProvider':'Add provider','model.badgeLocal':'Local · no key','model.badgeSet':'Key set','model.badgeUnset':'No key','model.delProvider':'Delete this provider','model.nameLabel':'Provider name (display, editable)','model.apiKey':'API Key','model.noKey':'Local model — no API key needed','model.keepBlank':'•••••••• (blank keeps current)','model.fetch':'Fetch models','model.fetchHint':'Load available models from this endpoint','model.cachedHas':'{n} model(s) cached','model.metaHas':'{m} models · {e} enabled','model.unset':'Not configured','model.filter':'Filter models…','model.save':'Save model config','model.noneEnabled':'No models enabled yet','model.remove':'Remove','model.choosePh':'(choose a model)','model.reqName':'Request name','model.editReqHint':'Click to edit the request name (model) sent to the provider','model.reqNameHint':'The request name is the "model" field sent to the provider (small text under the name). Add any model missing from the list — aliases, self-hosted gateways, preview builds.','model.reqNamePh':'e.g. deepseek-chat','model.addReq':'Add','model.dupReq':'Request name "{n}" is already enabled for this provider','model.reqAdded':'Added {n} — remember to click Save model config below','model.pruned':'removed {n} stale model(s)','model.pickTitle':'Choose a model','model.pickMsg':'This session has no model selected yet. Pick one from the model dropdown next to the send box.',
     'dlg.close':'Close','dlg.closeDeny':'Close (treated as deny)','dlg.closeSkip':'Close (skip, no answer)','ask.title':'Your input is needed','ask.submit':'Submit answers','appr.deny':'Deny','appr.allow':'Allow','mcpUI.title':'Add MCP Server','mcpUI.type':'Server type','mcpUI.typeStdio':'Local process (stdio: uvx / npx / node command)','mcpUI.typeHttp':'Remote · Streamable HTTP (URL)','mcpUI.typeSse':'Remote · SSE (legacy HTTP+SSE, URL)','mcpUI.name':'Name (unique)','mcpUI.namePh':'e.g. my-server','mcpUI.args':'Arguments (space-separated, optional)','mcpUI.env':'Environment (one KEY=VALUE per line, optional)','mcpUI.headers':'Request headers (one per line, Key: Value; auth e.g. Authorization: Bearer xxx)','mcpUI.scope':'Bind scope','mcpUI.test':'Test connection',
 
     'skill.bar':'Skills · global / role-specific',
@@ -953,7 +953,11 @@ function modelOptions() {
   for (const e of em) {
     const providers = (state.settings && state.settings.providers) || {};
     const p = providers[e.providerId] || {};
-    out.push({ pid: e.providerId, model: e.modelId, label: e.label || ((p.name || e.providerId) + ' · ' + e.modelId), active: false });
+    // 显示名里若看不出真正的请求名（用户自定义过 label），补一个括号标注，
+    // 避免"下拉里叫 A、实际请求 B"这种看不见的偏差
+    const base = e.label || ((p.name || e.providerId) + ' · ' + e.modelId);
+    const showReq = e.label && !String(e.label).includes(e.modelId);
+    out.push({ pid: e.providerId, model: e.modelId, label: showReq ? base + '（' + e.modelId + '）' : base, active: false });
   }
   return out;
 }
@@ -1570,6 +1574,11 @@ function renderModelPanel(body) {
             </div>
             <input type="text" class="ml-filter" id="filter_${id}" placeholder="${tr('model.filter')}" style="display:none">
             <div class="mlist" id="mlist_${id}" style="max-height:240px"></div>
+            <div class="req-add">
+              <input type="text" class="req-input" id="req_${id}" placeholder="${esc(tr('model.reqNamePh'))}" spellcheck="false" autocomplete="off">
+              <button class="btn-outline" data-addreq="${id}">＋ ${tr('model.addReq')}</button>
+            </div>
+            <p class="hint" style="font-size:11.5px;color:var(--faint);margin:6px 0 0">${tr('model.reqNameHint')}</p>
           </div>
         </div>`;
       }).join('') + `</div>`;
@@ -1580,20 +1589,71 @@ function renderModelPanel(body) {
       </div>`;
 
 
+    // 自动生成的显示名（用户没自定义 label 时，跟随请求名变化）
+    const autoLabel = (pid, mid) => pid + ' · ' + mid;
+
     function renderChips() {
       const box = $('#enChips');
       if (!box) return;
       if (!enabled.length) { box.innerHTML = '<span style="font-size:12px;color:var(--faint)">' + tr('model.noneEnabled') + '</span>'; return; }
-      box.innerHTML = enabled.map((e, i) => `
-        <span class="en-chip">
-          <span class="en-name">${esc(e.label || (e.providerId + ' · ' + e.modelId))}</span>
+      box.innerHTML = enabled.map((e, i) => {
+        const auto = !e.label || e.label === autoLabel(e.providerId, e.modelId);
+        const label = e.label || autoLabel(e.providerId, e.modelId);
+        return `
+        <span class="en-chip" data-idx="${i}">
+          <span class="en-name" data-edit="${i}" title="${tr('model.editReqHint')}">${esc(label)}</span>
+          <span class="en-req" title="${tr('model.reqName')}">${esc(e.modelId)}</span>
           <button class="en-x" data-ridx="${i}" title="${tr('model.remove')}">✕</button>
-        </span>`).join('');
+        </span>`;
+      }).join('');
       box.querySelectorAll('[data-ridx]').forEach((b) => b.addEventListener('click', (ev) => {
+        ev.stopPropagation();
         const idx = +ev.target.dataset.ridx;
         enabled.splice(idx, 1);
         syncChecks(); renderChips(); renderMetas();
       }));
+      // 点名称 → 就地编辑「请求名称」（真正发给供应商的 model 名）
+      box.querySelectorAll('[data-edit]').forEach((el) => el.addEventListener('click', () => startEditReq(+el.dataset.edit)));
+    }
+
+    /**
+     * 就地编辑某个已启用模型的**请求名称**（= 发给供应商的 model 字段）。
+     * 允许任意名字：拿到的是别名/自建网关时常需要自定义，不能只限拉取列表里的 id。
+     */
+    function startEditReq(i) {
+      const box = $('#enChips');
+      const e = enabled[i];
+      if (!box || !e) return;
+      const chip = box.querySelector(`.en-chip[data-idx="${i}"]`);
+      if (!chip) return;
+      const prevReq = e.modelId;
+      const wasAuto = !e.label || e.label === autoLabel(e.providerId, prevReq);
+      chip.classList.add('editing');
+      chip.innerHTML = `<input class="en-input" value="${esc(prevReq)}" spellcheck="false" autocomplete="off">
+        <button class="en-ok" title="${tr('common.saveOk')}">✓</button>
+        <button class="en-cancel" title="${tr('common.cancel')}">✕</button>`;
+      const inp = chip.querySelector('.en-input');
+      inp.focus(); inp.select();
+      const cancel = () => { renderChips(); };
+      const commit = () => {
+        const v = inp.value.trim();
+        if (!v || v === prevReq) return cancel();
+        if (enabled.some((x, j) => j !== i && x.providerId === e.providerId && x.modelId === v)) {
+          uiDialog({ title: tr('model.reqName'), message: tr('model.dupReq').replace('{n}', v), buttons: [{ label: tr('common.ok'), value: 1, primary: true }] });
+          inp.focus(); inp.select();
+          return;
+        }
+        e.modelId = v;
+        if (wasAuto) e.label = autoLabel(e.providerId, v);   // 未自定义过显示名 → 跟随请求名
+        renderChips(); renderMetas();
+      };
+      chip.querySelector('.en-ok').addEventListener('click', (ev) => { ev.stopPropagation(); commit(); });
+      chip.querySelector('.en-cancel').addEventListener('click', (ev) => { ev.stopPropagation(); cancel(); });
+      inp.addEventListener('keydown', (ev) => {
+        ev.stopPropagation();
+        if (ev.key === 'Enter') { ev.preventDefault(); commit(); }
+        else if (ev.key === 'Escape') { ev.preventDefault(); cancel(); }
+      });
     }
     function syncChecks() {
       document.querySelectorAll('.ml-ck[data-k]').forEach((cb) => {
@@ -1740,6 +1800,33 @@ function renderModelPanel(body) {
       renderModelPanel(body);
     }));
 
+    // 手动添加「请求名称」：拉取列表里没有的模型（别名 / 自建网关 / 预览版）也能启用
+    const addReq = (pid) => {
+      const inp = $('#req_' + pid);
+      if (!inp) return;
+      const v = inp.value.trim();
+      if (!v) { inp.focus(); return; }
+      if (enabled.some((e) => e.providerId === pid && e.modelId === v)) {
+        uiDialog({ title: tr('model.reqName'), message: tr('model.dupReq').replace('{n}', v), buttons: [{ label: tr('common.ok'), value: 1 }] });
+        return;
+      }
+      const nameEl = $('#name_' + pid);
+      const cname = (nameEl && nameEl.value.trim()) || pname(pid);
+      enabled.push({ providerId: pid, modelId: v, label: cname + ' · ' + v });
+      inp.value = '';
+      const msg = $('#modelMsg');
+      if (msg) { msg.textContent = tr('model.reqAdded').replace('{n}', v); setTimeout(() => { msg.textContent = ''; }, 4000); }
+      renderChips(); renderMetas();
+      // 若该请求名恰好也在已拉取列表中，同步勾上
+      const cb = document.querySelector(`.ml-ck[data-k="${CSS.escape(pid + '|' + v)}"]`);
+      if (cb) cb.checked = true;
+    };
+    body.querySelectorAll('[data-addreq]').forEach((b) => b.addEventListener('click', () => addReq(b.dataset.addreq)));
+    body.querySelectorAll('.req-input').forEach((inp) => inp.addEventListener('keydown', (ev) => {
+      ev.stopPropagation();
+      if (ev.key === 'Enter') { ev.preventDefault(); addReq(inp.id.replace(/^req_/, '')); }
+    }));
+
     // 拉取模型 → 就地展开可勾选列表
     body.querySelectorAll('[data-fetch]').forEach((btn) => {
       btn.addEventListener('click', async (ev) => {
@@ -1810,6 +1897,9 @@ function renderModelPanel(body) {
       // 以当前输入框的供应商名称重建已启用模型的显示标签（名称可留空 → 回退用 provider id）
       const en = enabled.map((e) => ({ providerId: e.providerId, modelId: e.modelId, label: (typedName(e.providerId) || e.providerId) + ' · ' + e.modelId }));
       await api('PUT', '/api/settings', { providers, global: { enabledModels: en } });
+      // 同步内存态并刷新发送框下拉（改请求名后无需刷新界面即可生效）
+      await refreshBootstrap();
+      fillModelSelect();
       flash('✓ ' + tr('common.save'), 'modelMsg');
       await refreshBootstrap();
       renderModelPanel(body); // 重绘：卡片名称 / 已启用 chips 以保存结果为准
