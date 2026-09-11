@@ -12,7 +12,8 @@ const I18N = {
     'usage.loading':'加载中…','usage.totalTokens':'累计 Tokens','usage.totalTurns':'累计轮次','usage.today':'今日轮次','usage.week':'近 7 天轮次','usage.input':'输入','usage.output':'输出','usage.cached':'其中缓存命中','usage.byModel':'按模型分布','usage.trend':'近 14 天趋势','usage.byRole':'按角色','usage.none':'暂无数据',
     'prompt.title':'全局提示词 AGENTS-GLOBAL.md','prompt.desc':'对所有角色生效；保存后同步到每个运行实例，新对话生效。',
     'common.save':'保存','common.ok':'知道了','common.saveOk':'✓ 已保存','common.loading':'加载中…','common.none':'暂无数据','common.polish':'AI 润色',
-    'model.enabledTitle':'已启用模型 · 发送框下拉只展示这些；新会话沿用该角色上次使用的模型','model.enabledHint':'展开 Provider → 点「获取模型」→ 勾选即启用（取消勾选即停用）。每行右侧「改请求名」可就地修改发给供应商的 model 字段。保存后生效。','model.providersTitle':'模型来源 · Provider','model.addProvider':'新增模型配置','model.badgeLocal':'本地·无需Key','model.badgeSet':'已配Key','model.badgeUnset':'无Key','model.delProvider':'删除该 Provider','model.nameLabel':'供应商名称（显示名，可自定义）','model.apiKey':'API Key','model.noKey':'本地模型，无需 API Key','model.keepBlank':'••••••••（留空保持不变）','model.fetch':'获取模型','model.fetchHint':'拉取该 endpoint 的可用模型','model.cachedHas':'已缓存 {n} 个模型','model.metaHas':'{m} 个模型 · {e} 个已启用','model.unset':'未配置','model.filter':'过滤模型…','model.save':'保存模型配置','model.noneEnabled':'尚未启用任何模型','model.remove':'移除','model.choosePh':'（请选择模型）','model.reqName':'请求名称','model.editReq':'改请求名','model.custom':'自定义','model.listEmpty':'（尚未获取模型；可点上方「获取模型」，或在下方直接填请求名添加）','model.editReqHint':'修改发给供应商的请求名称（model 字段）','model.reqNameHint':'请求名称＝发给供应商的 model 字段（名称下排小字）。列表里没有的模型可在此直接添加：别名、自建网关、预览版都适用。','model.reqNamePh':'例如 deepseek-chat','model.addReq':'添加','model.dupReq':'该请求名称「{n}」已在此供应商下启用','model.reqAdded':'已添加 {n} —— 记得点下方「保存模型配置」','model.renamedSync':'请求名已改为 {to}（原 {from}）；已同步更新 {n} 个使用该模型的会话','model.pruned':'已移除 {n} 个失效模型','model.pickTitle':'请选择模型','model.pickMsg':'这个会话还没有选择模型。请在发送框旁的模型下拉里选择本次对话要用的模型。',
+    'model.enabledTitle':'已启用模型 · 发送框下拉只展示这些；新会话沿用该角色上次使用的模型','model.enabledHint':'展开 Provider → 点「获取模型」→ 勾选即启用（取消勾选即停用）。每行右侧「改请求名」可就地修改发给供应商的 model 字段。保存后生效。','model.providersTitle':'模型来源 · Provider','model.addProvider':'新增模型配置','model.badgeLocal':'本地·无需Key','model.badgeSet':'已配Key','model.badgeUnset':'无Key','model.delProvider':'删除该 Provider','model.nameLabel':'供应商名称（显示名，可自定义）','model.apiKey':'API Key','model.noKey':'本地模型，无需 API Key','model.keepBlank':'••••••••（留空保持不变）','model.fetch':'获取模型','model.fetchHint':'拉取该 endpoint 的可用模型','model.cachedHas':'已缓存 {n} 个模型','model.metaHas':'{m} 个模型 · {e} 个已启用','model.unset':'未配置','model.filter':'过滤模型…','model.save':'保存模型配置','model.noneEnabled':'尚未启用任何模型','model.remove':'移除','model.choosePh':'（请选择模型）','model.reqName':'请求名称','model.editReq':'改请求名','model.custom':'自定义','model.listEmpty':'（尚未获取模型；可点上方「获取模型」，或在下方直接填请求名添加）','model.editReqHint':'修改发给供应商的请求名称（model 字段）','model.reqNameHint':'请求名称＝发给供应商的 model 字段（名称下排小字）。列表里没有的模型可在此直接添加：别名、自建网关、预览版都适用。','model.reqNamePh':'例如 deepseek-chat','model.addReq':'添加','model.dupReq':'该请求名称「{n}」已在此供应商下启用','model.reqAdded':'已添加 {n} —— 记得点下方「保存模型配置」','model.renamedSync':'请求名已改为 {to}（原 {from}）；已同步更新 {n} 个使用该模型的会话','model.saveFail':'保存失败：',
+    'unsaved.title':'有未保存的更改','unsaved.msg':'模型配置里有改动尚未保存。现在保存吗？','unsaved.save':'保存并关闭','unsaved.discard':'不保存','unsaved.stay':'取消','model.pruned':'已移除 {n} 个失效模型','model.pickTitle':'请选择模型','model.pickMsg':'这个会话还没有选择模型。请在发送框旁的模型下拉里选择本次对话要用的模型。',
     'dlg.close':'关闭','dlg.closeDeny':'关闭（视为拒绝）','dlg.closeSkip':'关闭（跳过，不回答）','ask.title':'需要你的选择','ask.submit':'提交回答','appr.deny':'拒绝','appr.allow':'允许','mcpUI.title':'新增 MCP 服务器','mcpUI.type':'服务器类型','mcpUI.typeStdio':'本地进程（stdio：uvx / npx / node 命令）','mcpUI.typeHttp':'远程 · Streamable HTTP（填 URL）','mcpUI.typeSse':'远程 · SSE（旧式 HTTP+SSE，填 URL）','mcpUI.name':'名称（唯一）','mcpUI.namePh':'例如 my-server','mcpUI.args':'参数（空格分隔，可空）','mcpUI.env':'环境变量（每行 KEY=VALUE，可空）','mcpUI.headers':'请求头（每行 Key: Value，可空；鉴权如 Authorization: Bearer xxx）','mcpUI.scope':'绑定范围','mcpUI.test':'测试连接',
 
     'skill.bar':'技能 · 全局通用 / 角色专用',
@@ -64,7 +65,7 @@ const I18N = {
     'usage.loading':'Loading…','usage.totalTokens':'Cumulative Tokens','usage.totalTurns':'Cumulative Turns','usage.today':'Turns Today','usage.week':'Last 7 Days','usage.input':'Input','usage.output':'Output','usage.cached':'of which cached','usage.byModel':'By Model','usage.trend':'Last 14 Days','usage.byRole':'By Role','usage.none':'No data',
     'prompt.title':'Global Prompt — AGENTS-GLOBAL.md','prompt.desc':'Applies to all roles; synced to every running instance, effective on new chats.',
     'common.save':'Save','common.ok':'Got it','common.saveOk':'✓ Saved','common.loading':'Loading…','common.none':'No data','common.polish':'AI Polish',
-    'model.enabledTitle':'Enabled Models — shown in the send box; a new chat reuses the model that role used last','model.enabledHint':'Expand a provider → tap "Fetch models" → tick to enable (untick to disable). Use "Rename" on a row to edit the model field sent to the provider. Takes effect after saving.','model.providersTitle':'Model Sources · Providers','model.addProvider':'Add provider','model.badgeLocal':'Local · no key','model.badgeSet':'Key set','model.badgeUnset':'No key','model.delProvider':'Delete this provider','model.nameLabel':'Provider name (display, editable)','model.apiKey':'API Key','model.noKey':'Local model — no API key needed','model.keepBlank':'•••••••• (blank keeps current)','model.fetch':'Fetch models','model.fetchHint':'Load available models from this endpoint','model.cachedHas':'{n} model(s) cached','model.metaHas':'{m} models · {e} enabled','model.unset':'Not configured','model.filter':'Filter models…','model.save':'Save model config','model.noneEnabled':'No models enabled yet','model.remove':'Remove','model.choosePh':'(choose a model)','model.reqName':'Request name','model.editReq':'Rename','model.custom':'custom','model.listEmpty':'(no models fetched yet — use "Fetch models" above, or type a request name below)', 'model.editReqHint':'Edit the request name (model field) sent to the provider','model.reqNameHint':'The request name is the "model" field sent to the provider (small text under the name). Add any model missing from the list — aliases, self-hosted gateways, preview builds.','model.reqNamePh':'e.g. deepseek-chat','model.addReq':'Add','model.dupReq':'Request name "{n}" is already enabled for this provider','model.reqAdded':'Added {n} — remember to click Save model config below','model.renamedSync':'Request name changed to {to} (was {from}); {n} session(s) using it were updated','model.pruned':'removed {n} stale model(s)','model.pickTitle':'Choose a model','model.pickMsg':'This session has no model selected yet. Pick one from the model dropdown next to the send box.',
+    'model.enabledTitle':'Enabled Models — shown in the send box; a new chat reuses the model that role used last','model.enabledHint':'Expand a provider → tap "Fetch models" → tick to enable (untick to disable). Use "Rename" on a row to edit the model field sent to the provider. Takes effect after saving.','model.providersTitle':'Model Sources · Providers','model.addProvider':'Add provider','model.badgeLocal':'Local · no key','model.badgeSet':'Key set','model.badgeUnset':'No key','model.delProvider':'Delete this provider','model.nameLabel':'Provider name (display, editable)','model.apiKey':'API Key','model.noKey':'Local model — no API key needed','model.keepBlank':'•••••••• (blank keeps current)','model.fetch':'Fetch models','model.fetchHint':'Load available models from this endpoint','model.cachedHas':'{n} model(s) cached','model.metaHas':'{m} models · {e} enabled','model.unset':'Not configured','model.filter':'Filter models…','model.save':'Save model config','model.noneEnabled':'No models enabled yet','model.remove':'Remove','model.choosePh':'(choose a model)','model.reqName':'Request name','model.editReq':'Rename','model.custom':'custom','model.listEmpty':'(no models fetched yet — use "Fetch models" above, or type a request name below)', 'model.editReqHint':'Edit the request name (model field) sent to the provider','model.reqNameHint':'The request name is the "model" field sent to the provider (small text under the name). Add any model missing from the list — aliases, self-hosted gateways, preview builds.','model.reqNamePh':'e.g. deepseek-chat','model.addReq':'Add','model.dupReq':'Request name "{n}" is already enabled for this provider','model.reqAdded':'Added {n} — remember to click Save model config below','model.renamedSync':'Request name changed to {to} (was {from}); {n} session(s) using it were updated','model.saveFail':'Save failed: ','unsaved.title':'Unsaved changes','unsaved.msg':'The model configuration has unsaved changes. Save them now?','unsaved.save':'Save & close','unsaved.discard':'Discard','unsaved.stay':'Cancel','model.pruned':'removed {n} stale model(s)','model.pickTitle':'Choose a model','model.pickMsg':'This session has no model selected yet. Pick one from the model dropdown next to the send box.',
     'dlg.close':'Close','dlg.closeDeny':'Close (treated as deny)','dlg.closeSkip':'Close (skip, no answer)','ask.title':'Your input is needed','ask.submit':'Submit answers','appr.deny':'Deny','appr.allow':'Allow','mcpUI.title':'Add MCP Server','mcpUI.type':'Server type','mcpUI.typeStdio':'Local process (stdio: uvx / npx / node command)','mcpUI.typeHttp':'Remote · Streamable HTTP (URL)','mcpUI.typeSse':'Remote · SSE (legacy HTTP+SSE, URL)','mcpUI.name':'Name (unique)','mcpUI.namePh':'e.g. my-server','mcpUI.args':'Arguments (space-separated, optional)','mcpUI.env':'Environment (one KEY=VALUE per line, optional)','mcpUI.headers':'Request headers (one per line, Key: Value; auth e.g. Authorization: Bearer xxx)','mcpUI.scope':'Bind scope','mcpUI.test':'Test connection',
 
     'skill.bar':'Skills · global / role-specific',
@@ -1409,7 +1410,35 @@ function openSettings(nav) {
   renderNav();
   renderPanel();
 }
-function closeSettings() { $('#settingsMask').classList.remove('show'); }
+// 模型配置面板：是否有未保存的改动，以及它的保存函数（由面板渲染时注入）
+let modelPanelDirty = false;
+let modelPanelSave = null;
+
+/**
+ * 关闭设置弹窗。模型配置面板有未保存改动时先问一句——
+ * 面板里混着 provider 字段、勾选、手动添加等多种改动，误关一次就全丢。
+ * @param {boolean} force 跳过询问（保存流程内部调用）
+ */
+async function closeSettings(force) {
+  if (!force && smNav === 'model' && modelPanelDirty && typeof modelPanelSave === 'function') {
+    const v = await uiDialog({
+      title: tr('unsaved.title'),
+      message: tr('unsaved.msg'),
+      buttons: [
+        { label: tr('common.cancel'), value: null },
+        { label: tr('unsaved.discard'), value: 'discard', danger: true },
+        { label: tr('unsaved.save'), value: 'save', primary: true },
+      ],
+    });
+    if (v === null) return;                 // 取消：留在设置界面
+    if (v === 'save') {
+      const okSaved = await modelPanelSave();
+      if (!okSaved) return;                 // 保存失败/被拒：不关闭，让用户看到原因
+    }
+    modelPanelDirty = false;
+  }
+  $('#settingsMask').classList.remove('show');
+}
 
 function renderNav() {
   document.querySelectorAll('#smNav .sm-nav-item').forEach((it) => {
@@ -1528,6 +1557,8 @@ let pendingOpenProvider = null; // 新增/删除后重渲染时要展开的 prov
 const provOpen = new Set();     // 用户手动展开的 provider 卡片；默认全部收起，重渲染不改变
 
 function renderModelPanel(body) {
+  modelPanelDirty = false;      // 每次重绘视为"已与服务端一致"
+  modelPanelSave = null;
   api('GET', '/api/settings').then((s) => {
     settingsCache = s;
     const provs = s.providers || {};
@@ -1697,6 +1728,7 @@ function renderModelPanel(body) {
           if (!saved) {
             entry.modelId = v;
             if (wasAuto) entry.label = autoLabel(pid, v);
+            markDirty();
             refreshProviderList(pid);
             renderMetas();
             const m0 = $('#modelMsg');
@@ -1731,6 +1763,7 @@ function renderModelPanel(body) {
         // 该行还没启用：直接按新请求名启用（勾选状态一并更新）
         const nameEl = $('#name_' + pid);
         enabled.push({ providerId: pid, modelId: v, label: ((nameEl && nameEl.value.trim()) || pname(pid)) + ' · ' + v });
+        markDirty();
         refreshProviderList(pid);
         renderMetas();
       };
@@ -1884,6 +1917,7 @@ function renderModelPanel(body) {
       inp.value = '';
       const msg = $('#modelMsg');
       if (msg) { msg.textContent = tr('model.reqAdded').replace('{n}', v); setTimeout(() => { msg.textContent = ''; }, 4000); }
+      markDirty();
       refreshProviderList(pid);   // 自定义项会作为一行出现在该 Provider 的列表顶部
       renderMetas();
     };
@@ -1946,7 +1980,16 @@ function renderModelPanel(body) {
     }
     pendingOpenProvider = null; // 展开意图已消费
 
-    $('#modelSave').addEventListener('click', async () => {
+    const markDirty = () => { modelPanelDirty = true; };
+    // 面板内任何输入/勾选都算改动（provider 名称/URL/Key、模型勾选、过滤框除外）
+    body.addEventListener('input', (ev) => {
+      const t = ev.target;
+      if (t && t.id && String(t.id).startsWith('filter_')) return;   // 过滤只是本地筛选
+      markDirty();
+    });
+    body.addEventListener('change', markDirty);
+
+    const doSaveModelPanel = async () => {
       const providers = {};
       const typedName = (id) => { const el = $('#name_' + id); return el ? el.value.trim() : ''; };
       for (const id of Object.keys(provs)) {
@@ -1962,14 +2005,23 @@ function renderModelPanel(body) {
       }
       // 以当前输入框的供应商名称重建已启用模型的显示标签（名称可留空 → 回退用 provider id）
       const en = enabled.map((e) => ({ providerId: e.providerId, modelId: e.modelId, label: (typedName(e.providerId) || e.providerId) + ' · ' + e.modelId }));
-      await api('PUT', '/api/settings', { providers, global: { enabledModels: en } });
+      const res = await api('PUT', '/api/settings', { providers, global: { enabledModels: en } });
+      if (res && res.error) {
+        const msg = $('#modelMsg');
+        if (msg) { msg.textContent = tr('model.saveFail') + res.error; }
+        return false;
+      }
+      modelPanelDirty = false;
       // 同步内存态并刷新发送框下拉（改请求名后无需刷新界面即可生效）
       await refreshBootstrap();
       fillModelSelect();
       flash('✓ ' + tr('common.save'), 'modelMsg');
-      await refreshBootstrap();
-      renderModelPanel(body); // 重绘：卡片名称 / 已启用 chips 以保存结果为准
-    });
+      renderModelPanel(body);   // 重绘：卡片名称 / 已启用列表以保存结果为准
+      return true;
+    };
+    // 供"关闭设置时提示保存"调用（closeSettings 里通过 modelPanelSave 触发）
+    modelPanelSave = doSaveModelPanel;
+    $('#modelSave').addEventListener('click', () => { doSaveModelPanel(); });
   });
 }
 
@@ -2993,7 +3045,7 @@ async function polishEditor(btn, ta, statusEl) {
   // 点外部任意处关闭角色选择器 / 技能选择器
   document.addEventListener('click', () => { closeRolePicker(); closeSkillPicker(); });
   $('#settingsBtn').addEventListener('click', () => openSettings('model'));
-  $('#settingsClose').addEventListener('click', closeSettings);
+  $('#settingsClose').addEventListener('click', () => closeSettings());   // 不能直接传 closeSettings：事件对象会被当成 force 参数而跳过询问
   $('#settingsMask').addEventListener('click', (e) => { if (e.target === $('#settingsMask')) closeSettings(); });
   document.querySelectorAll('#smNav .sm-nav-item').forEach((it) => it.addEventListener('click', () => openSettings(it.dataset.nav)));
   // Esc×2（任务运行中，1.5s 内两次）停止当前任务
