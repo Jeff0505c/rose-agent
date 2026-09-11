@@ -737,6 +737,52 @@ route('POST', /^\/api\/sandbox\/setup$/, async (ctx) => {
   return { status: 200, body: { started: r.started, mode } };
 });
 
+// #1c-2 POST /api/models/rename { providerId, from, to } —— 修改「请求名称」并**全量同步**
+// 只改设置里的名字是不够的：turn/start 注入的 model 取自**会话存的 modelId**，
+// 所以必须同时改写所有正用着旧名字的会话，否则那些会话会拿旧名字去请求（模型不存在）。
+route('POST', /^\/api\/models\/rename$/, async (ctx) => {
+  const { providerId, from, to } = ctx.body || {};
+  if (!providerId || !from || !to) return { status: 400, body: { error: 'providerId / from / to 均必填' } };
+  const fromV = String(from).trim();
+  const toV = String(to).trim();
+  if (!toV) return { status: 400, body: { error: '请求名称不能为空' } };
+  if (fromV === toV) return { status: 200, body: { ok: true, renamed: false, sessions: 0, threads: 0 } };
+
+  const cur = currentSettings();
+  if (!(cur.providers || {})[providerId]) return { status: 400, body: { error: `供应商不存在：${providerId}` } };
+  const list = ((cur.global || {}).enabledModels || []).map((e) => ({ ...e }));
+  if (list.some((e) => e.providerId === providerId && e.modelId === toV)) {
+    return { status: 409, body: { error: `请求名称「${toV}」已在此供应商下启用` } };
+  }
+  const idx = list.findIndex((e) => e.providerId === providerId && e.modelId === fromV);
+  if (idx < 0) return { status: 404, body: { error: `未找到已启用模型：${providerId} / ${fromV}` } };
+
+  // 1) 设置：改请求名；显示名若是自动生成的（providerId · modelId）则一并跟随
+  const autoLabel = `${providerId} · ${fromV}`;
+  list[idx] = {
+    ...list[idx],
+    modelId: toV,
+    label: (!list[idx].label || list[idx].label === autoLabel) ? `${providerId} · ${toV}` : list[idx].label,
+  };
+  saveSettings({ ...cur, global: { ...(cur.global || {}), enabledModels: list } });
+
+  // 2) 所有正用旧名字的会话 → 换到新名字（这是"与改名同步"的关键）
+  const sessions = loadSessions();
+  let touched = 0;
+  for (const session of sessions) {
+    if (session.providerId === providerId && session.modelId === fromV) { session.modelId = toV; touched++; }
+  }
+  if (touched) saveSessions(sessions);
+
+  // 3) 引擎侧线程映射同步（保持记录与会话实际注入一致）
+  let threads = 0;
+  try { threads = engine.renameModelInThreads(providerId, fromV, toV); } catch { /* 引擎未就绪时忽略 */ }
+
+  // 4) 前端刷新用
+  broadcast('models-renamed', { providerId, from: fromV, to: toV, sessions: touched });
+  return { status: 200, body: { ok: true, renamed: true, from: fromV, to: toV, sessions: touched, threads } };
+});
+
 // #1d GET /api/envcheck —— 环境自检（?refresh=1 忽略 60s 缓存）
 let envcheckCache = null;
 route('GET', /^\/api\/envcheck$/, async (ctx) => {

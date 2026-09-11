@@ -434,6 +434,24 @@ class CodexEngine {
     }
   }
 
+  /**
+   * 把线程映射里使用 (providerId, fromModel) 的会话改到 toModel。
+   * 改名的"同步"必须覆盖这里：映射记录每个会话当前用哪个模型，
+   * 不更新的话，引擎侧记录的与会话实际将要注入的 model 会不一致。
+   * @returns {number} 受影响的会话数
+   */
+  renameModelInThreads(providerId, fromModel, toModel) {
+    let n = 0;
+    for (const [sid, t] of this.threads) {
+      if (t && t.providerId === providerId && t.modelId === fromModel) {
+        this.threads.set(sid, { ...t, modelId: toModel });
+        n++;
+      }
+    }
+    if (n) this._persistThreads();
+    return n;
+  }
+
   // 诊断信息（诊断包用）：活跃进程、线程映射数、stderr 尾部
   diagInfo() {
     return {
