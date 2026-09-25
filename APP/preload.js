@@ -56,4 +56,13 @@ async function saveText(filename, text) {
   }
 }
 
-contextBridge.exposeInMainWorld('rose', { invokeApi, createEventSource, saveText });
+/* ---- 选择工作目录：主进程弹系统目录选择框 → { path } | { canceled } | { error } ---- */
+async function pickDirectory(title) {
+  try {
+    return await ipcRenderer.invoke('rose:pick-directory', { title: String(title || '') });
+  } catch (e) {
+    return { error: (e && e.message) || String(e) };
+  }
+}
+
+contextBridge.exposeInMainWorld('rose', { invokeApi, createEventSource, saveText, pickDirectory });

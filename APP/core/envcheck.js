@@ -144,13 +144,27 @@ function runChecks(o = {}) {
   else if (writable(codexHome)) add('codex-home', CHECKS.OK, codexHome);
   else add('codex-home', CHECKS.FAIL, `不可写：${codexHome}`, '打包后应指向 userData 目录');
 
-  // 5) codex 主二进制：真实执行 --version
+  // 5) codex 主二进制：先看体积、再真实执行 --version
   const bin = o.engineBin || '';
   const probe = probeBinary(bin, plat);
-  if (!probe.exists) {
+  // 体积下限：真实 codex 二进制数十 MB 起步。半成品（下载/解压被中断）会留下几十 KB 的残缺
+  // Mach-O/PE，执行时报的却是系统级 `spawn Unknown system error -88`（EBADMACHO），极易被误判成
+  // 杀软拦截。这里先按体积点名"文件不完整"，并给出确定性的修复命令。
+  const sizeBytes = (() => { try { return fs.statSync(bin).size; } catch { return -1; } })();
+  const MIN_BIN_BYTES = 20 * 1024 * 1024;
+  if (probe.exists && sizeBytes >= 0 && sizeBytes < MIN_BIN_BYTES) {
+    const mb = (sizeBytes / 1048576).toFixed(1);
+    add('codex-binary', CHECKS.FAIL,
+      `文件不完整：${bin} 只有 ${mb} MB（codex 二进制应为数十 MB）`,
+      '下载/解压曾中途中断。运行 `npm run setup`（或 `node scripts/fetch-codex.mjs`）重新获取；该命令现在会校验 SHA256、原子落位并真跑一次 --version');
+  } else if (!probe.exists) {
     add('codex-binary', CHECKS.FAIL, `未找到：${bin || '(空路径)'}`, '先运行 npm run setup 获取对应平台二进制');
   } else if (!probe.ran || probe.error) {
-    add('codex-binary', CHECKS.FAIL, `无法执行：${probe.error || '未知错误'}`, '检查文件权限/杀软拦截');
+    add('codex-binary', CHECKS.FAIL, `无法执行：${probe.error || '未知错误'}`,
+      '若报 EBADMACHO(-88)/格式错误，先按"文件不完整"处理：运行 `npm run setup` 重新获取；其次再排查文件权限/杀软拦截');
+  } else if (probe.exitCode === 0 && !probe.stdout) {
+    add('codex-binary', CHECKS.FAIL, `可执行但 --version 无输出（${bin}）`,
+      '二进制疑似损坏或版本异常：运行 `npm run setup` 重新获取（会自动校验与自检）');
   } else if (probe.exitCode === 0 && probe.stdout) {
     add('codex-binary', CHECKS.OK, `${probe.stdout.split('\n')[0]}（${bin}）`);
   } else if (!probe.stdout && !probe.stderr) {

@@ -11,9 +11,9 @@ const I18N = {
     'status.ready':'就绪','status.running':'处理中…','status.error':'出错',
     'usage.loading':'加载中…','usage.totalTokens':'累计 Tokens','usage.totalTurns':'累计轮次','usage.today':'今日轮次','usage.week':'近 7 天轮次','usage.input':'输入','usage.output':'输出','usage.cached':'其中缓存命中','usage.byModel':'按模型分布','usage.trend':'近 14 天趋势','usage.byRole':'按角色','usage.none':'暂无数据',
     'prompt.title':'全局提示词 AGENTS-GLOBAL.md','prompt.desc':'对所有角色生效；保存后同步到每个运行实例，新对话生效。',
-    'common.save':'保存','common.ok':'知道了','common.saveOk':'✓ 已保存','common.loading':'加载中…','common.none':'暂无数据','common.polish':'AI 润色',
-    'model.enabledTitle':'已启用模型 · 发送框下拉只展示这些；新会话沿用该角色上次使用的模型','model.enabledHint':'展开 Provider → 点「获取模型」→ 勾选即启用（取消勾选即停用）。每行右侧「改请求名」可就地修改发给供应商的 model 字段。保存后生效。','model.providersTitle':'模型来源 · Provider','model.addProvider':'新增模型配置','model.badgeLocal':'本地·无需Key','model.badgeSet':'已配Key','model.badgeUnset':'无Key','model.delProvider':'删除该 Provider','model.nameLabel':'供应商名称（显示名，可自定义）','model.apiKey':'API Key','model.noKey':'本地模型，无需 API Key','model.keepBlank':'••••••••（留空保持不变）','model.fetch':'获取模型','model.fetchHint':'拉取该 endpoint 的可用模型','model.cachedHas':'已缓存 {n} 个模型','model.metaHas':'{m} 个模型 · {e} 个已启用','model.unset':'未配置','model.filter':'过滤模型…','model.save':'保存模型配置','model.noneEnabled':'尚未启用任何模型','model.remove':'移除','model.choosePh':'（请选择模型）','model.reqName':'请求名称','model.editReq':'改请求名','model.custom':'自定义','model.listEmpty':'（尚未获取模型；可点上方「获取模型」，或在下方直接填请求名添加）','model.editReqHint':'修改发给供应商的请求名称（model 字段）','model.reqNameHint':'请求名称＝发给供应商的 model 字段（名称下排小字）。列表里没有的模型可在此直接添加：别名、自建网关、预览版都适用。','model.reqNamePh':'例如 deepseek-chat','model.addReq':'添加','model.dupReq':'该请求名称「{n}」已在此供应商下启用','model.reqAdded':'已添加 {n} —— 记得点下方「保存模型配置」','model.renamedSync':'请求名已改为 {to}（原 {from}）；已同步更新 {n} 个使用该模型的会话','model.saveFail':'保存失败：',
-    'unsaved.title':'有未保存的更改','unsaved.msg':'模型配置里有改动尚未保存。现在保存吗？','unsaved.save':'保存并关闭','unsaved.discard':'不保存','unsaved.stay':'取消','model.pruned':'已移除 {n} 个失效模型','model.pickTitle':'请选择模型','model.pickMsg':'这个会话还没有选择模型。请在发送框旁的模型下拉里选择本次对话要用的模型。',
+    'common.save':'保存','common.ok':'知道了','common.saveOk':'✓ 已保存','common.polish':'AI 润色',
+    'model.enabledHint':'展开 Provider → 点「获取模型」→ 勾选即启用（取消勾选即停用）。每行右侧「改请求名」可就地修改发给供应商的 model 字段。保存后生效。','model.providersTitle':'模型来源 · Provider','model.addProvider':'新增模型配置','model.badgeLocal':'本地·无需Key','model.badgeSet':'已配Key','model.badgeUnset':'无Key','model.delProvider':'删除该 Provider','model.nameLabel':'供应商名称（显示名，可自定义）','model.apiKey':'API Key','model.noKey':'本地模型，无需 API Key','model.keepBlank':'••••••••（留空保持不变）','model.fetch':'获取模型','model.fetchHint':'拉取该 endpoint 的可用模型','model.cachedHas':'已缓存 {n} 个模型','model.metaHas':'{m} 个模型 · {e} 个已启用','model.unset':'未配置','model.filter':'过滤模型…','model.save':'保存模型配置','model.choosePh':'（请选择模型）','model.reqName':'请求名称','model.editReq':'改请求名','model.custom':'自定义','model.listEmpty':'（尚未获取模型；可点上方「获取模型」，或在下方直接填请求名添加）','model.editReqHint':'修改发给供应商的请求名称（model 字段）','model.reqNameHint':'请求名称＝发给供应商的 model 字段（名称下排小字）。列表里没有的模型可在此直接添加：别名、自建网关、预览版都适用。','model.reqNamePh':'例如 deepseek-chat','model.addReq':'添加','model.dupReq':'该请求名称「{n}」已在此供应商下启用','model.reqAdded':'已添加 {n} —— 记得点下方「保存模型配置」','model.renamedSync':'请求名已改为 {to}（原 {from}）；已同步更新 {n} 个使用该模型的会话','model.saveFail':'保存失败：',
+    'unsaved.title':'有未保存的更改','unsaved.msg':'模型配置里有改动尚未保存。现在保存吗？','unsaved.save':'保存并关闭','unsaved.discard':'不保存','model.pruned':'已移除 {n} 个失效模型','model.pickTitle':'请选择模型','model.pickMsg':'这个会话还没有选择模型。请在发送框旁的模型下拉里选择本次对话要用的模型。',
     'dlg.close':'关闭','dlg.closeDeny':'关闭（视为拒绝）','dlg.closeSkip':'关闭（跳过，不回答）','ask.title':'需要你的选择','ask.submit':'提交回答','appr.deny':'拒绝','appr.allow':'允许','mcpUI.title':'新增 MCP 服务器','mcpUI.type':'服务器类型','mcpUI.typeStdio':'本地进程（stdio：uvx / npx / node 命令）','mcpUI.typeHttp':'远程 · Streamable HTTP（填 URL）','mcpUI.typeSse':'远程 · SSE（旧式 HTTP+SSE，填 URL）','mcpUI.name':'名称（唯一）','mcpUI.namePh':'例如 my-server','mcpUI.args':'参数（空格分隔，可空）','mcpUI.env':'环境变量（每行 KEY=VALUE，可空）','mcpUI.headers':'请求头（每行 Key: Value，可空；鉴权如 Authorization: Bearer xxx）','mcpUI.scope':'绑定范围','mcpUI.test':'测试连接',
 
     'skill.bar':'技能 · 全局通用 / 角色专用',
@@ -23,12 +23,12 @@ const I18N = {
 
     'mcp.title':'MCP 工具 · 全局通用 / 角色专属','mcp.add':'新增 MCP 服务器','mcp.note':'已激活 {a} / {t} 个 MCP 服务器','mcp.empty':'暂无 MCP 服务器，点右上角「新增 MCP 服务器」添加','mcp.delTitle':'删除 MCP 服务器','mcp.delMsg':'确定删除「{n}」？','mcp.hint':'已激活的全局 MCP 工具会注入所有角色；角色专属只注入绑定角色。变更后网关会重启 codex 进程以加载新配置。',
 'skill.import':'导入技能','skill.importFolder':'导入文件夹','skill.importZip':'导入 zip','skill.activeNote':'已激活 {a} / {t} 个技能','skill.tagGlobal':'全局','skill.tagRole':'角色','skill.actOn':'已激活','skill.actOff':'未激活','skill.empty':'暂无技能，点右上角「导入技能」添加','skill.delSkillTitle':'删除技能','skill.delSkillMsg':'删除技能「{n}」？\n技能目录与绑定信息将被移除。','skill.importFail':'导入失败','skill.deleted':'已删除','skill.impOk':'✓ 导入 {n} 个','skill.impInvalid':'，{m} 个不合规',
- 'sk.searchPh':'按名称搜索…','sk.filterAll':'全部角色','sk.noMatch':'没有匹配的技能','sk.matchNote':'筛选出 {v} / {t} 个','mcp.noMatch':'没有匹配的 MCP 服务器',
+ 'sk.searchPh':'按名称搜索…','sk.filterAll':'全部角色','sk.noMatch':'没有匹配的技能','mcp.noMatch':'没有匹配的 MCP 服务器',
 'model.urlKeyChanged':'URL / Key 已改动 — 点「获取模型」刷新可用模型','model.customName':'自定义供应商','model.addedTag':'已配置','model.customItem':'自定义…','model.customUrlHint':'手动填 URL，适配任意 OpenAI 兼容端点','model.fetching':'获取中…','model.fetchFail':'获取失败','model.delTitle':'删除 Provider','model.delMsg1':'确定删除','model.delMsg2':'？其已启用的模型会一并移除。',
 
     'memory.global':'全局记忆','memory.globalShared':'所有角色共享','memory.globalPh':'记录跨角色的全局事实、偏好与经验…','memory.roleSub':'角色记忆 · 每个角色独立，仅对对应角色生效','memory.rolePh':'该角色的专属记忆…','memory.noneRole':'暂无角色，先在「角色管理」创建',
     'roles.h4':'角色管理','roles.intro':'为不同专业或身份创建本地角色，并定义各自的人格与提示词；会话用到的沙箱、审批、模型在对话界面单独选择。','roles.add':'新增角色','roles.edit':'编辑','roles.delete':'删除','roles.delTitle':'删除角色','roles.delQ':'删除角色','roles.delWarn':'将同时删除该角色名下所有会话与其工作区，不可恢复。','roles.skillTitle':'专用技能','roles.skillKeep':'保留技能','roles.skillDel':'一并删除', 'roles.skillMsg':'该角色下有 {n} 个专用技能。是否一并删除？\n确定=一并删除技能；取消=保留技能（转为未激活）。',
-'common.saveRole':'保存角色','common.delete':'删除','common.cancel':'取消','common.close':'关闭','common.add':'新增',
+'common.delete':'删除','common.cancel':'取消',
 
     'nav.model':'模型配置','nav.prompt':'全局提示词','nav.memory':'记忆','nav.roles':'角色管理','nav.skills':'技能','nav.mcp':'MCP 工具','nav.usage':'用量','nav.general':'通用','nav.env':'环境与诊断',
     'env.check':'环境自检','env.checkDesc':'检查运行时、数据目录、codex 二进制与已启用 MCP 的命令是否可用。只读检测，不修改任何文件。',
@@ -46,26 +46,36 @@ const I18N = {
     'sb.tryUnelevated':'可以改用 unelevated 重试：它不需要管理员授权（用受限令牌 + ACL），代价是网络隔离较弱，但多数机器上比 elevated 更容易成功。',
     'sb.switchUnelevated':'改用 unelevated 重试',
     'sb.setupTimeout':'初始化在 90 秒内没有返回结果（可能卡在权限确认或被安全策略拦截）。',
-    'sb.needsInit':'Windows 沙箱未初始化，命令执行可能失败（codex#37818）。点右侧按钮初始化。','sb.updateNeeded':'Windows 沙箱需要更新，请重新初始化。','sb.unknown':'无法确认 Windows 沙箱状态：{e}','sb.worldWritable':'检测到目录对所有人可写，建议收窄权限。','sb.later':'稍后再说',
-    'gen.appearance':'外观 · 主题','gen.light':'浅色主题','gen.lightDesc':'明亮清爽，默认','gen.dark':'深色主题','gen.darkDesc':'暗色背景，夜间更护眼','gen.system':'跟随系统','gen.systemDesc':'随操作系统外观自动切换','gen.themeHint':'主题选择即时生效并自动保存。',
-    'gen.lang':'界面语言 · Language','gen.langHint':'切换界面文字（部分设置面板文案逐步补齐）','gen.zh':'中文','gen.en':'English',
+    'sb.needsInit':'Windows 沙箱未初始化，命令执行可能失败（codex#37818）。点右侧按钮初始化。','sb.updateNeeded':'Windows 沙箱需要更新，请重新初始化。','sb.unknown':'无法确认 Windows 沙箱状态：{e}','sb.worldWritable':'检测到目录对所有人可写，建议收窄权限。',
+    'gen.appearance':'外观 · 主题','gen.light':'浅色主题','gen.lightDesc':'明亮清爽，默认','gen.dark':'深色主题','gen.darkDesc':'暗色背景，夜间更护眼','gen.system':'跟随系统','gen.systemDesc':'随操作系统外观自动切换',
+    'gen.lang':'界面语言 · Language',
     'feed.empty':'选择左侧会话，或新建一个','feed.you':'你','session.newChat':'新建会话','session.rename':'重命名','session.delete':'删除','session.noMatch':'无匹配会话','ask.allDone':'全部已答','ask.done':'已答 {a}/{n} 题',
     'role.title':'选择会话角色','role.noRoles':'暂无角色，需先创建','role.newRole':'新建角色',
     'think.title':'思考内容不保存，仅记录耗时','think.seconds':'思考了 {n} 秒','think.inProgress':'思考中','err.generic':'出错了',
     'tool.run':'运行中','tool.done':'完成','tool.processing':'正在处理…','plan.title':'执行计划',
     'ask.confirmed':'已确认','ask.pendingTitle':'待回答的问题','ask.pending':'待回答','ask.skipped':'（跳过）','ask.otherPh':'其他…','ask.answerPh':'输入你的回答…',
-    'appr.escalate':'提权授权','appr.needPrefix':'需要审批 · ','appr.operation':'操作','appr.mcpEscalateTitle':'提权授权 · 远程 MCP 工具','appr.mcpConfirmTitle':'确认 · MCP 请求','appr.mcpRun':'允许远程 MCP 执行工具：{t}','appr.patch':'写入审批 · apply_patch','appr.exec':'执行审批 · exec_command','appr.outPolicy':'该操作超出当前角色的沙箱/审批策略',
+    'appr.needPrefix':'需要审批 · ','appr.operation':'操作','appr.mcpEscalateTitle':'提权授权 · 远程 MCP 工具','appr.mcpConfirmTitle':'确认 · MCP 请求','appr.mcpRun':'允许远程 MCP 执行工具：{t}','appr.patch':'写入审批 · apply_patch','appr.exec':'执行审批 · exec_command','appr.outPolicy':'该操作超出当前角色的沙箱/审批策略',
     'mode.needSess':'先打开或新建一个会话，再选择模式','mode.select':'选择会话模式','mode.plan':'✦ 计划','mode.default':'默认','mode.free':'零监管','mode.planT':'✦ 计划模式','mode.planD':'只读研究 · 产出计划 · 确认后实施（复杂任务建议）','mode.defaultT':'默认模式','mode.defaultD':'可写工作区 · 命令需审批 · 大改动前先说明方案','mode.freeT':'零监管模式','mode.freeD':'完全访问 · 自动执行 · 不审批（仅信任模型时使用）','search.clear':'清除','model.select':'选择本次对话使用的模型',
     'model.enableFirst':'（请先在 设置→模型配置 启用模型）','model.noModelTitle':'尚未配置模型','model.noModelMsg':'还没有启用任何模型。请先在「设置 → 模型配置」新增 Provider、填入 API Key 并启用模型。','model.goSettings':'去配置','att.remove':'移除','att.file':'附件','att.tooBig':'文件过大（>20MB）：','att.upload':'上传图片 / 文件','skill.choose':'选用技能','model.addProvTitle':'新增模型配置 · 选择厂商预设',
     'skill.noSess':'请先打开或新建一个会话，再选用技能','skill.noAvail':'当前会话暂无可用技能','skill.noAvailSub':'未导入/未激活；角色专用技能仅对绑定角色可见','skill.pickTitle':'选用技能（本次对话）',
-    'dial.hint':'提示','dial.gotit':'知道了','sm.sub':'配置','stop.title':'停止当前任务（Esc×2）','send.title':'发送（⏎）','settings':'设置','nav.settings':'设置','free.confirm':'将授予模型完全访问权限并自动执行所有命令，不做任何审批。\n\n仅在你完全信任模型且确知后果时使用。','free.enable':'仍然启用',
+    'dial.hint':'提示','dial.gotit':'知道了','sm.sub':'配置','stop.title':'停止当前任务（Esc×2）','send.title':'发送（⏎）','queue.title':'排队中（本轮结束后依次发送）','queue.edit':'编辑','queue.del':'删除','queue.steer':'插话发送（直接送进正在执行的任务）','queue.steerFail':'插话失败：','modal.from':'来自：{r} · {s}','modal.queuedMore':'还有 {n} 条来自其它会话的请求在排队','gen.ctxTitle':'上下文与自动压缩','gen.ctxPct':'自动压缩阈值（%）','gen.l0Unit':'tokens','gen.ctxPctShort':'压缩阈值','gen.l0Short':'工具输出上限','gen.l0Label':'单条工具输出上限（tokens）','gen.ctxSave':'保存','gen.ctxSaved':'已保存（下次引擎进程启动生效）','cfg.badTitle':'引擎配置有误','ctx.none':'上下文 —','ctx.usedTok':'已用 {n} tokens','ctx.noWindow':'窗口大小未实测（跑一轮后补全，届时显示百分比）','ctx.noneTip':'该会话还没跑过对话；跑过一轮后这里会显示上下文占用比例，点击可压缩','cfg.badMsg':'ROSE 生成的 config.toml 未被引擎接受，codex 已回落默认配置（模型/厂商/人格/MCP 都不生效，对话基本跑不通）。信息：','ws.pickTitle':'选择这个会话的工作目录','ws.fail':'创建会话失败：','ws.locked':'工作目录创建后不可更改（要换目录请新建会话）','ctx.title':'上下文占用 · 点击压缩上下文','ctx.used':'上下文 {p}%','ctx.compact':'压缩上下文','ctx.compacting':'正在压缩…','ctx.done':'上下文已压缩','ctx.maskTitle':'正在压缩上下文…','ctx.maskSub':'压缩完成后本会话自动恢复；期间可以切换到其他会话继续工作。','ctx.maskElapsed':'已用 {n} 秒','ctx.fail':'压缩失败：','ctx.busy':'有任务进行中，请先停止再压缩上下文','ctx.timeout':'压缩等待超时，已解除本会话的等待状态（如仍需要压缩，可再次点击圆环重试）。','settings':'设置','nav.settings':'设置','side.collapse':'收起侧栏','side.expand':'展开侧栏','common.on':'开','common.off':'关','cmd.head':'指令','cmd.panelOpened':'已打开对应面板','cmd.fail':'执行失败：','cmd.needArg':'缺少参数：{n}','cmd.needSession':'请先打开一个会话再使用该指令',
+    'cmd.compact.desc':'压缩上下文（codex 官方 thread/compact/start）','cmd.compact.done':'已发起压缩，完成后占用会刷新',
+    'cmd.model.desc':'查看/切换本会话模型','cmd.model.none':'没有已启用的模型（去 设置→模型配置 启用）','cmd.model.list':'已启用模型：','cmd.model.current':'当前','cmd.model.unknown':'没有匹配的模型：{n}','cmd.model.set':'本会话模型已切到 {n}（下一轮生效）',
+    'cmd.approvals.desc':'查看/切换审批策略','cmd.approvals.cur':'当前审批策略：{n}','cmd.approvals.onRequest':'按需审批（推荐）','cmd.approvals.never':'从不审批（高危）','cmd.approvals.bad':'取值只能是 on-request 或 never','cmd.approvals.set':'审批策略已切到 {n}（下一轮生效）',
+    'cmd.plan.desc':'进入/退出计划模式（只读研究后出计划）','cmd.plan.on':'已进入计划模式（只读）','cmd.plan.off':'已退出计划模式（可写工作区）',
+    'cmd.rename.desc':'重命名当前会话','cmd.rename.need':'用法：/rename <标题>','cmd.rename.done':'会话已重命名为「{n}」',
+    'cmd.status.desc':'查看当前会话配置与上下文占用','cmd.status.role':'角色','cmd.status.model':'模型','cmd.status.sandbox':'沙箱','cmd.status.approval':'审批','cmd.status.plan':'计划模式','cmd.status.workspace':'工作目录','cmd.status.context':'上下文','cmd.status.running':'运行中',
+    'cmd.new.desc':'新建会话（选角色 + 工作目录）','cmd.new.done':'请在弹出的面板里选择角色',
+    'cmd.init.desc':'生成 AGENTS.md（项目指令文件）','cmd.init.done':'已发出生成 AGENTS.md 的请求',
+    'cmd.skills.desc':'打开技能选择器','cmd.mcp.desc':'打开 MCP 工具设置','cmd.usage.desc':'打开用量面板','cmd.settings.desc':'打开设置',
+    'cmd.help.desc':'列出全部可用指令','cmd.help.title':'可用指令：','free.confirm':'将授予模型完全访问权限并自动执行所有命令，不做任何审批。\n\n仅在你完全信任模型且确知后果时使用。','free.enable':'仍然启用',
 },
   en: { newChat:'New Chat', searchPh:'Search sessions…', settingsBtn:'Settings', sendBtn:'Send', stopBtn:'■ Stop', inputPh:'Message… (⏎ send / ⇧⏎ newline)',
     'status.ready':'Ready','status.running':'Working…','status.error':'Error',
     'usage.loading':'Loading…','usage.totalTokens':'Cumulative Tokens','usage.totalTurns':'Cumulative Turns','usage.today':'Turns Today','usage.week':'Last 7 Days','usage.input':'Input','usage.output':'Output','usage.cached':'of which cached','usage.byModel':'By Model','usage.trend':'Last 14 Days','usage.byRole':'By Role','usage.none':'No data',
     'prompt.title':'Global Prompt — AGENTS-GLOBAL.md','prompt.desc':'Applies to all roles; synced to every running instance, effective on new chats.',
-    'common.save':'Save','common.ok':'Got it','common.saveOk':'✓ Saved','common.loading':'Loading…','common.none':'No data','common.polish':'AI Polish',
-    'model.enabledTitle':'Enabled Models — shown in the send box; a new chat reuses the model that role used last','model.enabledHint':'Expand a provider → tap "Fetch models" → tick to enable (untick to disable). Use "Rename" on a row to edit the model field sent to the provider. Takes effect after saving.','model.providersTitle':'Model Sources · Providers','model.addProvider':'Add provider','model.badgeLocal':'Local · no key','model.badgeSet':'Key set','model.badgeUnset':'No key','model.delProvider':'Delete this provider','model.nameLabel':'Provider name (display, editable)','model.apiKey':'API Key','model.noKey':'Local model — no API key needed','model.keepBlank':'•••••••• (blank keeps current)','model.fetch':'Fetch models','model.fetchHint':'Load available models from this endpoint','model.cachedHas':'{n} model(s) cached','model.metaHas':'{m} models · {e} enabled','model.unset':'Not configured','model.filter':'Filter models…','model.save':'Save model config','model.noneEnabled':'No models enabled yet','model.remove':'Remove','model.choosePh':'(choose a model)','model.reqName':'Request name','model.editReq':'Rename','model.custom':'custom','model.listEmpty':'(no models fetched yet — use "Fetch models" above, or type a request name below)', 'model.editReqHint':'Edit the request name (model field) sent to the provider','model.reqNameHint':'The request name is the "model" field sent to the provider (small text under the name). Add any model missing from the list — aliases, self-hosted gateways, preview builds.','model.reqNamePh':'e.g. deepseek-chat','model.addReq':'Add','model.dupReq':'Request name "{n}" is already enabled for this provider','model.reqAdded':'Added {n} — remember to click Save model config below','model.renamedSync':'Request name changed to {to} (was {from}); {n} session(s) using it were updated','model.saveFail':'Save failed: ','unsaved.title':'Unsaved changes','unsaved.msg':'The model configuration has unsaved changes. Save them now?','unsaved.save':'Save & close','unsaved.discard':'Discard','unsaved.stay':'Cancel','model.pruned':'removed {n} stale model(s)','model.pickTitle':'Choose a model','model.pickMsg':'This session has no model selected yet. Pick one from the model dropdown next to the send box.',
+    'common.save':'Save','common.ok':'Got it','common.saveOk':'✓ Saved','common.polish':'AI Polish',
+    'model.enabledHint':'Expand a provider → tap "Fetch models" → tick to enable (untick to disable). Use "Rename" on a row to edit the model field sent to the provider. Takes effect after saving.','model.providersTitle':'Model Sources · Providers','model.addProvider':'Add provider','model.badgeLocal':'Local · no key','model.badgeSet':'Key set','model.badgeUnset':'No key','model.delProvider':'Delete this provider','model.nameLabel':'Provider name (display, editable)','model.apiKey':'API Key','model.noKey':'Local model — no API key needed','model.keepBlank':'•••••••• (blank keeps current)','model.fetch':'Fetch models','model.fetchHint':'Load available models from this endpoint','model.cachedHas':'{n} model(s) cached','model.metaHas':'{m} models · {e} enabled','model.unset':'Not configured','model.filter':'Filter models…','model.save':'Save model config','model.choosePh':'(choose a model)','model.reqName':'Request name','model.editReq':'Rename','model.custom':'custom','model.listEmpty':'(no models fetched yet — use "Fetch models" above, or type a request name below)', 'model.editReqHint':'Edit the request name (model field) sent to the provider','model.reqNameHint':'The request name is the "model" field sent to the provider (small text under the name). Add any model missing from the list — aliases, self-hosted gateways, preview builds.','model.reqNamePh':'e.g. deepseek-chat','model.addReq':'Add','model.dupReq':'Request name "{n}" is already enabled for this provider','model.reqAdded':'Added {n} — remember to click Save model config below','model.renamedSync':'Request name changed to {to} (was {from}); {n} session(s) using it were updated','model.saveFail':'Save failed: ','unsaved.title':'Unsaved changes','unsaved.msg':'The model configuration has unsaved changes. Save them now?','unsaved.save':'Save & close','unsaved.discard':'Discard','model.pruned':'removed {n} stale model(s)','model.pickTitle':'Choose a model','model.pickMsg':'This session has no model selected yet. Pick one from the model dropdown next to the send box.',
     'dlg.close':'Close','dlg.closeDeny':'Close (treated as deny)','dlg.closeSkip':'Close (skip, no answer)','ask.title':'Your input is needed','ask.submit':'Submit answers','appr.deny':'Deny','appr.allow':'Allow','mcpUI.title':'Add MCP Server','mcpUI.type':'Server type','mcpUI.typeStdio':'Local process (stdio: uvx / npx / node command)','mcpUI.typeHttp':'Remote · Streamable HTTP (URL)','mcpUI.typeSse':'Remote · SSE (legacy HTTP+SSE, URL)','mcpUI.name':'Name (unique)','mcpUI.namePh':'e.g. my-server','mcpUI.args':'Arguments (space-separated, optional)','mcpUI.env':'Environment (one KEY=VALUE per line, optional)','mcpUI.headers':'Request headers (one per line, Key: Value; auth e.g. Authorization: Bearer xxx)','mcpUI.scope':'Bind scope','mcpUI.test':'Test connection',
 
     'skill.bar':'Skills · global / role-specific',
@@ -75,12 +85,12 @@ const I18N = {
 
     'mcp.title':'MCP Tools · global / role-specific','mcp.add':'Add MCP server','mcp.note':'{a}/{t} MCP server(s) active','mcp.empty':'No MCP servers yet — use “Add MCP server” (top-right)','mcp.delTitle':'Delete MCP Server','mcp.delMsg':'Delete “{n}”?','mcp.hint':'Active global MCP tools are injected into every role; role-specific ones only into the bound role. Changes restart the codex process to load the new config.',
 'skill.import':'Import skills','skill.importFolder':'Import folder','skill.importZip':'Import zip','skill.activeNote':'{a}/{t} skills active','skill.tagGlobal':'Global','skill.tagRole':'Role','skill.actOn':'Active','skill.actOff':'Inactive','skill.empty':'No skills yet — use “Import skills” (top-right) to add','skill.delSkillTitle':'Delete Skill','skill.delSkillMsg':'Delete skill “{n}”?\nIts folder and bindings will be removed.','skill.importFail':'Import failed','skill.deleted':'Deleted','skill.impOk':'✓ Imported {n}','skill.impInvalid':', {m} invalid',
- 'sk.searchPh':'Search by name…','sk.filterAll':'All roles','sk.noMatch':'No matching skills','sk.matchNote':'Showing {v} / {t}','mcp.noMatch':'No matching MCP servers',
+ 'sk.searchPh':'Search by name…','sk.filterAll':'All roles','sk.noMatch':'No matching skills','mcp.noMatch':'No matching MCP servers',
 'model.urlKeyChanged':'URL / key changed — tap "Fetch models" to refresh','model.customName':'Custom provider','model.addedTag':'Configured','model.customItem':'Custom…','model.customUrlHint':'Fill URL manually for any OpenAI-compatible endpoint','model.fetching':'Fetching…','model.fetchFail':'Fetch failed','model.delTitle':'Delete Provider','model.delMsg1':'Delete','model.delMsg2':'? Its enabled models will also be removed.',
 
     'memory.global':'Global Memory','memory.globalShared':'Shared by all roles','memory.globalPh':'Facts, preferences & experience shared across roles…','memory.roleSub':'Role Memory · one per role, applies only to that role','memory.rolePh':'This role’s private memory…','memory.noneRole':'No roles yet — create one in Roles first.',
     'roles.h4':'Roles','roles.intro':'Create local roles for different professions or identities and define each persona & prompt; the sandbox, approval and model used per chat are chosen in the conversation view.','roles.add':'Add Role','roles.edit':'Edit','roles.delete':'Delete','roles.delTitle':'Delete Role','roles.delQ':'Delete role','roles.delWarn':'This also deletes all sessions of this role and its workspace. This cannot be undone.','roles.skillTitle':'Role-specific Skills','roles.skillKeep':'Keep skills','roles.skillDel':'Delete too', 'roles.skillMsg':'This role has {n} role-specific skill(s). Delete them too?\nDelete = also remove skills · Keep = keep skills (inactive).',
-'common.saveRole':'Save Role','common.delete':'Delete','common.cancel':'Cancel','common.close':'Close','common.add':'Add',
+'common.delete':'Delete','common.cancel':'Cancel',
 
     'nav.model':'Model','nav.prompt':'Prompt','nav.memory':'Memory','nav.roles':'Roles','nav.skills':'Skills','nav.mcp':'MCP Tools','nav.usage':'Usage','nav.general':'General','nav.env':'Environment',
     'env.check':'Environment check','env.checkDesc':'Verifies runtime, data directory, codex binary and the commands used by enabled MCP servers. Read-only, changes nothing.',
@@ -98,19 +108,29 @@ const I18N = {
     'sb.tryUnelevated':'You can retry with unelevated: it needs no admin approval (restricted token + ACL); the trade-off is weaker network isolation, but it succeeds on far more machines.',
     'sb.switchUnelevated':'Retry with unelevated',
     'sb.setupTimeout':'Initialization produced no result within 90s (stuck on an approval prompt or blocked by security policy).',
-    'sb.needsInit':'Windows sandbox is not initialized; command execution may fail (codex#37818). Use the button to initialize.','sb.updateNeeded':'Windows sandbox needs an update — please re-initialize.','sb.unknown':'Cannot determine Windows sandbox state: {e}','sb.worldWritable':'A directory is world-writable; consider tightening permissions.','sb.later':'Later',
-    'gen.appearance':'Appearance & Theme','gen.light':'Light','gen.lightDesc':'Bright & clean (default)','gen.dark':'Dark','gen.darkDesc':'Dark background, easier on the eyes at night','gen.system':'System','gen.systemDesc':'Follow the OS appearance automatically','gen.themeHint':'Theme applies instantly and is saved automatically.',
-    'gen.lang':'Interface Language','gen.langHint':'Switch UI language (some setting-panel copy is being localized progressively)','gen.zh':'中文','gen.en':'English',
+    'sb.needsInit':'Windows sandbox is not initialized; command execution may fail (codex#37818). Use the button to initialize.','sb.updateNeeded':'Windows sandbox needs an update — please re-initialize.','sb.unknown':'Cannot determine Windows sandbox state: {e}','sb.worldWritable':'A directory is world-writable; consider tightening permissions.',
+    'gen.appearance':'Appearance & Theme','gen.light':'Light','gen.lightDesc':'Bright & clean (default)','gen.dark':'Dark','gen.darkDesc':'Dark background, easier on the eyes at night','gen.system':'System','gen.systemDesc':'Follow the OS appearance automatically',
+    'gen.lang':'Interface Language',
     'feed.empty':'Select a session on the left, or start a new one','feed.you':'You','session.newChat':'New chat','session.rename':'Rename','session.delete':'Delete','session.noMatch':'No matching sessions','ask.allDone':'All answered','ask.done':'{a}/{n} answered',
     'role.title':'Choose a role for this session','role.noRoles':'No roles yet — create one first','role.newRole':'New Role',
     'think.title':'Reasoning is not saved; only its duration is recorded','think.seconds':'Reasoned for {n} seconds','think.inProgress':'Thinking','err.generic':'Something went wrong',
     'tool.run':'Running','tool.done':'Done','tool.processing':'Working…','plan.title':'Execution plan',
     'ask.confirmed':'Confirmed','ask.pendingTitle':'Awaiting your answer','ask.pending':'Awaiting answer','ask.skipped':'(skipped)','ask.otherPh':'Other…','ask.answerPh':'Type your answer…',
-    'appr.escalate':'Privilege escalation','appr.needPrefix':'Approval needed · ','appr.operation':'action','appr.mcpEscalateTitle':'Escalation · remote MCP tool','appr.mcpConfirmTitle':'Confirm · MCP request','appr.mcpRun':'Allow the remote MCP tool to run: {t}','appr.patch':'Write approval · apply_patch','appr.exec':'Execution approval · exec_command','appr.outPolicy':"This action is outside the role's sandbox / approval policy",
+    'appr.needPrefix':'Approval needed · ','appr.operation':'action','appr.mcpEscalateTitle':'Escalation · remote MCP tool','appr.mcpConfirmTitle':'Confirm · MCP request','appr.mcpRun':'Allow the remote MCP tool to run: {t}','appr.patch':'Write approval · apply_patch','appr.exec':'Execution approval · exec_command','appr.outPolicy':"This action is outside the role's sandbox / approval policy",
     'mode.needSess':'Open or start a session first, then pick a mode','mode.select':'Choose session mode','mode.plan':'✦ Plan','mode.default':'Default','mode.free':'Auto-run','mode.planT':'✦ Plan mode','mode.planD':'Read-only research · produce a plan · confirm before executing (recommended for complex tasks)','mode.defaultT':'Default mode','mode.defaultD':'Writable workspace · commands need approval · explain big changes first','mode.freeT':'Auto-run mode','mode.freeD':'Full access · auto-execute · no approvals (only when you trust the model)','search.clear':'Clear','model.select':'Choose the model used for this conversation',
     'model.enableFirst':'(Enable a model first in Settings → Models)','model.noModelTitle':'No model configured','model.noModelMsg':'No model is enabled yet. Add a provider, enter its API key, and enable a model in Settings → Models.','model.goSettings':'Open settings','att.remove':'Remove','att.file':'Attachment','att.tooBig':'File too large (>20MB): ','att.upload':'Upload image / file','skill.choose':'Choose skills','model.addProvTitle':'Add provider · choose a preset',
     'skill.noSess':'Open or start a session first, then pick skills','skill.noAvail':'No usable skills for the current session','skill.noAvailSub':'Not imported/activated; role-specific skills are visible only to their bound role','skill.pickTitle':'Choose skills (this chat)',
-    'dial.hint':'Notice','dial.gotit':'Got it','sm.sub':'config','stop.title':'Stop current task (Esc×2)','send.title':'Send (⏎)','settings':'Settings','nav.settings':'Settings','free.confirm':'This grants the model full access and lets it auto-run every command with no approvals.\n\nOnly use this when you fully trust the model and understand the consequences.','free.enable':'Enable anyway',
+    'dial.hint':'Notice','dial.gotit':'Got it','sm.sub':'config','stop.title':'Stop current task (Esc×2)','send.title':'Send (⏎)','queue.title':'Queued (sent in order when this task ends)','queue.edit':'Edit','queue.del':'Delete','queue.steer':'Interject now (inject into the running task)','queue.steerFail':'Interject failed: ','modal.from':'From: {r} · {s}','modal.queuedMore':'{n} more request(s) from other sessions queued','gen.ctxTitle':'Context & auto-compact','gen.ctxPct':'Auto-compact threshold (%)','gen.l0Unit':'tokens','gen.ctxPctShort':'Compact at','gen.l0Short':'Tool output cap','gen.l0Label':'Tool output cap (tokens)','gen.ctxSave':'Save','gen.ctxSaved':'Saved (applies when the engine process restarts)','cfg.badTitle':'Engine config rejected','ctx.none':'Context —','ctx.usedTok':'{n} tokens used','ctx.noWindow':'Window size not measured yet (shows a percentage after one turn)','ctx.noneTip':'No turn has run in this session yet; after one turn this shows context usage (click to compact)','cfg.badMsg':'codex rejected the config.toml ROSE generated and fell back to defaults (model/provider/persona/MCP are inactive, which usually breaks conversations). Detail:','ws.pickTitle':'Choose the working directory for this session','ws.fail':'Failed to create session: ','ws.locked':'The working directory is fixed once created (start a new session to change it)','ctx.title':'Context usage · click to compact','ctx.used':'Context {p}%','ctx.compact':'Compact context','ctx.compacting':'Compacting…','ctx.done':'Context compacted','ctx.maskTitle':'Compacting context…','ctx.maskSub':'This session resumes automatically once compaction finishes; you can switch to another session meanwhile.','ctx.maskElapsed':'{n}s elapsed','ctx.fail':'Compaction failed: ','ctx.busy':'A task is running — stop it before compacting','ctx.timeout':'Timed out waiting for compaction; this session is released (click the ring to retry if needed).','settings':'Settings','nav.settings':'Settings','side.collapse':'Collapse sidebar','side.expand':'Expand sidebar','common.on':'on','common.off':'off','cmd.head':'Commands','cmd.panelOpened':'Panel opened','cmd.fail':'Failed: ','cmd.needArg':'Missing argument: {n}','cmd.needSession':'Open a session first to use this command',
+    'cmd.compact.desc':'Compact context (codex thread/compact/start)','cmd.compact.done':'Compaction started; usage refreshes when it finishes',
+    'cmd.model.desc':'Show or switch this session\'s model','cmd.model.none':'No model enabled (Settings → Models)','cmd.model.list':'Enabled models:','cmd.model.current':'current','cmd.model.unknown':'No matching model: {n}','cmd.model.set':'Session model switched to {n} (applies next turn)',
+    'cmd.approvals.desc':'Show or switch the approval policy','cmd.approvals.cur':'Approval policy: {n}','cmd.approvals.onRequest':'ask on request (recommended)','cmd.approvals.never':'never ask (risky)','cmd.approvals.bad':'Value must be on-request or never','cmd.approvals.set':'Approval policy switched to {n} (applies next turn)',
+    'cmd.plan.desc':'Enter or leave plan mode (read-only research first)','cmd.plan.on':'Plan mode on (read-only)','cmd.plan.off':'Plan mode off (writable workspace)',
+    'cmd.rename.desc':'Rename the current session','cmd.rename.need':'Usage: /rename <title>','cmd.rename.done':'Session renamed to "{n}"',
+    'cmd.status.desc':'Show session configuration and context usage','cmd.status.role':'Role','cmd.status.model':'Model','cmd.status.sandbox':'Sandbox','cmd.status.approval':'Approval','cmd.status.plan':'Plan mode','cmd.status.workspace':'Workspace','cmd.status.context':'Context','cmd.status.running':'Running',
+    'cmd.new.desc':'New session (pick role + workspace)','cmd.new.done':'Pick a role in the panel',
+    'cmd.init.desc':'Create an AGENTS.md (project instructions)','cmd.init.done':'Requested AGENTS.md generation',
+    'cmd.skills.desc':'Open the skill picker','cmd.mcp.desc':'Open MCP tool settings','cmd.usage.desc':'Open the usage panel','cmd.settings.desc':'Open settings',
+    'cmd.help.desc':'List all available commands','cmd.help.title':'Available commands:','free.confirm':'This grants the model full access and lets it auto-run every command with no approvals.\n\nOnly use this when you fully trust the model and understand the consequences.','free.enable':'Enable anyway',
 },
 };
 let lang = 'zh';
@@ -141,23 +161,37 @@ async function setLang(l) {
 
 
 const state = {
-  engine: 'codex',
   roles: [],
   sessions: [],
   currentSession: null,
   busySessions: {}, // 按会话记录「有任务进行中」：sessionId -> true（SSE 断线/多会话并行也不串扰）
-  stream: { text: '', tools: {} },
   attachments: [], // 待发送附件 {id,name,size,mime,kind,dataUrl,thumb?}
   allSkills: [],  // 全部技能（GET /api/skills）
   selSkills: [],  // 本次会话选用的技能 id 列表
+  queue: [],      // 运行中排队的消息（本轮结束后自动发出，替代"发送即停止"）
+  compactingSessions: {}, // 按会话记录"正在压缩"：sessionId -> true（切到别的会话不应显示它的动画）
   platform: null, // { id, arch, sandboxSupported }（GET /api/bootstrap）
   sandbox: null,  // Windows 沙箱状态（GET /api/sandbox）
   sandboxDismissed: null, // 已忽略的横幅状态（同一状态不再重复弹出）
   envcheck: null, // 最近一次环境自检结果
 };
 
-function markBusy(sid) { if (sid) state.busySessions[sid] = true; }
-function clearBusy(sid) { if (sid) delete state.busySessions[sid]; }
+function markBusy(sid) { if (sid) { state.busySessions[sid] = true; if (isCurrent(sid)) syncGenRow(); } }
+function clearBusy(sid) { if (sid) { delete state.busySessions[sid]; if (isCurrent(sid)) syncGenRow(); } }
+function isCurrent(sid) { return !!(state.currentSession && state.currentSession.id === sid); }
+/** 生成中指示行（.gen）的唯一开关：busy 为真时在末尾保留**一行**，为假时立刻移除。
+    必须显式同步：renderFeed 只在重建时创建它，而回合结束不再整体重渲染。 */
+function syncGenRow() {
+  const feed = $('#feed');
+  if (!feed) return;
+  const rows = [...feed.querySelectorAll(':scope > .gen')];
+  if (curBusy()) {
+    rows.slice(0, -1).forEach((r) => r.remove());
+    if (!rows.length) feed.appendChild(genRow(currentRole()));
+  } else {
+    rows.forEach((r) => r.remove());
+  }
+}
 function curBusy() { return !!(state.currentSession && state.busySessions[state.currentSession.id]); }
 
 const ICONS = {
@@ -426,6 +460,31 @@ function renderRolePicker() {
 
 /* ---------- 渲染消息流 ---------- */
 
+// 流式渲染合并器：a-delta 每个分片都重解析整篇 Markdown 是 O(n²)，会把主线程压满
+// （表现为"对话过程中拖窗口/滚动无响应"）。改为累积原文、每帧最多渲染一次；
+// 需要立即出结果时（全量重建结束）调用 flushAgentRender()。
+let agentRenderPending = false;
+function renderAgentNow() {
+  const a = feedState.curAgent;
+  if (!a) return;
+  // 自愈：目标节点若已不在文档里（列表被重建/节点被移除），继续写进去等于"新消息永远不显示"。
+  // 这时整体重建一次（重建会把游标指向新节点），保证面板与数据一致。
+  if (a.bodyEl && !a.bodyEl.isConnected) { renderFeed(); return; }
+  a.bodyEl.innerHTML = renderMarkdown(a._raw.replace(/\[(?:PLAN|REQUEST_PLAN_MODE)\]/g, ''));
+}
+function scheduleAgentRender() {
+  if (agentRenderPending) return;
+  agentRenderPending = true;
+  const run = () => { agentRenderPending = false; renderAgentNow(); };
+  if (typeof requestAnimationFrame === 'function') requestAnimationFrame(run);
+  else setTimeout(run, 16);
+}
+function flushAgentRender() {
+  if (!agentRenderPending) return;
+  agentRenderPending = false;
+  renderAgentNow();
+}
+
 function renderFeed() {
   const feed = $('#feed');
   feed.innerHTML = '';
@@ -436,9 +495,22 @@ function renderFeed() {
     return;
   }
   const role = currentRole();
-  // 严格按消息存储顺序重建：user / agent(a-delta 聚合) / tool 卡片交错排列
-  state.currentSession.messages.forEach((m, i) => feedAppendMsg(m, i));
-  if (curBusy()) feed.appendChild(genRow(role));
+  // 严格按消息存储顺序重建：user / agent(a-delta 聚合) / tool 卡片交错排列。
+  // ⚠️ 单条渲染失败必须只跳过该条：以前一次异常会中断整个 forEach → #feed 只建到一半，
+  // 表现就是"之前的回复不见了"（而且控制台之外没有任何提示）。
+  let renderFailed = 0, firstFail = null;
+  state.currentSession.messages.forEach((m, i) => {
+    try { feedAppendMsg(m, i); }
+    catch (e) {
+      renderFailed++;
+      if (!firstFail) firstFail = { i, type: m && m.t, msg: String((e && e.message) || e) };
+    }
+  });
+  if (renderFailed) {
+    console.error(`[rose] 有 ${renderFailed} 条消息渲染失败（首条：#${firstFail.i} type=${firstFail.type}：${firstFail.msg}）；其余已正常显示`);
+  }
+  flushAgentRender();                                                     // 重建结束：立刻成型（不等下一帧）
+  if (curBusy()) feed.appendChild(genRow(role));   // 与 syncGenRow() 一致：busy 时末尾保留一行
   scrollBottom();
 }
 
@@ -453,7 +525,7 @@ function feedAppendMsg(m, idx) {
   } else if (m.t === 'a-delta') {
     if (!feedState.curAgent) { feedState.curAgent = agentMsg(m.ts); feed.appendChild(feedState.curAgent); }
     feedState.curAgent._raw += m.v;
-    feedState.curAgent.bodyEl.innerHTML = renderMarkdown(feedState.curAgent._raw.replace(/\[(?:PLAN|REQUEST_PLAN_MODE)\]/g, ''));
+    scheduleAgentRender();      // 每帧最多解析一次（流式/重建共用）
   } else if (m.t === 'plan') {
     // 结构化计划：同回合的计划更新复用同一张卡片；内容与上一条完全相同时跳过重绘
     const sig = JSON.stringify(m.v);
@@ -511,7 +583,8 @@ function appendFeedEvent(d) {
   if (!m) return;
   // 思考段落告一段落：折叠思考卡
   if (feedState.reasoning) { feedState.reasoning.el.fold(); feedState.reasoning = null; }
-  feedAppendMsg(m, msgs.length - 1);
+  try { feedAppendMsg(m, msgs.length - 1); }
+  catch (e) { console.error('[rose] 单条消息渲染失败（已跳过）：' + ((e && e.message) || e)); return; }
   // 保持"正在处理"指示行在末尾
   const feed = $('#feed');
   const gen = feed.querySelector(':scope > .gen');
@@ -570,7 +643,7 @@ function userMsg(m) {
       } else {
         const tag = document.createElement('span');
         tag.className = 'att-file-tag';
-        tag.innerHTML = `<span class="ic">${ICONS.file}</span> ${esc(a.name || tr('att.file'))}`;
+        tag.innerHTML = `<span class="ic">${ICONS.file}</span><span class="af-name">${esc(a.name || tr('att.file'))}</span>`;
         wrap.appendChild(tag);
       }
     }
@@ -600,9 +673,12 @@ function toolCard(o) {
       <span class="tn">${esc(o.name)}</span>
       <span class="ta">${esc(o.args || '')}</span>
       <span class="st ${o.status === 'ok' ? 'ok' : ''}">${o.status === 'run' ? '<span class="spin"></span>' + tr('tool.run') : ICONS.check + ' ' + tr('tool.done')}</span>
+      <span class="caret">▾</span>
     </div>
     <div class="tb"></div>`;
   d.querySelector('.th').addEventListener('click', () => d.classList.toggle('open'));
+  // 建卡时若已带输出（历史重建 / tool-end 兜底路径）就先填好正文，展开即有内容
+  if (o.output) d.querySelector('.tb').textContent = o.output;
   d.fill = (o) => {
     if (o.status) {
       d.querySelector('.st').className = 'st ' + (o.status === 'ok' ? 'ok' : '');
@@ -611,10 +687,10 @@ function toolCard(o) {
     if (o.output !== undefined) d.querySelector('.tb').textContent = o.output || '';
   };
   // 工具输出流式：运行期间逐段追加（tool-end 会以完整输出覆盖）
+  // 卡片默认保持收起：输出只在用户点开卡头时才可见（与思考卡一致）
   d.appendOutput = (delta) => {
     d._out = (d._out || '') + delta;
     d.querySelector('.tb').textContent = d._out.length > 8000 ? '…' + d._out.slice(-8000) : d._out;
-    if (!d.classList.contains('open')) d.classList.add('open');
   };
   return d;
 }
@@ -672,7 +748,53 @@ function askSummaryEl(v, answers) {
 
 // ---- 模型提问弹窗（独立模态，收集多题后统一提交） ----
 const askModalState = { requestId: null, v: null };
-function showAskModal(d) {
+// 询问/审批弹窗队列：多角色并行时可能同时来多条，必须逐条处理且**按请求所属会话应答**，
+// 旧实现是「新请求直接顶掉旧请求」+ 用当前会话 id 应答 → 两条并行线程都会卡死。
+let engineWarnSeen = null;   // 同一份"配置非法"告警只弹一次
+const modalQueue = [];
+let activeModal = null;
+function sessionLabelOf(sid) {
+  const ss = (state.sessions || []).find((x) => x.id === sid);
+  const role = ss ? (state.roles || []).find((r) => r.id === ss.roleId) : null;
+  return { role: (role && role.name) || '会话', title: (ss && ss.title) || sid };
+}
+function modalFromLine(sid) {
+  const { role, title } = sessionLabelOf(sid);
+  return `<div class="modal-from">${esc(tr('modal.from').replace('{r}', role).replace('{s}', title))}</div>`;
+}
+function enforceModals(sid) { // 被应答/取消后，把它从队列里摘掉
+  for (let i = modalQueue.length - 1; i >= 0; i--) if (modalQueue[i].requestId === sid) modalQueue.splice(i, 1);
+  if (activeModal && activeModal.requestId === sid) { activeModal = null; pumpModals(); }
+}
+function pumpModals() {
+  if (activeModal) return;
+  const next = modalQueue.shift();
+  if (!next) return;
+  activeModal = next;
+  if (next.kind === 'ask') renderAskModal(next);
+  else renderApprovalModal(next);
+}
+function queueModal(item) {
+  if (activeModal && activeModal.requestId === item.requestId) return;
+  if (modalQueue.some((x) => x.requestId === item.requestId)) return;
+  modalQueue.push(item);
+  pumpModals();
+  // 已有弹窗在显示时，新来的请求只更新"还有 N 条"角标（等当前这条处理完自动接上）
+  if (activeModal) {
+    for (const maskId of ['#askModalMask', '#apprMask']) {
+      const box = document.querySelector(maskId + ' .modal-more');
+      if (box) { box.textContent = tr('modal.queuedMore').replace('{n}', String(modalQueue.length)); box.style.display = modalQueue.length ? '' : 'none'; }
+    }
+  }
+}
+function modalQueueBadge() {
+  // 始终输出该元素（无排队时隐藏）：后续新请求到达时可原地更新"还有 N 条"，否则元素不存在无从更新
+  const n = modalQueue.length;
+  const txt = n ? esc(tr('modal.queuedMore').replace('{n}', String(n))) : '';
+  return `<div class="modal-more"${n ? '' : ' style="display:none"'}>${txt}</div>`;
+}
+function showAskModal(d) { queueModal({ kind: 'ask', ...d }); }
+function renderAskModal(d) {
   // 已有一个提问弹窗开着时，直接替换内容（新请求优先）；旧弹窗未提交的答案丢弃但请求不阻塞
   askModalState.requestId = d.requestId;
   askModalState.v = d;
@@ -745,24 +867,51 @@ function showAskModal(d) {
   foot.className = 'am-foot';
   foot.innerHTML = `<span class="am-count"></span>`;
   body.appendChild(foot);
+  // 顶部标注来源会话：并行时用户知道这条弹窗属于哪个角色/会话
+  if (body.parentElement) {
+    body.parentElement.querySelectorAll('.modal-from, .modal-more').forEach((el) => el.remove());
+    body.insertAdjacentHTML('beforebegin', modalFromLine(d.sessionId) + modalQueueBadge());
+  }
   $('#askModalSubmit').onclick = () => {
     const finalAns = {};
     for (const q of qs) if (picks[q.id] && picks[q.id].length) finalAns[q.id] = { answers: picks[q.id] };
-    api('POST', '/api/ask', { sessionId: state.currentSession.id, requestId: d.requestId, answers: finalAns });
+    api('POST', '/api/ask', { sessionId: d.sessionId, requestId: d.requestId, answers: finalAns });
     hideAskModal();
   };
   // 右上角 ✕：跳过不回答（回空 answers，避免 turn 空等）
   $('#askModalClose').onclick = () => {
-    api('POST', '/api/ask', { sessionId: state.currentSession.id, requestId: d.requestId, answers: {} });
+    api('POST', '/api/ask', { sessionId: d.sessionId, requestId: d.requestId, answers: {} });
     hideAskModal();
   };
   updateSubmit();
   mask.classList.add('show');
 }
+/**
+ * 回合已结束/被中断：该会话的审批与询问弹窗不可能再有结果，必须撤掉。
+ * 否则 activeModal 一直被占着，后面任何会话的审批都只能排队（表现为"点了没反应/一直转"）。
+ */
+function closeStaleModals(sessionId) {
+  const stale = [];
+  if (activeModal && (!sessionId || activeModal.sessionId === sessionId)) stale.push(activeModal);
+  for (let i = modalQueue.length - 1; i >= 0; i--) {
+    if (!sessionId || modalQueue[i].sessionId === sessionId) { stale.push(modalQueue[i]); modalQueue.splice(i, 1); }
+  }
+  if (!stale.length) return;
+  for (const m of stale) enforceModals(m.requestId);
+  $('#askModalMask').classList.remove('show');
+  $('#apprMask').classList.remove('show');
+  askModalState.requestId = null;
+  askModalState.v = null;
+  activeModal = null;
+  pumpModals();
+}
+
 function hideAskModal() {
+  const rid = askModalState.requestId;
   askModalState.requestId = null;
   askModalState.v = null;
   $('#askModalMask').classList.remove('show');
+  if (activeModal && (rid === null || activeModal.requestId === rid)) { activeModal = null; pumpModals(); }
 }
 
 function thinkCardEl() {
@@ -807,10 +956,9 @@ function thinkCardEl() {
 
 
 // 审批弹窗：收到工具/命令权限申请时弹出，允许/拒绝后回传
-let apprModalBusy = false;
-function showApprovalModal(ev) {
-  if (apprModalBusy) return; // 防重复弹
-  apprModalBusy = true;
+// 入队（真正的弹窗渲染在 renderApprovalModal：由 pumpModals 调度）
+function showApprovalModal(ev) { queueModal({ kind: 'appr', ...ev }); }
+function renderApprovalModal(ev) {
   const mask = $('#apprMask');
   const titleEl = mask.querySelector('.appr-title');
   const kind = ev.kind;
@@ -839,11 +987,13 @@ function showApprovalModal(ev) {
   }
   titleEl.innerHTML = titleInner;
   const body = mask.querySelector('.modal-body');
-  body.innerHTML = bodyHtml;
+  body.innerHTML = modalFromLine(ev.sessionId) + bodyHtml + modalQueueBadge();
   const finish = async (ok) => {
-    await api('POST', '/api/approve', { sessionId: state.currentSession.id, requestId: ev.requestId, decision: ok });
+    // 关键：用请求自带的 sessionId（不是"当前正在看的会话"）——否则并行时会答到别的线程上，两边都卡
+    await api('POST', '/api/approve', { sessionId: ev.sessionId, requestId: ev.requestId, decision: ok });
     mask.classList.remove('show');
-    apprModalBusy = false;
+    activeModal = null;
+    pumpModals();
   };
   $('#apprAllow').onclick = async () => { await finish(true); };
   $('#apprDeny').onclick = async () => { await finish(false); };
@@ -896,18 +1046,22 @@ function renderTopbar() {
     $('#topTitle').textContent = 'ROSE';
     $('#topRole').textContent = '—';
   }
-  const btn = $('#sendBtn');
-  if (curBusy()) {
-    btn.classList.add('stopping');
-    btn.disabled = false;
-    btn.title = tr('stop.title');
-  } else {
-    btn.classList.remove('stopping');
-    btn.disabled = !state.currentSession;
-    btn.title = tr('send.title');
+  const wsEl = $('#topWorkspace');
+  if (wsEl) {
+    const wsp = state.currentSession && state.currentSession.workspace;
+    wsEl.style.display = wsp ? 'inline-flex' : 'none';
+    if (wsp) { wsEl.textContent = wsp; wsEl.title = tr('ws.locked'); }
   }
+  const btn = $('#sendBtn');
+  const stop = $('#stopBtn');
+  btn.title = tr('send.title');
+  btn.disabled = !state.currentSession;
+  if (stop) stop.style.display = curBusy() ? 'flex' : 'none';
   syncModeUI();
   fillModelSelect();
+  renderCtxHint();
+  renderQueueHint();
+  renderCompactMask();
 }
 
 // ---- 会话模式：由会话策略三元组推断，UI 以三种模式呈现 ----
@@ -1021,13 +1175,251 @@ function fillModelSelect() {
 }
 
 
+
+/* ---------- 侧栏收起/展开（收起后只留 图标：logo / 新建 / 设置） ---------- */
+const SIDEBAR_KEY = 'rose.sidebar.collapsed';
+function sidebarCollapsed() {
+  try { return localStorage.getItem(SIDEBAR_KEY) === '1'; } catch { return false; }
+}
+function applySidebarCollapsed(v) {
+  const app = document.querySelector('.app');
+  if (!app) return;
+  app.classList.toggle('side-collapsed', !!v);
+  try { localStorage.setItem(SIDEBAR_KEY, v ? '1' : '0'); } catch {}
+}
+function toggleSidebar() { applySidebarCollapsed(!sidebarCollapsed()); }
+
+
+/* ---------- 原生指令（斜杠命令；对齐 codex TUI 指令名 + dsh 的交互） ---------- */
+// 说明：ROSE 走 codex app-server（不是 TUI），所以只收录"引擎/ROSE 真能执行"的指令；
+// 未收录的（/vim /pet /quit /raw /cd … 属 TUI 本地功能）不假装支持。
+function noticeLine(text) {
+  const feed = $('#feed');
+  if (!feed) return;
+  const d = document.createElement('div');
+  d.className = 'sys-row';
+  d.textContent = text;
+  feed.appendChild(d);
+  stickToBottom();
+}
+
+const cmd = {
+  // —— 引擎侧 ——
+  compact: {
+    args: '', desc: 'cmd.compact.desc',
+    async run() {
+      const r = await doCompact();
+      if (r && r.error) throw new Error(r.error);
+      return tr('cmd.compact.done');
+    },
+  },
+  // —— 会话配置（与发送框旁的控件同一套状态）——
+  model: {
+    needsSession: true,
+    args: '[model]', desc: 'cmd.model.desc',
+    async run(arg) {
+      const opts = modelOptions();
+      if (!arg) {
+        if (!opts.length) return tr('cmd.model.none');
+        return tr('cmd.model.list') + '\n' + opts.map((o) => `  ${o.model}  (${o.pid})${o.model === state.currentSession.modelId ? '  ← ' + tr('cmd.model.current') : ''}`).join('\n');
+      }
+      const hit = opts.find((o) => o.model === arg) || opts.find((o) => o.model.toLowerCase().includes(arg.toLowerCase()));
+      if (!hit) return tr('cmd.model.unknown').replace('{n}', arg);
+      state.currentSession.providerId = hit.pid;
+      state.currentSession.modelId = hit.model;
+      const inList = (state.sessions || []).find((x) => x.id === state.currentSession.id);
+      if (inList) { inList.providerId = hit.pid; inList.modelId = hit.model; }
+      fillModelSelect();
+      const sel = $('#modelSelect');
+      if (sel) sel.value = hit.pid + '|' + hit.model;   // 发送框下拉是"下一轮用哪个模型"的真源
+      renderTopbar();
+      return tr('cmd.model.set').replace('{n}', hit.model);
+    },
+  },
+  approvals: {
+    needsSession: true,
+    args: '[on-request|never]', desc: 'cmd.approvals.desc',
+    async run(arg) {
+      const v = (arg || '').trim();
+      if (!v) return tr('cmd.approvals.cur').replace('{n}', state.currentSession.approval || 'on-request') + '\n  on-request  ' + tr('cmd.approvals.onRequest') + '\n  never       ' + tr('cmd.approvals.never');
+      if (v !== 'on-request' && v !== 'never') return tr('cmd.approvals.bad');
+      state.currentSession.approval = v;
+      syncModeUI();
+      return tr('cmd.approvals.set').replace('{n}', v);
+    },
+  },
+  plan: {
+    needsSession: true,
+    args: '', desc: 'cmd.plan.desc',
+    async run() {
+      const on = !state.currentSession.planMode;
+      state.currentSession.planMode = on;
+      state.currentSession.sandbox = on ? 'read-only' : 'workspace-write';
+      syncModeUI();
+      return on ? tr('cmd.plan.on') : tr('cmd.plan.off');
+    },
+  },
+  rename: {
+    needsSession: true,
+    args: '<title>', desc: 'cmd.rename.desc',
+    async run(arg) {
+      const t = (arg || '').trim();
+      if (!t) return tr('cmd.rename.need');
+      const r = await api('PATCH', '/api/sessions/' + state.currentSession.id, { title: t });
+      if (r && r.error) return tr('cmd.fail') + r.error;
+      state.currentSession.title = t;
+      await refreshSessions(); renderSidebar(); renderTopbar();
+      return tr('cmd.rename.done').replace('{n}', t);
+    },
+  },
+  status: {
+    needsSession: true,
+    args: '', desc: 'cmd.status.desc',
+    async run() {
+      const s0 = state.currentSession;
+      const used = Number(s0.contextUsed) || 0, win = Number(s0.contextWindow) || 0;
+      const role = currentRole();
+      return [
+        `${tr('cmd.status.role')}: ${role ? role.name : '-'}`,
+        `${tr('cmd.status.model')}: ${s0.modelId || '-'} (${s0.providerId || '-'})`,
+        `${tr('cmd.status.sandbox')}: ${s0.sandbox}   ${tr('cmd.status.approval')}: ${s0.approval}`,
+        `${tr('cmd.status.plan')}: ${s0.planMode ? tr('common.on') : tr('common.off')}`,
+        `${tr('cmd.status.workspace')}: ${s0.workspace || '-'}`,
+        `${tr('cmd.status.context')}: ${used ? Math.round(used / 1000) + 'k' + (win ? ' / ' + Math.round(win / 1000) + 'k' : '') : '-'}`,
+        `${tr('cmd.status.running')}: ${curBusy() ? tr('common.on') : tr('common.off')}`,
+      ].join('\n');
+    },
+  },
+  // —— 应用动作 ——
+  new: {
+    args: '', desc: 'cmd.new.desc',
+    async run() { openRolePicker(); return tr('cmd.new.done'); },
+  },
+  init: {
+    args: '', desc: 'cmd.init.desc',
+    async run() {
+      // 对齐 codex 的 /init：生成 AGENTS.md（作为普通消息发给模型，落盘可追溯）
+      const prompt = 'Create an AGENTS.md file at the repository root containing project-specific instructions for future agent runs: how to build, test, lint, run locally, coding conventions, and any gotchas you can verify from the repo. Keep it concise and factual; do not invent commands you could not verify.';
+      const inp = $('#input'); if (inp) inp.value = prompt;
+      await send();
+      return tr('cmd.init.done');
+    },
+  },
+  skills:    { args: '', desc: 'cmd.skills.desc',    async run() { toggleSkillPicker(); return tr('cmd.panelOpened'); } },
+  mcp:       { args: '', desc: 'cmd.mcp.desc',       async run() { openSettings('mcp'); return tr('cmd.panelOpened'); } },
+  usage:     { args: '', desc: 'cmd.usage.desc',     async run() { openSettings('usage'); return tr('cmd.panelOpened'); } },
+  settings:  { args: '', desc: 'cmd.settings.desc',  async run() { openSettings('model'); return tr('cmd.panelOpened'); } },
+  help: {
+    args: '', desc: 'cmd.help.desc',
+    async run() {
+      return tr('cmd.help.title') + '\n' + Object.entries(cmd)
+        .map(([n, c]) => `  /${n}${c.args ? ' ' + c.args : ''}`.padEnd(24) + tr(c.desc)).join('\n');
+    },
+  },
+};
+
+// 解析一行输入：命中已注册指令才拦截（否则当普通消息发出去，"/tmp 是啥" 仍可用）
+function parseCommand(line) {
+  const t = String(line || '').trimStart();
+  if (!t.startsWith('/')) return null;
+  const m = t.match(/^\/([A-Za-z][\w-]*)(?:\s+([\s\S]*))?$/);
+  if (!m) return null;
+  const name = m[1].toLowerCase();
+  if (!cmd[name]) return null;
+  return { name, arg: (m[2] || '').trim() };
+}
+
+// 让高亮项滚入面板可视区（面板 max-height 300px，条目多时超出 → 必须自动跟随）
+function scrollCmdIntoView(el) {
+  const box = $('#cmdPicker');
+  if (!box || !el) return;
+  const top = el.offsetTop;
+  const bottom = top + el.offsetHeight;
+  if (top < box.scrollTop) box.scrollTop = top;
+  else if (bottom > box.scrollTop + box.clientHeight) box.scrollTop = bottom - box.clientHeight;
+}
+
+let cmdActive = -1;
+function cmdCandidates(q) {
+  const keys = Object.keys(cmd);
+  if (!q) return keys;                              // 光杆 "/" → 列出全部
+  return keys.filter((n) => n.startsWith(q));       // 无命中 → 空数组（**不**回退成"全部指令"）
+}
+function renderCmdPicker() {
+  const box = $('#cmdPicker');
+  const inp = $('#input');
+  if (!box || !inp) return;
+  const t = inp.value;
+  const hide = () => { box.hidden = true; box.innerHTML = ''; cmdActive = -1; };
+  const m = t.match(/^\/([A-Za-z][\w-]*)?$/);    // 光杆 "/" 或 "/xxx"（尚未输入参数）时弹面板
+  if (!m) { hide(); return; }
+  const cands = cmdCandidates((m[1] || '').toLowerCase());
+  if (!cands.length) { hide(); return; }                      // 无命中 → 不显示面板
+  if (cmdActive >= cands.length) cmdActive = 0;
+  box.hidden = false;
+  box.innerHTML = `<div class="cmd-head">${esc(tr('cmd.head'))}</div>` + cands.map((n, i) => `
+    <button type="button" class="cmd-item${i === cmdActive ? ' active' : ''}" data-name="${esc(n)}">
+      <span class="cmd-name">/${esc(n)}</span>
+      ${cmd[n].args ? `<span class="cmd-args">${esc(cmd[n].args)}</span>` : ''}
+      <span class="cmd-desc">${esc(tr(cmd[n].desc))}</span>
+    </button>`).join('');
+  box.querySelectorAll('.cmd-item').forEach((el) => el.addEventListener('mousedown', (e) => {
+    e.preventDefault();
+    completeCommand(el.dataset.name);
+  }));
+}
+function completeCommand(name) {
+  const inp = $('#input');
+  if (!inp) return;
+  inp.value = '/' + name + (cmd[name] && cmd[name].args ? ' ' : '');
+  inp.focus();
+  renderCmdPicker();
+}
+async function runCommandLine(line) {
+  const parsed = parseCommand(line);
+  if (!parsed) return false;
+  const inp = $('#input');
+  if (inp) inp.value = '';
+  renderCmdPicker();
+  const c = cmd[parsed.name];
+  if (c.args && !parsed.arg && c.args.startsWith('<')) { noticeLine(tr('cmd.needArg').replace('{n}', '/' + parsed.name + ' ' + c.args)); return true; }
+  // 这些指令操作"当前会话"：没有会话时必须给人话，而不是抛 Cannot read properties of null
+  if (c.needsSession && !state.currentSession) { noticeLine(tr('cmd.needSession')); return true; }
+  try {
+    const text = await c.run(parsed.arg);
+    if (text) noticeLine(`/${parsed.name}\n${text}`);
+  } catch (e) {
+    noticeLine(`/${parsed.name}\n${tr('cmd.fail')}${(e && e.message) || e}`);
+  }
+  return true;
+}
+
 /* ---------- 会话动作 ---------- */
 
 async function newSession(roleId) {
   collapsedRoles.delete(roleId); // 新建会话 → 展开该角色分组（其它角色保持原收起状态）
-  const s = await api('POST', '/api/sessions', { roleId });
+  // 工作目录：**必选、无默认值、建后不可改**（codex 的 cwd 属于线程，中途改等于换线程、丢上下文）
+  const workspace = await pickWorkspaceForNewSession();
+  if (!workspace) return;
+  const s = await api('POST', '/api/sessions', { roleId, workspace });
+  if (!s || s.error || !s.id) {
+    uiDialog({ title: tr('dial.hint'), message: (s && s.error) || tr('ws.fail'), buttons: [{ label: tr('dial.gotit'), value: true, primary: true }] });
+    return;
+  }
   await refreshSessions();
   await openSession(s.id);
+}
+
+// 新建会话的工作目录选择：系统目录选择框；用户取消 → 放弃建会话
+async function pickWorkspaceForNewSession() {
+  if (!window.rose || typeof window.rose.pickDirectory !== 'function') {
+    // 浏览器直开（无 Electron 垫片）：退化为手输路径
+    const typed = window.prompt(tr('ws.pickTitle'), '');
+    return typed && typed.trim() ? typed.trim() : null;
+  }
+  const r = await window.rose.pickDirectory(tr('ws.pickTitle'));
+  if (!r || r.canceled || !r.path) return null;
+  return r.path;
 }
 async function deleteSession(id) {
   await api('DELETE', '/api/sessions/' + id);
@@ -1035,7 +1427,9 @@ async function deleteSession(id) {
   await refreshSessions();
   renderFeed(); renderTopbar(); renderSidebar();
 }
+let openSeq = 0;   // 点击序号：只有最后一次点击的结果可以落地（避免"后点的先到"）
 async function openSession(id) {
+  const seq = ++openSeq;
   const messages = await api('GET', '/api/sessions/' + id + '/messages');
   let s = state.sessions.find((x) => x.id === id);
   if (!s) {
@@ -1046,10 +1440,15 @@ async function openSession(id) {
     s = state.sessions.find((x) => x.id === id);
   }
   if (!s) return;   // 会话确实不存在（已被删除）——不要设置残缺的 currentSession
+  if (seq !== openSeq) return;   // 期间用户又点了别的会话：本次结果作废（含下面的 render）
   state.currentSession = { ...s, messages };
   state.selSkills = []; // 切换会话时清空已选技能
+  // ⚠️ 待发附件也必须清空：否则在 A 里选的文件会被发给 B（发送允许"仅附件"，静默串台）
+  state.attachments = [];
+  renderAttPicks();
   loadSkills();
   await syncRunning(); // 打开即与服务端对账任务状态（含其它标签页/断线期间开始的任务）
+  if (seq !== openSeq) return;
   renderSidebar(); renderFeed(); renderTopbar();
 }
 async function refreshSessions() { state.sessions = await api('GET', '/api/sessions'); }
@@ -1121,9 +1520,11 @@ function renameSession(sess, itemEl) {
 async function send() {
   const t = $('#input');
   const text = t.value.trim();
+  // 斜杠指令优先（命中的指令不发给模型；未命中的当普通消息，"/tmp 是啥" 照常可用）
+  if (text.startsWith('/') && (await runCommandLine(text))) return;
   const att = state.attachments.slice();
   const sks = state.selSkills.slice();
-  if (!state.currentSession || curBusy()) return;
+  if (!state.currentSession) return;
   if (!text && !att.length && !sks.length) return;
   // 未配置任何模型（会话无模型 且 启用列表为空）：引导去设置，避免把空模型发给引擎
   const cm0 = effectiveProviderModel();
@@ -1146,8 +1547,31 @@ async function send() {
     }
     return;
   }
-  const sid = state.currentSession.id;
+  // 运行中：不再打断当前任务（旧版发送按钮在运行时=停止按钮，极易误停整轮工作），改为排队
+  if (curBusy()) {
+    state.queue.push({ sessionId: state.currentSession.id, text, att, sks });
+    t.value = '';
+    state.attachments = [];
+    state.selSkills = [];
+    renderAttPicks();
+    renderSkillChips();
+    renderQueueHint();
+    return;
+  }
+  // 正常发送路径也必须清空输入框（排队路径已清）——曾出现"发送后文字还留在输入框"
   t.value = '';
+  state.attachments = [];
+  state.selSkills = [];
+  renderAttPicks();
+  renderSkillChips();
+  await sendPayload({ sessionId: state.currentSession.id, text, att, sks });
+}
+
+// 真正把一条消息发给引擎（历史遗留的乐观上屏 + 错误回滚逻辑保持不变）
+async function sendPayload(p) {
+  const sid = p.sessionId;
+  const text = p.text, att = p.att || [], sks = p.sks || [];
+  if (!state.currentSession || state.currentSession.id !== sid) return;
   markBusy(sid);
   state.currentSession.messages.push({ t: 'user', v: text, ts: Date.now(), ...(att.length ? { att: att.map(a2m) } : {}) });
   state.attachments = [];
@@ -1157,7 +1581,7 @@ async function send() {
   renderFeed(); renderTopbar();
   setAgentStatus('running');
   // 读取发送框旁的模型选择（pid|model），随本条消息带上 → 本会话即用该模型
-  const pickedNow = pickedModelFromSelect() || cm0;
+  const pickedNow = pickedModelFromSelect() || effectiveProviderModel();
   const pid = pickedNow.pid;
   const mid = pickedNow.model;
   const body = { text };
@@ -1189,6 +1613,249 @@ async function send() {
   }
 }
 
+
+
+
+/* ---------- 压缩蒙版：只作用于正在压缩的那个会话 ---------- */
+const compactWatchdogs = new Map();   // sessionId -> timeout（按会话，多个压缩互不干扰）
+/** 蒙版兜底：引擎若因异常不发 compact-end，超时后主动释放，避免该会话被永久禁止发送。 */
+function armCompactWatchdog(sessionId) {
+  const old = compactWatchdogs.get(sessionId);
+  if (old) clearTimeout(old);
+  compactWatchdogs.set(sessionId, setTimeout(() => {
+    compactWatchdogs.delete(sessionId);
+    if (!state.compactingSessions[sessionId]) return;
+    setCompacting(sessionId, false);
+    if (state.currentSession && state.currentSession.id === sessionId) {
+      uiDialog({ title: tr('dial.hint'), message: tr('ctx.timeout'), buttons: [{ label: tr('dial.gotit'), value: true, primary: true }] });
+    }
+  }, Number(state.compactTimeoutMs) > 0 ? Number(state.compactTimeoutMs) : 180000));   // 默认 3 分钟（可注入，便于测试）
+}
+// 压缩很快时（实测小线程 ~1.9s）蒙版会一闪而过，看起来像"没有蒙版"；给一个最短展示时长兜底
+const COMPACT_MIN_MS = 1500;
+let compactTicker = null;
+/** 每秒刷新蒙版上的"已用 N 秒"，让用户看到确实在推进（而不是静态卡片） */
+function tickCompactMask() {
+  if (compactTicker) return;
+  compactTicker = setInterval(() => {
+    const sid = state.currentSession && state.currentSession.id;
+    if (!sid || !state.compactingSessions[sid]) { clearInterval(compactTicker); compactTicker = null; return; }
+    renderCompactMask();
+  }, 1000);
+}
+/** 手工压缩收尾：清掉任何残留的"处理中"（busy 标记 + 末尾指示行 + 停止键/状态灯） */
+function resetAfterCompact(sessionId) {
+  clearBusy(sessionId);              // 手工压缩不是回合：这里若还有 busy，只可能是历史残留
+  if (!isCurrent(sessionId)) return;
+  setAgentStatus('ready');
+  renderTopbar();
+  syncGenRow();
+  stickToBottom();
+}
+function setCompacting(sessionId, on, opts) {
+  if (!sessionId) return;
+  if (on) {
+    // manual=ROSE 主动触发的压缩（圆环//compact）：它不是回合，结束后必须把可能残留的
+    // "正在处理"状态一并清掉；auto=引擎在回合内自行压缩，不能碰该回合的 busy。
+    state.compactingSessions[sessionId] = { at: Date.now(), manual: !!(opts && opts.manual) };
+    armCompactWatchdog(sessionId);
+    tickCompactMask();
+  } else {
+    const cur = state.compactingSessions[sessionId];
+    if (!cur) return;
+    const wait = COMPACT_MIN_MS - (Date.now() - (cur.at || 0));
+    if (wait > 0) {
+      // 到点前不动；若期间又开始了新一轮压缩（对象标识变化）则放弃这次释放
+      setTimeout(() => { if (state.compactingSessions[sessionId] === cur) setCompacting(sessionId, false); }, wait);
+      return;
+    }
+    const wasManual = !!cur.manual;
+    delete state.compactingSessions[sessionId];
+    if (wasManual) resetAfterCompact(sessionId);
+    const wd = compactWatchdogs.get(sessionId);
+    if (wd) { clearTimeout(wd); compactWatchdogs.delete(sessionId); }
+    // 秒表只在"确实没有会话在压缩"时停掉（并发压缩时另一个会话还要继续走秒）
+    if (compactTicker && !Object.keys(state.compactingSessions).length) { clearInterval(compactTicker); compactTicker = null; }
+  }
+  renderCompactMask();
+  renderCtxHint();
+}
+// 蒙版元素由 JS 创建（不再依赖 index.html 里有它）：旧版页面/缓存 HTML 下也能工作
+function ensureCompactMask() {
+  let m = $('#compactMask');
+  if (m) return m;
+  m = document.createElement('div');
+  m.className = 'compact-mask';
+  m.id = 'compactMask';
+  m.hidden = true;
+  m.innerHTML = '<div class="cm-card"><div class="cm-spin" aria-hidden="true"></div>'
+    + '<div class="cm-title"></div><div class="cm-bar" aria-hidden="true"></div>'
+    + '<div class="cm-elapsed"></div><div class="cm-sub"></div></div>';
+  // ⚠️ 挂到 .main（对话列，position:relative 且不滚动），不要挂到滚动容器 #chatroom：
+  // 否则 inset:0 会锚在内容原点，长对话滚到底部时蒙版滚出视口 → 用户"看不到蒙版但发不出消息"。
+  (document.querySelector('.main') || document.body).appendChild(m);
+  // 若样式表里没有 .compact-mask（页面比本次改动更旧），用内联样式兜底，保证它是个能看见的遮罩
+  if (getComputedStyle(m).position !== 'absolute') {
+    m.style.cssText = 'position:absolute;inset:0;z-index:20;display:flex;align-items:center;justify-content:center;'
+      + 'background:rgba(16,20,28,.35);backdrop-filter:blur(6px)';
+  }
+  return m;
+}
+
+function renderCompactMask() {
+  const mask = ensureCompactMask();
+  const sid = state.currentSession && state.currentSession.id;
+  const on = !!(sid && state.compactingSessions[sid]);
+  mask.hidden = !on;
+  const tEl = mask.querySelector('.cm-title');
+  const sEl = mask.querySelector('.cm-sub');
+  const eEl = mask.querySelector('.cm-elapsed');
+  if (tEl) tEl.textContent = tr('ctx.maskTitle');
+  if (sEl) sEl.textContent = tr('ctx.maskSub');
+  if (eEl) {
+    const started = state.compactingSessions[sid];
+    const secs = on && started && started.at ? Math.floor((Date.now() - started.at) / 1000) : 0;
+    eEl.textContent = secs >= 1 ? tr('ctx.maskElapsed').replace('{n}', String(secs)) : '';
+  }
+  // 压缩期间禁止该会话发送（避免和压缩任务抢线程）；其他会话不受影响
+  const btn = $('#sendBtn');
+  if (btn) btn.disabled = on || !state.currentSession;
+  // 占位符不动（蒙版 + 发送键禁用已经足够表达"等待中"）
+}
+
+/* ---------- 上下文占用（圆环，参考 DSH 的 ContextMeter） ---------- */
+// 常显圆环：进度=已用/窗口；悬停出数值卡；点击=压缩上下文（行为与之前一致）。
+const CTX_R = 5.5;                                  // 与 DSH 同参数：viewBox 14×14、r=5.5、描边 2
+const CTX_C = 2 * Math.PI * CTX_R;
+const fmtTok = (n) => (!n ? '0' : n >= 1000000 ? (n / 1000000).toFixed(Number.isInteger(n / 100000) ? 0 : 1).replace(/\.0$/, '') + 'M' : n >= 1000 ? Math.round(n / 1000) + 'k' : String(n));
+
+function renderCtxHint() {
+  const el = $('#ctxHint');
+  if (!el) return;
+  const s0 = state.currentSession;
+  if (!s0) { el.style.display = 'none'; return; }
+  el.style.display = 'inline-flex';
+  const used = Number(s0.contextUsed) || 0;
+  const win = Number(s0.contextWindow) || 0;
+  const acp = Number((state.settings && state.settings.global && state.settings.global.autoCompactPercent)) || 80;
+  // 只要有"已用"就显示数值（窗口未知时退化为"只报 token，不算百分比"，历史会话常见）
+  const hasUsed = used > 0;
+  const hasPct = hasUsed && win > 0;
+  const pct = hasPct ? Math.min(100, Math.round((used / win) * 100)) : 0;
+  el.classList.toggle('danger', hasPct && pct >= acp);
+  el.classList.toggle('warn', hasPct && pct < acp && pct >= acp * 0.75);
+  el.classList.toggle('unknown', hasUsed && !hasPct);
+  el.classList.toggle('compacting', !!(s0 && state.compactingSessions[s0.id]));
+  const dash = hasPct ? `${(CTX_C * pct / 100).toFixed(2)} ${CTX_C.toFixed(2)}` : `0 ${CTX_C.toFixed(2)}`;
+  el.innerHTML = `
+    <svg viewBox="0 0 14 14" width="14" height="14" aria-hidden="true">
+      <circle class="ring-track" cx="7" cy="7" r="${CTX_R}"/>
+      <circle class="ring-fill" cx="7" cy="7" r="${CTX_R}" stroke-dasharray="${dash}" transform="rotate(-90 7 7)"/>
+    </svg>
+    <span class="ctx-pop" role="tooltip">
+      ${hasUsed
+        ? (hasPct
+          ? `<b>${esc(tr('ctx.used').replace('{p}', String(pct)))}</b>
+             <span>${fmtTok(used)} / ${fmtTok(win)} tokens</span>`
+          : `<b>${esc(tr('ctx.usedTok').replace('{n}', fmtTok(used)))}</b>
+             <span>${esc(tr('ctx.noWindow'))}</span>`)
+        : `<b>${esc(tr('ctx.none'))}</b><span>${esc(tr('ctx.noneTip'))}</span>`}
+    </span>`;
+  el.setAttribute('aria-label', hasPct ? tr('ctx.used').replace('{p}', String(pct))
+    : (hasUsed ? tr('ctx.usedTok').replace('{n}', fmtTok(used)) : tr('ctx.none')));
+}
+
+/**
+ * 点击上下文圆环 = 执行 `/compact` 指令（与输入框里敲 /compact **完全同一条路径**）。
+ * 不再额外弹确认框：压缩本身只是把历史压成摘要，蒙版已经明确表达"正在压缩"；
+ * 用户要的是"点一下就开始"，少一步骤、少一处分叉。
+ */
+async function compactContext() {
+  if (!state.currentSession) { noticeLine(tr('cmd.needSession')); return; }
+  if (curBusy()) { uiDialog({ title: tr('dial.hint'), message: tr('ctx.busy'), buttons: [{ label: tr('dial.gotit'), value: true, primary: true }] }); return; }
+  try {
+    const text = await cmd.compact.run();
+    if (text) flash(text, 'reMsg');
+  } catch (e) {
+    uiDialog({ title: tr('dial.hint'), message: tr('ctx.fail') + ((e && e.message) || e), buttons: [{ label: tr('dial.gotit'), value: true, primary: true }] });
+  }
+}
+
+// 唯一压缩入口（圆环点击与 /compact 指令共用）：上蒙版 → 调官方 RPC → 由 compact-end 事件释放
+async function doCompact() {
+  if (!state.currentSession) return { error: 'no session' };
+  const sid = state.currentSession.id;
+  setCompacting(sid, true, { manual: true });
+  const r = await api('POST', '/api/compact', { sessionId: sid });
+  if (r && r.error) { setCompacting(sid, false); return { error: r.error }; }
+  return { ok: true };
+}
+
+/* ---------- 运行中排队（替代"发送按钮=停止按钮"的旧行为） ---------- */
+// 队列渲染在输入框上方：每条支持「插话发送 / 编辑 / 删除」。
+function renderQueueHint() {
+  const el = $('#queueHint');
+  if (!el) return;
+  const sid = state.currentSession && state.currentSession.id;
+  const mine = state.queue.filter((q) => q.sessionId === sid);
+  if (!mine.length) { el.style.display = 'none'; el.innerHTML = ''; return; }
+  el.style.display = 'block';
+  el.innerHTML = `<div class="q-head">⏳ ${esc(tr('queue.title'))}（${mine.length}）</div>` +
+    mine.map((q, i) => `<div class="q-item" data-i="${i}">
+      <span class="q-text" title="${esc(q.text)}">${esc(q.text || '（仅附件）')}</span>
+      <span class="q-acts">
+        <button class="q-btn q-steer" data-act="steer" title="${esc(tr('queue.steer'))}">⚡ ${esc(tr('queue.steer'))}</button>
+        <button class="q-btn" data-act="edit" title="${esc(tr('queue.edit'))}">✎</button>
+        <button class="q-btn q-del" data-act="del" title="${esc(tr('queue.del'))}">✕</button>
+      </span></div>`).join('');
+  el.querySelectorAll('.q-item').forEach((row) => {
+    const idx = Number(row.dataset.i);
+    const item = mine[idx];
+    row.querySelectorAll('.q-btn').forEach((btn) => btn.addEventListener('click', async () => {
+      const act = btn.dataset.act;
+      if (act === 'del') {
+        state.queue = state.queue.filter((q) => q !== item);
+        renderQueueHint();
+        return;
+      }
+      if (act === 'edit') {
+        // 取回输入框编辑（从队列移除，避免编辑后重复排队）
+        const inp = $('#input');
+        if (inp) { inp.value = item.text || ''; inp.focus(); }
+        state.attachments = (item.att || []).slice();
+        state.selSkills = (item.sks || []).slice();
+        renderAttPicks(); renderSkillChips();
+        state.queue = state.queue.filter((q) => q !== item);
+        renderQueueHint();
+        return;
+      }
+      if (act === 'steer') {
+        btn.disabled = true;
+        const r = await api('POST', '/api/steer', { sessionId: item.sessionId, text: item.text || '' });
+        if (r && r.error) {
+          btn.disabled = false;
+          uiDialog({ title: tr('dial.hint'), message: tr('queue.steerFail') + r.error, buttons: [{ label: tr('dial.gotit'), value: true, primary: true }] });
+          return;
+        }
+        state.queue = state.queue.filter((q) => q !== item);
+        renderQueueHint();
+      }
+    }));
+  });
+}
+
+// 本轮结束 → 自动发出该会话排在最前的消息（仅当用户仍停留在该会话，避免跨会话串台）
+function flushQueue(sessionId) {
+  if (!state.queue.length) return;
+  if (state.busySessions[sessionId]) return;
+  if (!state.currentSession || state.currentSession.id !== sessionId) return;
+  const i = state.queue.findIndex((q) => q.sessionId === sessionId);
+  if (i < 0) return;
+  const p = state.queue.splice(i, 1)[0];
+  renderQueueHint();
+  sendPayload(p).catch(() => {});
+}
+
 /* ---------- 附件上传 ---------- */
 const fmtSize = (n) => (n < 1024 ? n + ' B' : n < 1048576 ? (n / 1024).toFixed(1) + ' KB' : (n / 1048576).toFixed(1) + ' MB');
 const a2m = (x) => ({ name: x.name, kind: x.kind, mime: x.mime, src: x.kind === 'image' ? x.dataUrl : undefined });
@@ -1215,7 +1882,7 @@ function renderAttPicks() {
     const chip = document.createElement('div');
     chip.className = 'att-chip';
     const media = a.kind === 'image'
-      ? `<img class="thumb" src="${a.dataUrl}" alt="">`
+      ? `<img class="thumb" src="${esc(a.dataUrl)}" alt="">`
       : `<span class="f-ic"><span class="ic">${ICONS.file}</span></span>`;
     chip.innerHTML = `${media}<span class="a-meta"><span class="a-name">${esc(a.name)}</span><span class="a-size">${fmtSize(a.size)}</span></span><button class="a-x" data-id="${a.id}" title="${tr('att.remove')}">✕</button>`;
     box.appendChild(chip);
@@ -1300,6 +1967,29 @@ function connectSSE() {
   const es = new EventSource('/events');
   es.addEventListener('message', (e) => {
     const d = JSON.parse(e.data);
+    // ① 与"当前在看哪个会话"无关的状态事件：必须先处理，且同时更新会话列表里的值。
+    //    这些事件来自后台会话也很常见（并行/切走时压缩完成），早退会把状态丢掉 → 切回该会话仍显示蒙版。
+    if (d.kind === 'compact-start') {
+      setCompacting(d.sessionId, true);
+      if (!d.auto && state.currentSession && d.sessionId === state.currentSession.id) flash(tr('ctx.compacting'), 'reMsg');
+      return;
+    }
+    if (d.kind === 'compact-end') {
+      setCompacting(d.sessionId, false);   // 手工压缩会在内部调用 resetAfterCompact（清 busy + 指示行）
+      if (state.currentSession && d.sessionId === state.currentSession.id) flash(tr('ctx.done'), 'reMsg');
+      return;
+    }
+    if (d.kind === 'context-usage') {
+      const inList = (state.sessions || []).find((x) => x.id === d.sessionId);
+      if (inList) { inList.contextUsed = d.used; if (d.window) inList.contextWindow = d.window; }
+      if (state.currentSession && d.sessionId === state.currentSession.id) {
+        state.currentSession.contextUsed = d.used;
+        if (d.window) state.currentSession.contextWindow = d.window;
+        renderCtxHint();
+      }
+      return;
+    }
+    // ② 其余事件只影响"正在看的那个会话"
     if (!state.currentSession || d.sessionId !== state.currentSession.id) return;
     const msgs = state.currentSession.messages;
     if (d.kind === 'user') {
@@ -1315,7 +2005,19 @@ function connectSSE() {
   });
   es.addEventListener('engine-event', (e) => {
     const d = JSON.parse(e.data);
-    if (d.type === 'sandbox-setup-completed') {
+    if (d.type === 'config-warning') {
+      // 引擎配置非法 → codex 会**静默回落默认值**（厂商/模型/人格/MCP 全部不生效，表现为"对话跑不通"）。
+      // 这条必须让用户看见：同一份告警只弹一次。
+      const sig = String(d.summary || '') + '|' + String(d.details || '');
+      if (sig !== engineWarnSeen) {
+        engineWarnSeen = sig;
+        uiDialog({
+          title: tr('cfg.badTitle'),
+          message: tr('cfg.badMsg') + '\n\n' + String(d.details || d.summary || '') + (d.path ? '\n' + d.path : ''),
+          buttons: [{ label: tr('dial.gotit'), value: 1, primary: true }],
+        });
+      }
+    } else if (d.type === 'sandbox-setup-completed') {
       // 初始化结束（成功/失败都告知，不静默）：刷新状态与横幅。
       // 若本次点击的初始化流程正在等待（sandboxSetupWaiting），由它统一报告结果，避免重复弹窗。
       state.sandboxDismissed = null;
@@ -1342,17 +2044,17 @@ function connectSSE() {
   });
   es.addEventListener('approval', (e) => {
     const d = JSON.parse(e.data);
-    if (!state.currentSession || d.sessionId !== state.currentSession.id) return;
-    showApprovalModal(d);
+    showApprovalModal(d);   // 后台会话的审批也要弹（否则那条线程永远等不到应答）
   });
   es.addEventListener('ask', (e) => {
     const d = JSON.parse(e.data);
-    if (!state.currentSession || d.sessionId !== state.currentSession.id) return;
-    // 提问以独立弹窗呈现；消息流只追加紧凑占位（回答后变只读记录）
-    const msgs = state.currentSession.messages;
-    if (!msgs.some((m) => m.t === 'ask' && m.v.requestId === d.requestId)) {
-      msgs.push({ t: 'ask', v: { requestId: d.requestId, questions: d.questions }, ts: Date.now() });
-      appendFeedEvent({ kind: 'ask' });
+    // 只把占位追加到"正在看的那个会话"的消息流；后台会话的提问照样弹窗处理
+    if (state.currentSession && d.sessionId === state.currentSession.id) {
+      const msgs = state.currentSession.messages;
+      if (!msgs.some((m) => m.t === 'ask' && m.v.requestId === d.requestId)) {
+        msgs.push({ t: 'ask', v: { requestId: d.requestId, questions: d.questions }, ts: Date.now() });
+        appendFeedEvent({ kind: 'ask' });
+      }
     }
     showAskModal(d);
   });
@@ -1363,6 +2065,18 @@ function connectSSE() {
     state.currentSession.planMode = true;
     state.currentSession.sandbox = 'read-only';
     state.currentSession.approval = 'on-request';
+    renderTopbar();
+  });
+  es.addEventListener('plan-mode-off', (e) => {
+    const d = JSON.parse(e.data);
+    if (!state.currentSession || d.sessionId !== state.currentSession.id) return;
+    // 计划已交付 → 后端自动切回普通模式（还原进 Plan 前的沙箱/审批），这里同步界面
+    state.currentSession.planMode = false;
+    if (d.sandbox) state.currentSession.sandbox = d.sandbox;
+    if (d.approval) state.currentSession.approval = d.approval;
+    const inList = (state.sessions || []).find((x) => x.id === d.sessionId);
+    if (inList) { inList.planMode = false; inList.sandbox = state.currentSession.sandbox; }
+    syncModeUI();
     renderTopbar();
   });
   es.addEventListener('ask-resolved', (e) => {
@@ -1377,16 +2091,28 @@ function connectSSE() {
     }
     // 关闭对应弹窗（如有）
     if (askModalState.requestId === d.requestId) hideAskModal();
+    else enforceModals(d.requestId);
+  });
+  es.addEventListener('approval-resolved', (e) => {
+    const d = JSON.parse(e.data);
+    enforceModals(d.requestId);
+    if (!activeModal) { $('#apprMask').classList.remove('show'); $('#askModalMask').classList.remove('show'); }
   });
   es.addEventListener('turn', (e) => {
     const d = JSON.parse(e.data);
     // busy 状态按会话记录：无论当前是否正在看该会话都先解除任务标记
     clearBusy(d.sessionId);
+    flushQueue(d.sessionId);   // 有排队消息则接着发（本轮结束不再空转）
+    closeStaleModals(d.sessionId);   // 回合已结束：该会话没来得及应答的审批弹窗必须撤掉
     if (!state.currentSession || d.sessionId !== state.currentSession.id) return;
     if (d.status === 'error') setAgentStatus('error');
     else setAgentStatus('ready');
     refreshSessions().then(() => { renderSidebar(); renderTopbar(); });
-    renderFeed();
+    // ⚠️ 这里原来直接 renderFeed()：清空重建整个列表 → 强制滚到底 + 展开的卡片全折叠
+    // （用户正在读长输出时被"拽走"）。改成增量收尾：立即成型 + 仅在贴底时跟随。
+    flushAgentRender();
+    renderTopbar();
+    stickToBottom();
   });
   // 连接/重连对账：EventSource 会自动重连；错过的事件靠 /api/running + 消息补拉恢复，
   // 避免断线后界面永久停留在「处理中」或漏掉已完成内容
@@ -1489,6 +2215,14 @@ async function setTheme(t) {
 }
 
 function renderGeneralPanel(body) {
+  // 需要 settings（含引擎实测的模型窗口）→ 没拿到时先拉一次再渲染
+  if (!state.settings || !state.settings.contextWindows) {
+    api('GET', '/api/settings').then((s) => {
+      state.settings = { ...(state.settings || {}), ...s };
+      renderGeneralPanel(body);
+    }).catch(() => {});
+    return;
+  }
   const curT = themeValue();
   const themeOpts = [
     { v:'light', label: tr('gen.light'), desc: tr('gen.lightDesc') },
@@ -1499,24 +2233,41 @@ function renderGeneralPanel(body) {
     { v:'zh', label: '中文' },
     { v:'en', label: 'English' },
   ];
+  // 卡片只留标题；说明文字进 title（通用页尽量少放正文）
   const card = (o, name, checked, extraAttrs) => `
-    <label data-opt="${o.v}" style="display:flex;align-items:center;gap:11px;padding:10px 13px;border:1px solid ${checked ? 'var(--accent)' : 'var(--border)'};border-radius:11px;cursor:pointer;background:${checked ? 'var(--accent-soft)' : 'var(--panel)'};${extraAttrs || ''}">
+    <label data-opt="${o.v}" title="${esc(o.desc || '')}" style="display:flex;align-items:center;gap:11px;padding:9px 12px;border:1px solid ${checked ? 'var(--accent)' : 'var(--border)'};border-radius:11px;cursor:pointer;background:${checked ? 'var(--accent-soft)' : 'var(--panel)'};${extraAttrs || ''}">
       <input type="radio" name="${name}" value="${o.v}" ${checked ? 'checked' : ''} style="accent-color:var(--accent);cursor:pointer">
-      <span style="flex:1"><b style="display:block;font-size:13px;color:var(--text);font-weight:600">${o.label}</b>${o.desc ? `<span class="hint" style="display:block;font-size:11.5px;color:var(--faint);margin-top:2px">${o.desc}</span>` : ''}</span>
+      <span style="flex:1;font-size:13px;color:var(--text);font-weight:600">${o.label}</span>
     </label>`;
+  // 自动压缩阈值（%）：窗口解析（用户声明 > 引擎实测 > 家族默认）由服务端算好，见 /api/settings.contextWindows
+  const g = (state.settings && state.settings.global) || {};
+  const acp = Number.isFinite(Number(g.autoCompactPercent)) ? Number(g.autoCompactPercent) : 80;
+  const l0 = Number.isFinite(Number(g.toolOutputTokenLimit)) ? Number(g.toolOutputTokenLimit) : 8000;
+  const cw = (state.settings && state.settings.contextWindows) || {};
   body.innerHTML = `
     <div class="sp-section">
       <h4>${tr('gen.appearance')}</h4>
       <div style="display:flex;gap:9px;margin-top:8px">
         ${themeOpts.map((o) => card(o, 'theme', curT === o.v, 'flex:1;min-width:0')).join('')}
       </div>
-      <p class="hint" style="font-size:11.5px;color:var(--faint);margin-top:10px">${tr('gen.themeHint')}</p>
     </div>
     <div class="sp-section">
       <h4>${tr('gen.lang')}</h4>
-      <p class="hint" style="margin:-2px 0 10px;font-size:12px;color:var(--faint)">${tr('gen.langHint')}</p>
-      <div style="display:flex;gap:10px;max-width:470px">
+      <div style="display:flex;gap:10px;max-width:470px;margin-top:8px">
         ${langOpts.map((o) => card(o, 'lang', lang === o.v)).join('')}
+      </div>
+    </div>
+    <div class="sp-section">
+      <h4>${tr('gen.ctxTitle')}</h4>
+      <div style="display:flex;align-items:center;gap:8px;max-width:640px;flex-wrap:wrap;margin-top:8px">
+        <label for="acpInput" class="gen-lbl">${tr('gen.ctxPctShort')}</label>
+        <input type="number" id="acpInput" min="10" max="99" step="1" value="${acp}" aria-label="${esc(tr('gen.ctxPct'))}" style="width:70px;padding:5px 8px;border:1px solid var(--border);border-radius:8px;background:var(--panel);color:var(--text);font-family:inherit">
+        <span class="gen-lbl">%</span>
+        <label for="l0Input" class="gen-lbl">${tr('gen.l0Short')}</label>
+        <input type="number" id="l0Input" min="500" max="200000" step="500" value="${l0}" aria-label="${esc(tr('gen.l0Label'))}" style="width:96px;padding:5px 8px;border:1px solid var(--border);border-radius:8px;background:var(--panel);color:var(--text);font-family:inherit">
+        <span class="gen-lbl">${tr('gen.l0Unit')}</span>
+        <button class="btn" id="acpSave" style="padding:5px 12px;font-size:12px">${tr('gen.ctxSave')}</button>
+        <span class="hint" id="acpMsg" style="font-size:11.5px;color:var(--faint)"></span>
       </div>
     </div>`;
   body.querySelectorAll('input[name="theme"]').forEach((r) => r.addEventListener('change', async () => {
@@ -1527,6 +2278,24 @@ function renderGeneralPanel(body) {
     if (!r.checked) return;
     await setLang(r.value); renderGeneralPanel(body);
   }));
+  const acpBtn = body.querySelector('#acpSave');
+  if (acpBtn) acpBtn.addEventListener('click', async () => {
+    const inp = body.querySelector('#acpInput');
+    const v = Math.round(Number(inp && inp.value));
+    if (!Number.isFinite(v) || v < 10 || v > 99) {
+      uiDialog({ title: tr('dial.hint'), message: tr('gen.ctxPct') + ' 10–99', buttons: [{ label: tr('dial.gotit'), value: true, primary: true }] });
+      return;
+    }
+    const l0El = body.querySelector('#l0Input');
+    const l0v = Math.round(Number(l0El && l0El.value));
+    const l0ok = Number.isFinite(l0v) && l0v >= 500 && l0v <= 200000;
+    await api('PUT', '/api/settings', { global: { autoCompactPercent: v, ...(l0ok ? { toolOutputTokenLimit: l0v } : {}) } });
+    state.settings = state.settings || {}; state.settings.global = { ...(state.settings.global || {}), autoCompactPercent: v, ...(l0ok ? { toolOutputTokenLimit: l0v } : {}) };
+    if (!state.settings.contextWindows) state.settings.contextWindows = {};
+    renderGeneralPanel(body);
+    const m = body.querySelector('#acpMsg');
+    if (m) { m.textContent = tr('gen.ctxSaved'); setTimeout(() => { m.textContent = ''; }, 4000); }
+  });
 }
 
 // ---------- 模型配置：Provider 卡片（折叠）+ 获取模型 + 已启用模型 ----------
@@ -1581,12 +2350,12 @@ function renderModelPanel(body) {
         const stLabel = keyless ? tr('model.badgeLocal') : (p.keySet ? tr('model.badgeSet') : tr('model.badgeUnset'));
         const open = provOpen.has(id) || id === pendingOpenProvider ? ' open' : '';
         return `
-        <div class="prov-card${open}" id="card_${id}">
-          <div class="prov-head" data-toggle="${id}">
+        <div class="prov-card${open}" id="card_${esc(id)}">
+          <div class="prov-head" data-toggle="${esc(id)}">
             <span class="prov-caret">▶</span>
             <span class="prov-name">${esc(p.name || id)}</span>
             <span class="key-badge ${st}" style="font-size:10px">${stLabel}</span>
-            <span class="prov-meta"><span id="meta_${id}">${metaBrief(id, p)}</span><button class="prov-del" data-del="${id}" title="${tr('model.delProvider')}"><span class="ic">${ICONS.trash}</span></button></span>
+            <span class="prov-meta"><span id="meta_${esc(id)}">${metaBrief(id, p)}</span><button class="prov-del" data-del="${esc(id)}" title="${tr('model.delProvider')}"><span class="ic">${ICONS.trash}</span></button></span>
           </div>
           <div class="prov-body">
             <div class="prov-field"><label>${tr('model.nameLabel')}</label>
@@ -1598,14 +2367,14 @@ function renderModelPanel(body) {
               : `<div class="prov-field"><label>${tr('model.apiKey')}</label>
               <input type="password" id="key_${id}" placeholder="${p.keySet ? tr('model.keepBlank') : 'sk-...'}" autocomplete="off"></div>`}
             <div class="prov-fetch">
-              <button class="btn-outline" data-fetch="${id}" style="padding:5px 12px;font-size:12px">↻ ${tr('model.fetch')}</button>
+              <button class="btn-outline" data-fetch="${esc(id)}" style="padding:5px 12px;font-size:12px">↻ ${tr('model.fetch')}</button>
               <span class="hint" id="fetchMsg_${id}">${(p.models && p.models.length) ? cachedTxt(p.models.length) : tr('model.fetchHint')}</span>
             </div>
-            <input type="text" class="ml-filter" id="filter_${id}" placeholder="${tr('model.filter')}" style="display:none">
+            <input type="text" class="ml-filter" id="filter_${esc(id)}" placeholder="${tr('model.filter')}" style="display:none">
             <div class="mlist" id="mlist_${id}" style="max-height:240px"></div>
             <div class="req-add">
               <input type="text" class="req-input" id="req_${id}" placeholder="${esc(tr('model.reqNamePh'))}" spellcheck="false" autocomplete="off">
-              <button class="btn-outline" data-addreq="${id}">＋ ${tr('model.addReq')}</button>
+              <button class="btn-outline" data-addreq="${esc(id)}">＋ ${tr('model.addReq')}</button>
             </div>
             <p class="hint" style="font-size:11.5px;color:var(--faint);margin:6px 0 0">${tr('model.reqNameHint')}</p>
           </div>
@@ -2284,7 +3053,7 @@ function renderUsagePanel(body) {  body.innerHTML = `<div class="sp-section"><p 
       </div>
       <div class="sp-section"><h4>${tr('usage.trend')}</h4>
         ${days.length ? `<div class="usage-days">${days.map(([day, v]) => `
-          <div class="ud-col" title="${day}: ${v.input + v.output} tokens"><div class="ud-bar" style="height:${Math.max(3, Math.round((v.input + v.output) / maxDay * 90))}px"></div><span class="ud-lbl">${day.slice(5)}</span></div>`).join('')}</div>`
+          <div class="ud-col" title="${esc(day)}: ${v.input + v.output} tokens"><div class="ud-bar" style="height:${Math.max(3, Math.round((v.input + v.output) / maxDay * 90))}px"></div><span class="ud-lbl">${day.slice(5)}</span></div>`).join('')}</div>`
         : none}
       </div>
       <div class="sp-section"><h4>${tr('usage.byRole')}</h4>
@@ -2571,7 +3340,7 @@ function renderMemoryPanel(body) {
 function renderRolesPanel(body) {
   let html = `<div class="sp-section"><h4>${tr('roles.h4')}</h4><p class="mem-sub">${tr('roles.intro')}</p>`;
   for (const role of state.roles) {
-    html += `<div class="role-card" data-rid="${role.id}">
+    html += `<div class="role-card" data-rid="${esc(role.id)}">
       <div class="rc-h">
         <span class="ic rc-icon">${ICONS[role.icon] || ICONS.coder}</span>
         <div class="rc-meta">
@@ -2894,7 +3663,10 @@ function flash(msg, id) {
 }
 
 // 本地 CSS 对话框（替代浏览器原生 confirm/alert/prompt），Promise<value|null>
+let pendingDialog = null;   // 同一时刻只允许一个系统对话框（重入会把前一个 Promise 悬挂住）
 function uiDialog({ title = '', message = '', buttons = [] } = {}) {
+  // 前一个还没答完 → 先按"取消"收尾，再显示新的（否则旧 Promise 永不 resolve，监听器泄漏）
+  if (pendingDialog) { try { pendingDialog(null); } catch {} }
   return new Promise((resolve) => {
     const mask = $('#dlgMask');
     const t = $('#dlgTitle');
@@ -2909,8 +3681,10 @@ function uiDialog({ title = '', message = '', buttons = [] } = {}) {
       mask.classList.remove('show');
       mask.onclick = null;
       document.removeEventListener('keydown', onKey);
+      if (pendingDialog === done) pendingDialog = null;
       resolve(v);
     };
+    pendingDialog = done;
     const onKey = (e) => { if (e.key === 'Escape') done(null); };
     // 点击遮罩（对话框外部）等价于取消，避免界面被遮罩挡住“卡住”
     mask.onclick = (e) => { if (e.target === mask) done(null); };
@@ -2960,7 +3734,6 @@ async function polishEditor(btn, ta, statusEl) {
 
 (async function init() {
   const boot = await api('GET', '/api/bootstrap');
-  state.engine = boot.engine.name;
   state.roles = boot.roles;
   state.global = boot.global || {};
   state.settings = (boot.global && boot.global.settings) || null;
@@ -2987,14 +3760,43 @@ async function polishEditor(btn, ta, statusEl) {
   refreshSandbox(false);
 
   // 发送 / 停止复用同一按钮：任务运行时显示「■ 停止」
-  $('#sendBtn').addEventListener('click', () => {
-    if (curBusy()) stopCurrent();
-    else send();
-  });
+  // 发送与停止彻底分离：运行时点「发送」= 排队（旧版同一个按钮，误点即打断整轮工作）
+  $('#sendBtn').addEventListener('click', () => send());
+  $('#stopBtn').addEventListener('click', () => stopCurrent());
+  const ctxEl = $('#ctxHint');
+  if (ctxEl) ctxEl.addEventListener('click', () => compactContext());
   $('#input').addEventListener('keydown', (e) => {
+    // 指令面板打开时接管方向键/Tab/Enter/Esc（对齐 dsh 的命令面板交互）
+    const box = $('#cmdPicker');
+    const pickerOpen = box && !box.hidden;
+    if (pickerOpen) {
+      const items = [...box.querySelectorAll('.cmd-item')];
+      if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+        e.preventDefault();
+        cmdActive = (cmdActive + (e.key === 'ArrowDown' ? 1 : -1) + items.length) % items.length;
+        items.forEach((el, i) => el.classList.toggle('active', i === cmdActive));
+        scrollCmdIntoView(items[cmdActive]);
+        return;
+      }
+      if (e.key === 'Escape') { e.preventDefault(); box.hidden = true; cmdActive = -1; return; }
+      // 回车 = 面板唯一的确认键，且**直接发送**：发送的就是当前高亮项（上下键选中的那条），
+      // 不再"先填进输入框再按一次"。带参数时把参数一起带上（此时面板通常已因空格关闭）。
+      if (e.key === 'Enter' && !e.shiftKey && !e.isComposing && e.keyCode !== 229) {
+        e.preventDefault();
+        const active = items[cmdActive] || items[0];     // ⚠️ 先取高亮项，再复位 cmdActive
+        const activeName = active ? active.dataset.name : null;
+        const typed = parseCommand(e.currentTarget.value);
+        const arg = typed && typed.name === activeName ? typed.arg : '';
+        box.hidden = true; cmdActive = -1;
+        if (activeName) e.currentTarget.value = '/' + activeName + (arg ? ' ' + arg : '');
+        send();
+        return;
+      }
+    }
     // 输入法组合中按 Enter（选词/上屏）不触发发送：isComposing 为标准判据，keyCode 229 兜底旧引擎
     if (e.key === 'Enter' && !e.shiftKey && !e.isComposing && e.keyCode !== 229) { e.preventDefault(); send(); }
   });
+  $('#input').addEventListener('input', () => { cmdActive = 0; renderCmdPicker(); });
   // 上传附件
   $('#attachBtn').addEventListener('click', () => $('#fileInput').click());
   $('#fileInput').addEventListener('change', (e) => {
@@ -3029,6 +3831,15 @@ async function polishEditor(btn, ta, statusEl) {
   });
   // 新会话：不再用默认角色——点开角色选择器；无角色时引导去创建
   $('#newChat').addEventListener('click', (e) => { e.stopPropagation(); openRolePicker(); });
+  // 侧栏收起：顶部按钮收起；收起后点 logo 展开（logo 悬停会变成"展开"图标）
+  const sbToggle = $('#sidebarToggle');
+  if (sbToggle) sbToggle.addEventListener('click', (e) => { e.stopPropagation(); toggleSidebar(); });
+  const sbLogo = $('#sidebarLogo');
+  if (sbLogo) sbLogo.addEventListener('click', (e) => {
+    e.stopPropagation();
+    if (sidebarCollapsed()) applySidebarCollapsed(false);   // 展开态点 logo 不做事
+  });
+  applySidebarCollapsed(sidebarCollapsed());
   // 会话搜索（侧栏顶部输入框）
   const ss = $('#sessSearch'), ssClear = $('#sessSearchClear');
   if (ss) ss.addEventListener('input', () => {

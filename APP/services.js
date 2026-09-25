@@ -8,7 +8,7 @@ const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
 const { spawn } = require('child_process');
-const { createEngine, CODEX_HOME, resolveToolCommand, expandVars, TOOLS_DIR, CODEX_BIN } = require('./core/engines');
+const { createEngine, CODEX_HOME, resolveToolCommand, expandVars, TOOLS_DIR, CODEX_BIN, familyWindow, contextBudget } = require('./core/engines');
 const platform = require('./core/platform');
 const envcheck = require('./core/envcheck');
 const skills = require('./core/skills');
@@ -36,15 +36,25 @@ function isKeylessProvider(id, p) {
 // 把各 Provider 的 API Key 注入进程 env（codex 子进程经 config.toml 的 env_key 读取）。
 // keyless 本地 Provider 无真实 Key，注入一个占位值，避免 codex 因 env_key 解析为空而报错
 //（Ollama 忽略 Authorization 头，任何非空值均可）。
+const injectedEnvKeys = new Set();   // 记录我们注入过的 env 名，便于撤销
 function injectProviderEnv(providers) {
+  const wanted = new Set();
   for (const [id, p] of Object.entries(providers || {})) {
     if (!p || !p.envKey) continue;
+    wanted.add(p.envKey);
     if (isKeylessProvider(id, p)) {
       if (!process.env[p.envKey]) process.env[p.envKey] = 'local';
     } else if (p.apiKey) {
       process.env[p.envKey] = p.apiKey;
+    } else {
+      delete process.env[p.envKey];   // 用户把 key 清空 → 必须真的撤掉，否则旧密钥还留在环境里
     }
   }
+  // 被删除/改名的 provider：把之前注入的 env 一并撤掉，否则"撤销密钥"只是界面上的假动作
+  for (const k of [...injectedEnvKeys]) {
+    if (!wanted.has(k)) { delete process.env[k]; injectedEnvKeys.delete(k); }
+  }
+  for (const k of wanted) injectedEnvKeys.add(k);
 }
 
 /* ---------------- 角色 ---------------- */
@@ -86,8 +96,33 @@ function readJsonSafe(file, fallback) {
 
 function sessionPath(id) { return path.join(DATA, 'sessions.json'); }
 
+/**
+ * 读会话索引。⚠️ "文件不存在"与"文件损坏"必须区分：以前两者都返回 []，于是下一次
+ * POST /api/sessions 就把损坏文件覆盖成"只含新会话"的数组 —— 用户所有会话记录一次全没。
+ * 现在损坏时把原文件隔离成 sessions.json.corrupt-<ts> 并抛错，宁可让这次操作失败。
+ */
+function loadSessionsStrict() {
+  const f = sessionPath();
+  let raw;
+  try { raw = fs.readFileSync(f, 'utf8'); }
+  catch (e) { if (e && e.code === 'ENOENT') return []; throw e; }
+  try {
+    const v = JSON.parse(raw);
+    if (!Array.isArray(v)) throw new Error('顶层不是数组');
+    return v;
+  } catch (e) {
+    const bak = f + '.corrupt-' + Date.now();
+    try { fs.renameSync(f, bak); } catch {}
+    throw new Error(`会话索引损坏（${(e && e.message) || e}），已隔离为 ${path.basename(bak)}；`
+      + '请检查该文件或从备份恢复后重试（不会用空列表覆盖它）。');
+  }
+}
 function loadSessions() {
-  return readJsonSafe(sessionPath(), []);
+  try { return loadSessionsStrict(); }
+  catch (e) {
+    console.error('[rose] ' + e.message);
+    return { __corrupt: true, error: e.message };
+  }
 }
 function saveSessions(list) {
   writeFileAtomic(sessionPath(), JSON.stringify(list, null, 2));
@@ -98,10 +133,40 @@ function appendMessage(sessionId, obj) {
   fs.mkdirSync(MESSAGES_DIR, { recursive: true });
   fs.appendFileSync(messagePath(sessionId), JSON.stringify(obj) + '\n');
 }
+/**
+ * 读消息日志（JSONL）。⚠️ **按行解析，坏行只跳过该行**：
+ * 以前是整体 `map(JSON.parse)` 且 catch 一律返回 `[]` —— 只要有一行是崩溃/强杀时写了一半的
+ * JSON（`a-delta` 日志很长，进程随时可能被打断），**整段会话历史会静默消失**：
+ * 面板全空、控制台无报错，用户看到的就是"之前的回复全丢了"。
+ * 实测：1.2MB / 22117 行的真实日志，仅把最后一行截断 → 读取结果 0 条。
+ * 这里坏行跳过并计数；非运行中的会话顺手把坏行就地修掉（运行中不重写，避免与 append 竞争）。
+ */
 function loadMessages(sessionId) {
-  try {
-    return fs.readFileSync(messagePath(sessionId), 'utf8').trim().split('\n').filter(Boolean).map((l) => JSON.parse(l));
-  } catch { return []; }
+  let raw;
+  try { raw = fs.readFileSync(messagePath(sessionId), 'utf8'); } catch { return []; }
+  const lines = raw.split('\n');
+  const out = [];
+  const bad = [];
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    if (!line.trim()) continue;
+    try { out.push(JSON.parse(line)); }
+    catch {
+      bad.push(i + 1);
+      // 崩溃时常见的"半行 + 下一行黏在一起"：尝试把 `{...}{...}` 拆开救回后半段（更新的那条）
+      const at = line.indexOf('}{');
+      if (at >= 0) {
+        const tail = line.slice(at + 1);
+        try { const rec = JSON.parse(tail); if (rec && typeof rec === 'object') out.push(rec); } catch {}
+      }
+    }
+  }
+  if (bad.length) {
+    console.warn(`[rose] 会话 ${sessionId} 的消息日志有 ${bad.length} 行损坏（第 ${bad.slice(0, 5).join('、')} 行…），已跳过并保留其余 ${out.length} 条`);
+    // 仅在没有任务运行时修复文件（运行中会有并发 append，重写可能丢新数据）
+    if (!activeTurns.has(sessionId)) { try { saveMessages(sessionId, out); } catch {} }
+  }
+  return out;
 }
 function saveMessages(sessionId, list) {
   fs.mkdirSync(MESSAGES_DIR, { recursive: true });
@@ -188,10 +253,15 @@ function safeRoleId(rid) { return ROLE_ID_RE.test(rid) ? rid : null; }
 function isReservedName(id) { return platform.WIN_RESERVED.has(String(id || '').toLowerCase()); }
 
 // 归一化上传附件 → { preview, images, filesHint }
-function processAttachments(roleId, list) {
+// 附件落在 ROSE 自己的数据目录（work/data/uploads/<sessionId>/），**不写进用户的工作目录**：
+// 工作目录属于用户的仓库，产品内部产物不该污染它。
+// 会话级附件目录（ROSE 私有数据目录）
+function uploadsDir(sessionId) { return path.join(DATA, 'uploads', String(sessionId)); }
+
+function processAttachments(sessionId, list) {
   const preview = [], images = [], filesHint = [];
   if (!Array.isArray(list)) return { preview, images, filesHint: '' };
-  const dir = path.join(WORK, roleId, 'uploads');
+  const dir = uploadsDir(sessionId);
   fs.mkdirSync(dir, { recursive: true });
   const safeName = (n) => String(n || 'file').replace(/[\\/:*?"<>|\u0000-\u001f]/g, '_').slice(0, 80);
   let idx = 0;
@@ -206,10 +276,10 @@ function processAttachments(roleId, list) {
       preview.push({ name: a.name, kind: 'image', mime: a.mime || 'image/png', src: a.dataUrl, saved: fn });
       images.push({ type: 'image', url: a.dataUrl });
       // 图片已随消息以视觉输入送达模型（支持视觉的模型直接看图），文件路径仅备查，勿再为看图而读盘
-      filesHint.push(`[附件图片] ${a.name}：已随本条消息以图片形式发送，可直接看图；文件同时保存为 ${path.relative(path.join(WORK, roleId), fp)}（仅当需要元数据/再处理时才读取）`);
+      filesHint.push(`[附件图片] ${a.name}：已随本条消息以图片形式发送，可直接看图；文件同时保存为 ${fp}（仅当需要元数据/再处理时才读取）`);
     } else {
       preview.push({ name: a.name, kind: 'file', mime: a.mime || 'application/octet-stream', saved: fn });
-      filesHint.push(`[附件文件] ${a.name} → 已保存为 ${path.relative(path.join(WORK, roleId), fp)}，如需请用工具读取其内容`);
+      filesHint.push(`[附件文件] ${a.name} → 已保存为 ${fp}，如需请用工具读取其内容`);
     }
   }
   return { preview, images, filesHint: filesHint.join('\n') };
@@ -239,6 +309,8 @@ function runTurn(session, userText, media, skillIds, opts) {
   if (!engineText.trim() && (images.length || filesHint)) engineText = '请查看我上传的附件/图片并回应。' + (filesHint ? '\n\n' + filesHint : '');
   if (!engineText.trim() && skillRefs.length) engineText = '请按所选技能完成本次任务。';
   let turnUsage = null; // 本轮 token 用量（usage 事件先于 turn-complete 到达）
+  let turnContextWindow = null; // 引擎报告的上下文窗口大小（用于「上下文占用」显示）
+  let planDelivered = false;    // 本轮是否交付了 Plan 模式的 <proposed_plan> 正文
   let reasoning = null; // 思考时段记录（首条 r-delta → 末条 r-delta）
   let turnText = '';    // 本轮助手全文累积（用于检测 [PLAN] / [REQUEST_PLAN_MODE] 标记）
   const handle = engine.createTurn(ctx, engineText, {
@@ -249,12 +321,27 @@ function runTurn(session, userText, media, skillIds, opts) {
       broadcast('message', { sessionId: session.id, kind: 'r-delta', itemId: ev.itemId, delta: ev.delta });
     },
     'plan': (ev) => { appendMessage(session.id, { t: 'plan', v: { plan: ev.plan, explanation: ev.explanation }, ts: Date.now() }); broadcast('message', { sessionId: session.id, kind: 'plan', plan: ev.plan, explanation: ev.explanation }); },
+    // Plan 模式的 <proposed_plan> 正文开始交付（正文本身走 text-delta 落盘，与正文同序）
+    'plan-delivered': () => { planDelivered = true; },
     'ask': (ev) => { appendMessage(session.id, { t: 'ask', v: { requestId: ev.requestId, questions: ev.questions }, ts: Date.now() }); broadcast('ask', { sessionId: session.id, requestId: ev.requestId, questions: ev.questions }); },
     'tool-output-delta': (ev) => broadcast('message', { sessionId: session.id, kind: 'tool-output-delta', toolId: ev.toolId, delta: ev.delta }),
     'tool-start': (ev) => { const s1 = sessionOpenTools.get(session.id) || sessionOpenTools.set(session.id, new Set()).get(session.id); s1.add(ev.toolId); appendMessage(session.id, { t: 'tool', v: { name: ev.name, args: ev.args, status: 'run', toolId: ev.toolId }, ts: Date.now() }); broadcast('message', { sessionId: session.id, kind: 'tool-start', toolId: ev.toolId, name: ev.name, args: ev.args }); },
     'tool-end': (ev) => { const s2 = sessionOpenTools.get(session.id); if (s2) s2.delete(ev.toolId); appendMessage(session.id, { t: 'tool-end', v: ev, ts: Date.now() }); broadcast('message', { sessionId: session.id, kind: 'tool-end', ...ev }); },
-    'usage': (ev) => { turnUsage = ev.usage; },
+    'usage': (ev) => { turnUsage = ev.usage; if (ev.contextWindow) turnContextWindow = ev.contextWindow; },
+    // 实时上下文占用（引擎在回合进行中多次上报）：直接推给前端，让圆环边跑边动
+    'context-usage': (ev) => {
+      if (ev.window) turnContextWindow = ev.window;
+      broadcast('message', { sessionId: session.id, kind: 'context-usage', used: ev.used, window: ev.window || turnContextWindow || null });
+    },
     'approval-request': (ev) => broadcast('approval', { sessionId: session.id, ...ev }),
+    // 压缩过程（引擎的 ContextCompaction item）：让界面能显示"压缩中 → 压缩完成"
+    'compact-start': (ev) => broadcast('message', { sessionId: session.id, kind: 'compact-start', auto: !!ev.auto }),
+    'compact-end': () => {
+      broadcast('message', { sessionId: session.id, kind: 'compact-end' });
+      // 压缩完成后占用必然变化 → 让前端重新取一次会话（拿最新的 contextUsed）
+      const fresh = loadSessions().find((x) => x.id === session.id);
+      if (fresh && fresh.contextUsed) broadcast('message', { sessionId: session.id, kind: 'context-usage', used: fresh.contextUsed, window: fresh.contextWindow || null });
+    },
     'turn-complete': () => {
       activeTurns.delete(session.id);
       closeOpenTools(session.id, '结束');
@@ -264,6 +351,8 @@ function runTurn(session, userText, media, skillIds, opts) {
         const s = sessions.find((x) => x.id === session.id);
         if (s) {
           // 自动进 Plan：同步持久化只读沙箱（引擎 policyFor 已按 planMode 强制只读，落盘保持一致）
+          s.prePlanSandbox = s.sandbox;       // 记住进 Plan 前的策略，出 Plan 时还原
+          s.prePlanApproval = s.approval;
           s.planMode = true;
           s.sandbox = 'read-only';
           saveSessions(sessions);
@@ -277,11 +366,53 @@ function runTurn(session, userText, media, skillIds, opts) {
           return; // 不在此发 turn-complete（避免前端提前复位 turnRunning），由续问轮自行收尾
         }
       }
+      // Plan 出稿即自动切回普通模式：计划已交付（正文含 proposed_plan 或引擎走 plan 通道），
+      // 会话不应继续卡在只读 —— 否则用户回「执行」时写不了文件，表现为「说完计划就停住」。
+      if (session.planMode && (planDelivered || /<\/?proposed_plan>/.test(turnText))) {
+        const sessions2 = loadSessions();
+        const s2 = sessions2.find((x) => x.id === session.id);
+        if (s2) {
+          s2.planMode = false;
+          s2.sandbox = s2.prePlanSandbox || 'workspace-write';
+          s2.approval = s2.prePlanApproval || 'on-request';
+          delete s2.prePlanSandbox;
+          delete s2.prePlanApproval;
+          saveSessions(sessions2);
+          session.planMode = false;                  // 本轮后续记账/广播同步为已退出
+          session.sandbox = s2.sandbox;
+          session.approval = s2.approval;
+          broadcast('message', { sessionId: session.id, kind: 'plan-mode-off', sandbox: s2.sandbox, approval: s2.approval });
+        }
+      }
       if (reasoning) {
         const seconds = Math.max(1, Math.round((reasoning.lastTs - reasoning.firstTs) / 1000));
         appendMessage(session.id, { t: 'think', v: { seconds }, ts: Date.now() });
       }
-      if (turnUsage) appendUsageLine({ ts: Date.now(), sessionId: session.id, roleId: session.roleId, providerId: session.providerId, modelId: session.modelId, ...turnUsage });
+      if (turnUsage) appendUsageLine({ ts: Date.now(), sessionId: session.id, roleId: session.roleId, providerId: session.providerId, modelId: session.modelId, ...turnUsage, ...(turnContextWindow ? { window: turnContextWindow } : {}) });
+      // 上下文占用（本会话最近一轮的输入 token ≈ 当前上下文规模）：顶栏/发送框显示，便于判断何时该压缩
+      // 引擎实测到的模型上下文窗口 → 记到 settings.modelWindowsDetected（按 provider|model），
+      // 供 config.toml 计算 model_auto_compact_token_limit（模型目录不提供该字段）
+      if (turnContextWindow) {
+        const cur = readJsonSafe(SETTINGS_PATH, settings);
+        const key = `${session.providerId || 'openai'}|${session.modelId || ''}`;
+        // 引擎上报的窗口只是"实测参考"（常小于模型真实能力），单独存，不与用户声明混在一起
+        const detected = { ...(cur.modelWindowsDetected || {}) };
+        if (detected[key] !== turnContextWindow) {
+          detected[key] = turnContextWindow;
+          saveSettings({ ...cur, modelWindowsDetected: detected });
+        }
+      }
+      if (turnUsage && (turnUsage.inputTokens || turnUsage.totalTokens)) {
+        const used = turnUsage.inputTokens || turnUsage.totalTokens || 0;
+        const sessions3 = loadSessions();
+        const s3 = sessions3.find((x) => x.id === session.id);
+        if (s3) {
+          s3.contextUsed = used;
+          if (turnContextWindow) s3.contextWindow = turnContextWindow;
+          saveSessions(sessions3);
+        }
+        broadcast('message', { sessionId: session.id, kind: 'context-usage', used, window: turnContextWindow || (s3 ? s3.contextWindow : null) || null });
+      }
       broadcast('turn', { sessionId: session.id, status: 'complete' });
     },
     'error': (ev) => {
@@ -312,15 +443,9 @@ function deleteSession(id) {
   if (!s) return false;
   if (activeTurns.has(id)) return false; // 运行中不删
   saveSessions(sessions.filter((x) => x.id !== id));
-  // 附件落盘文件（work/<role>/uploads/）：从消息记录里找回文件名，逐个删除
-  for (const m of loadMessages(id)) {
-    for (const a of (m.att || [])) {
-      if (a && typeof a.saved === 'string' && a.saved) {
-        // basename 防穿越：只允许删 uploads 目录下的一层文件
-        try { fs.unlinkSync(path.join(WORK, s.roleId, 'uploads', path.basename(a.saved))); } catch {}
-      }
-    }
-  }
+  // 附件目录：整目录删除（会话级）。⚠️ 必须在消息循环**之外**执行一次：
+  // 以前写在循环里，消息日志为空/损坏时 loadMessages 返回 []，循环体不执行 → 附件目录永久残留。
+  try { fs.rmSync(uploadsDir(id), { recursive: true, force: true }); } catch {}
   try { fs.unlinkSync(messagePath(id)); } catch {}
   engine.dropSession(id);
   sessionOpenTools.delete(id);
@@ -342,6 +467,63 @@ function sweepExpiredSessions() {
 }
 
 /* ---------------- 用量：内存增量聚合 ---------------- */
+// 从 codex rollout 里读该会话（或该角色任一会话）实测过的 model_context_window。
+// 老会话没有 contextWindow 字段、旧用量行也没有 window 字段时，这是唯一权威来源。
+const CODEX_HOME_DIR = process.env.ROSE_CODEX_HOME || path.join(ROOT, 'APP', 'core', '.codex-home');
+const windowCache = new Map();   // `${roleId}|${threadId||''}` -> number|null
+function windowFromRollout(roleId, threadId) {
+  const key = `${roleId}|${threadId || ''}`;
+  if (windowCache.has(key)) return windowCache.get(key);
+  let found = null;
+  try {
+    const base = path.join(CODEX_HOME_DIR, 'runs', String(roleId), 'sessions');
+    const files = [];
+    const walk = (dir, depth) => {
+      if (depth > 4 || found) return;
+      let ents = [];
+      try { ents = fs.readdirSync(dir, { withFileTypes: true }); } catch { return; }
+      for (const e of ents) {
+        const fp = path.join(dir, e.name);
+        if (e.isDirectory()) walk(fp, depth + 1);
+        else if (e.name.endsWith('.jsonl') && e.name.startsWith('rollout-')) files.push(fp);
+      }
+    };
+    walk(base, 0);
+    // 优先精确命中该会话线程的 rollout，其次取最新一个（同角色同模型的窗口一致）
+    const pick = threadId ? files.find((f) => f.includes(threadId)) : null;
+    const ordered = pick ? [pick] : files.sort().reverse().slice(0, 3);
+    for (const fp of ordered) {
+      const txt = fs.readFileSync(fp, 'utf8');
+      const m = txt.match(/"model_context_window"\s*:\s*(\d+)/);
+      if (m && Number(m[1]) > 0) { found = Number(m[1]); break; }
+    }
+  } catch { /* 忽略：读不到就用其它兜底 */ }
+  windowCache.set(key, found);
+  return found;
+}
+
+// usage.jsonl 里最近一次记录的模型窗口（老行没有 window 字段 → 继续往前找）
+function lastKnownWindow() {
+  try {
+    const lines = fs.readFileSync(USAGE_PATH, 'utf8').trim().split('\n');
+    for (let i = lines.length - 1; i >= 0; i--) {
+      const o = JSON.parse(lines[i]);
+      if (o && typeof o.window === 'number' && o.window > 0) return o.window;
+    }
+  } catch { /* 忽略 */ }
+  return null;
+}
+// 取某会话最后一次落盘的用量行（用于回填"上下文占用"）
+function lastUsageForSession(sid) {
+  try {
+    const lines = fs.readFileSync(USAGE_PATH, 'utf8').trim().split('\n');
+    for (let i = lines.length - 1; i >= 0; i--) {
+      const o = JSON.parse(lines[i]);
+      if (o && o.sessionId === sid) return o;
+    }
+  } catch { /* 无文件/坏行：忽略 */ }
+  return null;
+}
 
 const USAGE_PATH = path.join(DATA, 'usage.jsonl');
 const usageState = {
@@ -611,7 +793,20 @@ function init() {
   // 引擎级事件（Windows 沙箱初始化结果 / 目录全局可写告警）→ 广播到所有窗口
   engine.onGlobal((ev) => {
     try {
-      if (ev.type === 'sandbox-setup-completed') {
+      if (ev.type === 'session-item') {
+        // 空闲会话的手动压缩：把 ContextCompaction 的 started/completed 广播给对应会话，
+        // 前端据此上/下压缩蒙版（否则只能等 3 分钟兜底超时）。
+        const sid = engine.sessionIdForThread(ev.threadId);
+        const isCompact = ev.item && /contextCompaction/i.test(String(ev.item.type || ''));
+        if (sid && isCompact) {
+          if (/item\/started$/.test(ev.phase)) broadcast('message', { sessionId: sid, kind: 'compact-start', auto: false });
+          else if (/item\/completed$/.test(ev.phase)) {
+            broadcast('message', { sessionId: sid, kind: 'compact-end' });
+            const fresh = loadSessions().find((x) => x.id === sid);
+            if (fresh && fresh.contextUsed) broadcast('message', { sessionId: sid, kind: 'context-usage', used: fresh.contextUsed, window: fresh.contextWindow || null });
+          }
+        }
+      } else if (ev.type === 'sandbox-setup-completed') {
         sandboxInfo.lastSetup = { success: !!ev.success, error: ev.error || null, mode: ev.mode || null, at: Date.now() };
         sandboxInfo.readiness = null;          // 状态已变，强制下次重新查询
       } else if (ev.type === 'world-writable-warning') {
@@ -644,7 +839,12 @@ function init() {
   // 启动：一次性把历史 usage.jsonl 载入内存桶
   try {
     const raw = fs.readFileSync(USAGE_PATH, 'utf8').trim().split('\n').filter(Boolean);
-    for (const l of raw) addUsageToAgg(JSON.parse(l));
+    // 逐行解析：用量日志也可能被崩溃截断，坏行只跳过该行（以前一行坏 → 整个 try 中断，后面的历史全丢）
+    let skipped = 0;
+    for (const l of raw) {
+      try { addUsageToAgg(JSON.parse(l)); } catch { skipped++; }
+    }
+    if (skipped) console.warn(`[rose] usage.jsonl 有 ${skipped} 行损坏，已跳过`);
   } catch {}
 }
 
@@ -693,7 +893,7 @@ route('GET', /^\/api\/bootstrap$/, () => {
     global: {
       agentsMd: read(GLOBAL_AGENTS),
       memory: read(GLOBAL_MEMORY),
-      settings: currentSettings(),
+      settings: maskedSettings(),   // ⚠️ 不能回传明文 apiKey（与 GET /api/settings 同一套掩码）
     },
   } };
 });
@@ -815,7 +1015,28 @@ route('GET', /^\/api\/running$/, () => {
 
 // #3 GET /api/sessions —— 会话列表
 route('GET', /^\/api\/sessions$/, () => {
-  const sessions = loadSessions().map((s) => ({ ...s, role: undefined, roleId: s.roleId }));
+  const sessions = loadSessions().map((s) => {
+    const out = { ...s, role: undefined, roleId: s.roleId };
+    // 老会话（本版之前）没有 contextUsed：用该会话最后一次用量行的输入 token 回填，
+    // 并把引擎实测的窗口按 provider|model 补上 —— 否则界面看不到"上下文占用"。
+    if (!out.contextUsed) {
+      const last = lastUsageForSession(s.id);
+      if (last && (last.inputTokens || last.totalTokens)) out.contextUsed = last.inputTokens || last.totalTokens;
+      if (last && last.window) out.contextWindow = last.window;   // 用量行里带的窗口（新写入的行有）
+    }
+    if (!out.contextWindow) {
+      const all = readJsonSafe(SETTINGS_PATH, settings);
+      const k = `${out.providerId || 'openai'}|${out.modelId || ''}`;
+      // 优先级：家族真实能力 > 引擎实测（settings 或 rollout）> 无
+      const detected = ((all.modelWindowsDetected || {})[k]) || lastKnownWindow() || undefined;
+      const thr = (readJsonSafe(path.join(DATA, 'engine-threads.json'), {}) || {}).sessions || {};
+      const threadId = thr[s.id] && thr[s.id].threadId;
+      out.contextWindow = familyWindow(out.modelId)
+        || (typeof detected === 'number' && detected > 0 ? detected : undefined)
+        || windowFromRollout(out.roleId, threadId) || undefined;
+    }
+    return out;
+  });
   return { status: 200, body: sessions };
 });
 
@@ -824,18 +1045,32 @@ route('POST', /^\/api\/sessions$/, async (ctx) => {
   const body = ctx.body;
   const role = loadRoles().find((r) => r.id === body.roleId);
   if (!role) return { status: 400, body: { error: 'role not found' } };
+  // 工作目录：**新会话必填、且不可中途更改**（codex 的 cwd 是线程级属性，中途改等于换线程、丢上下文）。
+  // 必须绝对路径；不存在则创建（用户选的是"用这个目录"，我们就把它准备好）。
+  const wsRaw = typeof body.workspace === 'string' ? body.workspace.trim() : '';
+  if (!wsRaw) return { status: 400, body: { error: '请先选择工作目录（新会话必填）' } };
+  if (!path.isAbsolute(wsRaw)) return { status: 400, body: { error: '工作目录必须是绝对路径' } };
+  const workspace = path.resolve(wsRaw);
+  try {
+    fs.mkdirSync(workspace, { recursive: true });
+    if (!fs.statSync(workspace).isDirectory()) return { status: 400, body: { error: '工作目录不是一个目录' } };
+  } catch (e) {
+    return { status: 400, body: { error: '工作目录不可用：' + ((e && e.message) || e) } };
+  }
   // 取消「全局默认模型」：新会话沿用**该角色上一次使用的模型**；首次使用留空，由用户选择
   const last = lastModelForRole(role.id);
   const providerId = body.providerId || last.providerId || '';
   const modelId = body.modelId || last.modelId || '';
   const pol = activePolicyPair();
   const sessions = loadSessions();
+  if (!Array.isArray(sessions)) return { status: 409, body: { error: sessions.error } };
   // 白名单校验：防止调用方绕过前端 UI 直接创建 danger-full-access + never 高危组合；非法值回退全局默认
   const SANDBOX_CREATE = ['read-only', 'workspace-write', 'danger-full-access'];
   const APPROVAL_CREATE = ['on-request', 'never'];
   const s = {
     id: 's' + crypto.randomBytes(4).toString('hex'),
-    title: (body.title || '新会话').slice(0, 40),
+    title: (typeof body.title === 'string' && body.title ? body.title : '新会话').slice(0, 40),
+    workspace,
     roleId: role.id,
     providerId,
     modelId,
@@ -856,6 +1091,9 @@ route('PATCH', /^\/api\/sessions\/[^/]+$/, async (ctx) => {
   const s = sessions.find((x) => x.id === id);
   if (!s) return { status: 404, body: { error: 'session not found' } };
   const body = ctx.body;
+  if (body.workspace !== undefined && body.workspace !== s.workspace) {
+    return { status: 400, body: { error: '工作目录创建后不可更改（改目录等于换线程、上下文不继承）；请新建会话' } };
+  }
   const title = typeof body.title === 'string' ? body.title.trim().slice(0, 40) : '';
   if (!title) return { status: 400, body: { error: 'empty title' } };
   s.title = title;
@@ -896,6 +1134,10 @@ route('POST', /^\/api\/sessions\/[^/]+\/messages$/, async (ctx) => {
   const role = loadRoles().find((r) => r.id === s.roleId);
   if (!role) return { status: 400, body: { error: '该会话的角色不存在（可能已被删除）' } };
   if (activeTurns.has(s.id)) return { status: 409, body: { error: '当前会话有任务进行中，请稍候或先停止' } };
+  // ⚠️ 活动即续期：30 天保留期必须按"最近使用"算，而不是按创建/改名算。
+  // 以前只有创建与 PATCH(改名) 会写 updatedAt → 天天在用的老会话也会到期被清扫（连历史一起删）。
+  s.updatedAt = Date.now();
+  saveSessions(sessions);
   const text = typeof body.text === 'string' ? body.text.trim() : '';
   if (!text && !((body.attachments || []).length) && !((body.skills || []).length)) return { status: 400, body: { error: 'empty message' } };
   const hasAtt = Array.isArray(body.attachments) && body.attachments.length > 0;
@@ -918,11 +1160,18 @@ route('POST', /^\/api\/sessions\/[^/]+\/messages$/, async (ctx) => {
   // 会话级沙箱/审批策略随消息更新（白名单校验，非法忽略）；Plan 模式开关同存
   const SANDBOX = ['read-only', 'workspace-write', 'danger-full-access'];
   const APPROVAL = ['on-request', 'never'];
+  // 进入计划模式前记住原策略：计划交付后自动切回普通模式时按此还原（手动切与模型自动进入共用同一套字段）
+  if (typeof body.planMode === 'boolean' && body.planMode && !s.planMode) {
+    s.prePlanSandbox = s.sandbox;
+    s.prePlanApproval = s.approval;
+  }
+  const leavingPlan = typeof body.planMode === 'boolean' && !body.planMode && s.planMode;
   if (SANDBOX.includes(body.sandbox)) s.sandbox = body.sandbox;
   if (APPROVAL.includes(body.approval)) s.approval = body.approval;
   if (typeof body.planMode === 'boolean') s.planMode = body.planMode;
+  if (leavingPlan) { delete s.prePlanSandbox; delete s.prePlanApproval; }   // 手动出 Plan：快照用完即弃
   saveSessions(sessions);
-  const media = processAttachments(role.id, body.attachments);
+  const media = processAttachments(s.id, body.attachments);
   runTurn({ ...s, role }, text, media, body.skills);
   return { status: 200, body: { ok: true } };
 });
@@ -932,10 +1181,10 @@ route('POST', /^\/api\/approve$/, async (ctx) => {
   const body = ctx.body;
   const sessions = loadSessions();
   const s = sessions.find((x) => x.id === body.sessionId);
-  if (s) {
-    const role = loadRoles().find((r) => r.id === s.roleId);
-    await engine.approve({ ...s, role }, body.requestId, !!body.decision);
-  }
+  if (!s) return { status: 404, body: { error: 'session not found' } };
+  if (!body.requestId) return { status: 400, body: { error: '缺少 requestId' } };
+  const role = loadRoles().find((r) => r.id === s.roleId);
+  await engine.approve({ ...s, role }, body.requestId, !!body.decision);
   broadcast('approval-resolved', body);
   return { status: 200, body: { ok: true } };
 });
@@ -962,15 +1211,22 @@ route('POST', /^\/api\/ask$/, async (ctx) => {
   return { status: 404, body: { error: 'session not found' } };
 });
 
-// #12 POST /api/plan-mode { sessionId, enabled }
-route('POST', /^\/api\/plan-mode$/, async (ctx) => {
-  const body = ctx.body;
+// #12b POST /api/compact { sessionId } —— 手动压缩上下文（thread/compact/start）
+route('POST', /^\/api\/compact$/, async (ctx) => {
   const sessions = loadSessions();
-  const s = sessions.find((x) => x.id === body.sessionId);
+  const s = sessions.find((x) => x.id === ctx.body.sessionId);
   if (!s) return { status: 404, body: { error: 'session not found' } };
-  s.planMode = !!body.enabled;
-  saveSessions(sessions);
-  return { status: 200, body: { ok: true, planMode: s.planMode } };
+  if (activeTurns.has(s.id)) return { status: 409, body: { error: '有任务进行中，请先停止再压缩上下文' } };
+  const role = loadRoles().find((r) => r.id === s.roleId);
+  if (!role) return { status: 404, body: { error: 'role not found' } };
+  try {
+    const r = await engine.compact({ ...s, role });
+    if (r && r.error) return { status: 400, body: { error: r.error } };
+    // 如实返回"已请求"语义：引擎在下一轮开始时才真正压缩，别让前端误以为已经压完
+    return { status: 200, body: { ok: true, requested: true } };
+  } catch (e) {
+    return { status: 500, body: { error: (e && e.message) || 'compact failed' } };
+  }
 });
 
 // #13 GET /api/usage —— 按 天/模型/角色 汇总（读内存增量聚合桶）
@@ -1033,6 +1289,24 @@ route('POST', /^\/api\/mcp\/test$/, async (ctx) => {
   return { status: 200, body: await mcpProbe(command, args, env) };
 });
 
+// #18b POST /api/steer { sessionId, text } —— 运行中插话（送进正在执行的 turn）
+route('POST', /^\/api\/steer$/, async (ctx) => {
+  const body = ctx.body || {};
+  const text = typeof body.text === 'string' ? body.text.trim() : '';
+  if (!text) return { status: 400, body: { error: '空消息' } };
+  const sessions = loadSessions();
+  if (!Array.isArray(sessions)) return { status: 409, body: { error: sessions.error } };
+  const s = sessions.find((x) => x.id === body.sessionId);
+  if (!s) return { status: 404, body: { error: 'session not found' } };
+  if (!activeTurns.has(s.id)) return { status: 409, body: { error: '该会话当前没有正在执行的任务，请直接发送' } };
+  const role = loadRoles().find((r) => r.id === s.roleId);
+  const r = await engine.steer({ ...s, role }, text);
+  if (r && r.error) return { status: 409, body: { error: r.error } };
+  appendMessage(s.id, { t: 'user', v: text, ts: Date.now() });
+  broadcast('message', { sessionId: s.id, kind: 'user', text });
+  return { status: 200, body: { ok: true } };
+});
+
 // #19 POST /api/interrupt { sessionId }
 route('POST', /^\/api\/interrupt$/, async (ctx) => {
   const body = ctx.body;
@@ -1048,24 +1322,18 @@ route('POST', /^\/api\/interrupt$/, async (ctx) => {
   return { status: 200, body: { ok: true } };
 });
 
-// #20-21 全局文件读写（AGENTS-GLOBAL.md / MEMORY.md）
-route('GET', /^\/api\/global\/file$/, (ctx) => {
-  const which = ctx.query.get('name');
-  const allow = { agents: 'AGENTS-GLOBAL.md', memory: 'MEMORY.md' };
-  if (!allow[which]) return { status: 400, body: { error: 'bad name' } };
-  const p = path.join(ROOT, 'roles', '_global', allow[which]);
-  return { status: 200, body: { content: (() => { try { return fs.readFileSync(p, 'utf8'); } catch { return ''; } })() } };
-});
-route('POST', /^\/api\/global\/file$/, (ctx) => {
-  const body = ctx.body;
-  const allow = { agents: 'AGENTS-GLOBAL.md', memory: 'MEMORY.md' };
-  if (!allow[body.name] || typeof body.content !== 'string') return { status: 400, body: { error: 'bad request' } };
-  writeFileAtomic(path.join(ROOT, 'roles', '_global', allow[body.name]), body.content);
-  // 全局提示词/记忆变更即时生效：引擎在每轮 turn 前会把 AGENTS-GLOBAL.md(+全局记忆) 刷新进各 CODEX_HOME
-  return { status: 200, body: { ok: true } };
-});
+/** 供前端使用的设置副本：**剥掉所有明文密钥**（bootstrap 与 /api/settings 共用，避免两处口径不一致） */
+function maskedSettings() {
+  const cur = readJsonSafe(SETTINGS_PATH, settings);
+  const out = { ...cur, providers: {} };
+  for (const [id, p] of Object.entries(cur.providers || {})) {
+    out.providers[id] = { ...p, keySet: !!p.apiKey };
+    delete out.providers[id].apiKey;
+  }
+  return out;
+}
 
-// #22 GET /api/settings —— 返回完整配置（apiKey 不回显明文，以 keySet 状态呈现）
+// #20-21 全局文件读写（AGENTS-GLOBAL.md / MEMORY.md）
 route('GET', /^\/api\/settings$/, () => {
   const cur = readJsonSafe(SETTINGS_PATH, settings);
   const prov = {};
@@ -1073,7 +1341,30 @@ route('GET', /^\/api\/settings$/, () => {
     prov[id] = { ...p, keySet: !!p.apiKey };
     delete prov[id].apiKey; // 不回传明文 key，前端仅显示"已配置/未配置"
   }
-  return { status: 200, body: { global: cur.global, server: cur.server, providers: prov } };
+  // 每个已启用模型的窗口解析：声明（用户填）> 实测（引擎上报）> 家族默认。
+  // 之所以要"声明"这一层：引擎自报的窗口来自它的模型目录，常小于模型真实能力
+  // （例：DeepSeek 系列实际 1M，引擎报 258400），不能直接当权威值用。
+  const contextWindows = {};
+  const detectedAll = cur.modelWindowsDetected || {};
+  for (const m of ((cur.global && cur.global.enabledModels) || [])) {
+    if (!m || !m.providerId || !m.modelId) continue;
+    const key = `${m.providerId}|${m.modelId}`;
+    const detected = typeof detectedAll[key] === 'number' && detectedAll[key] > 0 ? detectedAll[key] : null;
+    const fam = familyWindow(m.modelId);
+    const effective = fam || detected || null;   // 家族真实能力优先，引擎实测兜底（不提供手填）
+    // 与 config.toml 用**同一个函数**算预算（唯一真源），避免两处数字不一致
+    const b = contextBudget(cur, m.providerId, m.modelId);
+    const pct = b.pct, threshold = b.threshold, usable = b.usable;
+    const target = b.target, catalogMax = b.catalog.max;
+    contextWindows[key] = {
+      detected, family: fam, effective, catalogMax, target, base: usable, pct, threshold,
+      // 引擎的硬上限：可用窗口 × 90%（写更大的阈值会被静默钳制）
+      engineClamp: usable ? Math.max(1000, Math.floor(usable * 0.9)) : null,
+      source: fam ? 'family' : (detected ? 'detected' : 'unknown'),
+      engineCapped: !!(effective && target < effective),
+    };
+  }
+  return { status: 200, body: { global: cur.global, server: cur.server, providers: prov, modelWindowsDetected: detectedAll, contextWindows } };
 });
 
 // #23 PUT /api/settings —— 保存全局提示词、providers(含 apiKey)、模型默认
@@ -1091,10 +1382,18 @@ route('PUT', /^\/api\/settings$/, async (ctx) => {
     writeFileAtomic(GLOBAL_MEMORY, body.global.memory);
     delete body.global.memory;
   }
+  const nextGlobal = { ...(cur.global || {}), ...(body.global || {}) };
+  // L0 工具输出上限：正整数校验（非法/越界一律忽略，避免把垃圾值写进 config.toml）
+  if (body.global && body.global.toolOutputTokenLimit !== undefined) {
+    const n = Number(body.global.toolOutputTokenLimit);
+    if (Number.isFinite(n) && n >= 500 && n <= 200000) nextGlobal.toolOutputTokenLimit = Math.round(n);
+    else delete nextGlobal.toolOutputTokenLimit;
+  }
   const next = {
-    global: { ...(cur.global || {}), ...(body.global || {}) },
+    global: nextGlobal,
     providers: { ...(cur.providers || {}) },
     server: { ...(cur.server || {}), ...(body.server || {}) },
+    modelWindowsDetected: { ...(cur.modelWindowsDetected || {}) },
   };
   // 合并 providers：apiKey 未提供（undefined）→ 保留旧值；显式传空串 → 清空；值=null → 删除该 provider
   if (body.providers) {
@@ -1115,7 +1414,9 @@ route('PUT', /^\/api\/settings$/, async (ctx) => {
   // 所以这两类变更必须让现有 codex 进程失效，下一轮重新生成配置并 spawn。
   const providersChanged = JSON.stringify(next.providers || {}) !== JSON.stringify(cur.providers || {});
   const sandboxChanged = next.global && next.global.windowsSandbox !== (cur.global || {}).windowsSandbox;
-  if (providersChanged || (platform.isWin(process.platform) && sandboxChanged)) {
+  // 自动压缩阈值写在 config.toml，改动同样只在 spawn 时生效 → 一并让进程失效
+  const compactChanged = (next.global && next.global.autoCompactPercent) !== (cur.global && cur.global.autoCompactPercent);
+  if (providersChanged || compactChanged || (platform.isWin(process.platform) && sandboxChanged)) {
     try { engine.invalidateProcs(); } catch {}
     if (sandboxChanged) sandboxInfo.mode = next.global.windowsSandbox;
   }
@@ -1155,17 +1456,20 @@ route('POST', /^\/api\/models\/fetch$/, async (ctx) => {
       list.push({ id, name });
     }
     if (!list.length) return { status: 502, body: { error: '模型列表为空（可能端点不支持）' } };
-    // 缓存到该 provider 供下次下拉（非敏感）
-    prov.models = list;
-    cur.providers[pid] = prov;
-    // 刷新后清理：该 provider 下已不在最新列表里的「已启用模型」（供应商下线模型时不再残留）
+    // ⚠️ 上面 await 了最长 15s 的网络请求：期间用户可能保存过设置（或一轮对话写回了实测窗口）。
+    // 直接写回开头的快照会把那些改动**静默回滚**。所以这里重新读盘，只合并"本次刷新"的字段。
+    const fresh = readJsonSafe(SETTINGS_PATH, settings);
+    if (!fresh.providers) fresh.providers = {};
+    const freshProv = { ...(fresh.providers[pid] || {}), models: list };
+    fresh.providers[pid] = freshProv;
     const ids = new Set(list.map((m) => m.id));
-    if (!cur.global) cur.global = {};
-    const before = (cur.global.enabledModels || []).length;
-    cur.global.enabledModels = (cur.global.enabledModels || [])
+    if (!fresh.global) fresh.global = {};
+    const before = (fresh.global.enabledModels || []).length;
+    fresh.global.enabledModels = (fresh.global.enabledModels || [])
       .filter((e) => !(e && e.providerId === pid && !ids.has(e.modelId)));
-    const removed = before - cur.global.enabledModels.length;
-    writeFileAtomic(SETTINGS_PATH, JSON.stringify(cur, null, 2));
+    const removed = before - fresh.global.enabledModels.length;
+    writeFileAtomic(SETTINGS_PATH, JSON.stringify(fresh, null, 2));
+    settings = fresh;
     if (removed) console.log(`[models] ${pid}: 已移除 ${removed} 个失效的已启用模型`);
     return { status: 200, body: { models: list, removed } };
   } catch (e) {
@@ -1296,10 +1600,12 @@ route('PUT', /^\/api\/roles\/[^/]+$/, async (ctx) => {
   return { status: 200, body: role };
 });
 route('DELETE', /^\/api\/roles\/[^/]+$/, async (ctx) => {
-  const rid = safeRoleId(ctx.pathname.split('/')[3]);
+  const rawRid = ctx.pathname.split('/')[3];
+  // ⚠️ _global 必须在 safeRoleId 之前判断：正则不允许前导下划线，否则永远先落到"role not found"
+  if (rawRid === '_global') return { status: 400, body: { error: '_global 为全局配置目录，不可删除' } };
+  const rid = safeRoleId(rawRid);
   const dir = roleDir(rid || '');
   if (!rid || !fs.existsSync(path.join(dir, 'role.json'))) return { status: 404, body: { error: 'role not found' } };
-  if (rid === '_global') return { status: 400, body: { error: '_global 为全局配置目录，不可删除' } };
   // 专用技能/MCP 联动：?deleteSkills=1 一并删除；否则保留并置未激活
   const ds = ['1', 'true', 'yes'].includes(String(ctx.query.get('deleteSkills') || ''));
   let skillsAffected = 0;
@@ -1310,11 +1616,18 @@ route('DELETE', /^\/api\/roles\/[^/]+$/, async (ctx) => {
   // 连带清理：该角色名下会话 + 消息 + 附件、work 工作区、codex 运行配置、引擎线程映射
   const all = loadSessions() || [];
   const removed = all.filter((s) => s.roleId === rid);
+  // 有任务在跑的会话不能被"抽走"：会话/消息删掉后，运行中的 turn 仍会继续写盘并广播，
+  // 留下谁也管不到的孤儿会话。要求先停这些会话。
+  const busy = removed.filter((s) => activeTurns.has(s.id));
+  if (busy.length) {
+    return { status: 409, body: { error: `该角色有 ${busy.length} 个会话正在执行任务，请先停止后再删除角色` } };
+  }
   saveSessions(all.filter((s) => s.roleId !== rid));
   for (const s of removed) {
     // 角色整目录随后被 rm，仅移除映射即可（不必逐个 thread/delete）
     engine.forgetThread(s.id);
     try { fs.unlinkSync(messagePath(s.id)); } catch {}
+    try { fs.rmSync(uploadsDir(s.id), { recursive: true, force: true }); } catch {}   // 附件随会话一起删
   }
   try { fs.rmSync(path.join(WORK, rid), { recursive: true, force: true }); } catch {}
   try { fs.rmSync(path.join(CODEX_HOME, 'runs', rid), { recursive: true, force: true }); } catch {}
@@ -1326,7 +1639,9 @@ route('DELETE', /^\/api\/roles\/[^/]+$/, async (ctx) => {
 function getAttachment(sessionId, fname) {
   const s = loadSessions().find((x) => x.id === sessionId);
   if (!s || !fname || fname.includes('/') || fname.includes('\\')) return null;
-  const fp = path.join(WORK, s.roleId, 'uploads', path.basename(fname));
+  // 会话级附件目录；历史会话（v0.24.2 之前）附件在 work/<role>/uploads，作兼容回退
+  let fp = path.join(uploadsDir(sessionId), path.basename(fname));
+  if (!fs.existsSync(fp)) fp = path.join(WORK, s.roleId, 'uploads', path.basename(fname));
   try {
     const data = fs.readFileSync(fp);
     const ext = path.extname(fname).toLowerCase();

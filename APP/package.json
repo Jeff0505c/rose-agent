@@ -7,6 +7,7 @@
     "install-deps": "node ../scripts/install.mjs --app .",
     "setup": "node ../scripts/setup.mjs",
     "doctor": "node ../scripts/doctor.mjs",
+    "prestart": "node ../scripts/brand-dev-app.mjs || true",
     "start": "electron .",
     "dist": "npm run setup && electron-builder",
     "dist:mac": "npm run setup && electron-builder --mac",

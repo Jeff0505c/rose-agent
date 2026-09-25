@@ -137,6 +137,84 @@ function readRoleSoulFile(roleId) {
   return '';
 }
 
+/* ---------------- 上下文窗口解析（三级：用户声明 > 引擎实测 > 家族默认） ---------------- */
+// 引擎自带的模型目录给出的 model_context_window 往往小于模型真实能力
+// （例：DeepSeek 系列实际 1M，引擎目录给的是 258400），所以**不能**把它当权威值：
+//   settings.modelWindowsDetected[provider|model] = 引擎实测上报的（次优先，仅兜底）
+//   FAMILY_CONTEXT_WINDOWS                        = 已知家族的默认窗口（最低优先）
+// 说明：不提供"每模型手填窗口"（用户要求取消）。窗口按下面顺序自动判定：
+//   ① 家族默认（已知模型真实能力，如 DeepSeek 1M —— 引擎目录值常偏小）
+//   ② 引擎实测上报值（未知家族时的唯一来源）
+//   ③ null（界面显示"未知"，不编造）
+const FAMILY_CONTEXT_WINDOWS = [
+  [/^deepseek/i, 1000000],   // DeepSeek v3.x/v4 系列（官方口径 1M）
+  [/^qwen|^qwq/i, 1000000],  // Qwen 长上下文档（可按模型改）
+  [/^kimi|^moonshot/i, 256000],
+  [/^glm|^zhipu/i, 200000],
+  [/^claude/i, 200000],
+  // 注意：**不列 OpenAI 自家模型**（gpt-*/o*）——它们在 codex 内置目录里，
+  // 引擎上报的窗口（如 272000，gpt-5.4 的 max 可到 1M）才是权威值，家族表别去覆盖它。
+];
+function familyWindow(modelId) {
+  for (const [re, v] of FAMILY_CONTEXT_WINDOWS) if (re.test(String(modelId || ''))) return v;
+  return null;
+}
+// codex 0.152.1 内置目录（从 vendor 二进制提取：slug → 窗口/上限）。
+// **未收录的 slug 一律回退到默认条目**（窗口=上限=272000）——这就是 BYO 模型"只能用 258k"的来源。
+const ENGINE_CATALOG = {
+  'gpt-5.6-sol': { window: 272000, max: 872000 },
+  'gpt-5.6-terra': { window: 272000, max: 872000 },
+  'gpt-5.6-luna': { window: 272000, max: 872000 },
+  'gpt-daybreak-blue-latest': { window: 272000, max: 872000 },
+  'gpt-daybreak-red-latest': { window: 372000, max: 372000 },
+  'gpt-5.5': { window: 272000, max: 272000 },
+  'gpt-5.4': { window: 272000, max: 1000000 },
+  'gpt-5.4-mini': { window: 272000, max: 272000 },
+  'gpt-5.2': { window: 272000, max: 272000 },
+  'codex-auto-review': { window: 272000, max: 872000 },
+};
+const ENGINE_CATALOG_FALLBACK = { window: 272000, max: 272000 };
+function engineCatalogEntry(modelId) {
+  return ENGINE_CATALOG[String(modelId || '')] || ENGINE_CATALOG_FALLBACK;
+}
+
+/**
+ * 上下文预算（**唯一真源**：config.toml 与设置页都用它，避免两处算不一样）。
+ * 规则（全部对应本机实测）：
+ *  - 引擎可用窗口 = 目标窗口 × 95%；
+ *  - 目标窗口 ≤ 引擎目录该模型（或回退条目）的窗口，否则会被静默丢弃；
+ *  - 引擎实测值只用来"向上修正"（覆盖被采纳、或目录与我们记录的不同），绝不向下收敛，
+ *    否则每轮都会把自己的窗口越算越小（自我缩水）。
+ */
+function contextBudget(settings, providerId, modelId) {
+  const cat = engineCatalogEntry(modelId);
+  const fam = resolveContextWindow(settings, providerId, modelId);
+  const detected = ((settings.modelWindowsDetected || {})[`${providerId}|${modelId}`]);
+  const pctRaw = Number(settings.global && settings.global.autoCompactPercent);
+  const pct = Number.isFinite(pctRaw) && pctRaw >= 10 && pctRaw <= 99 ? pctRaw : 80;
+
+  let target = Math.min(fam || cat.window, cat.window);   // 家族真实能力与引擎上限取小
+  let usable = Math.round(target * 0.95);
+  // 引擎实测窗口比我们记录的更大 → 说明配置真的生效了（例如目录放行到 1M）：实测是权威，
+  // 把 target/usable 一起抬上去。⚠️ 只抬 usable 不抬 target 会写出
+  // `model_context_window = 272000` + `model_auto_compact_token_limit = 760000` 这种自相矛盾的配置
+  // （阈值大于声明窗口 → 引擎若校验 threshold≤window 会整份回落默认，压缩行为也不可预期）。
+  if (typeof detected === 'number' && detected > usable) { usable = detected; target = Math.max(target, detected); }
+  const limit = Math.max(1000, Math.min(Math.floor((usable * pct) / 100), Math.floor(usable * 0.9)));
+  return { target, usable, pct, threshold: limit, detected: detected || null, family: fam || null, catalog: cat };
+}
+
+function resolveContextWindow(settings, providerId, modelId) {
+  const key = `${providerId}|${modelId}`;
+  // ① 已知真实能力优先：先按模型名判家族，模型名不认识时再看 provider
+  //   （同一 provider 下常出现自定义/别名模型名，如 deepseek provider + "v4.1-flash"）
+  const fam = familyWindow(modelId) || familyWindow(providerId);
+  if (typeof fam === 'number' && fam > 0) return fam;
+  const detected = (settings.modelWindowsDetected || {})[key];
+  if (typeof detected === 'number' && detected > 0) return detected;  // ② 引擎实测兜底
+  return null;                                                // ③ 未知
+}
+
 /* ---------------- Codex 引擎（真实） ---------------- */
 
 class CodexEngine {
@@ -147,6 +225,8 @@ class CodexEngine {
     this.procs = new Map();       // roleId -> st（每角色一个 app-server 进程；参数每轮注入）
     this.threads = new Map();     // sessionId -> { roleId, threadId, cwd }（线程身份=会话）
     this.turnByThread = new Map(); // threadId -> TurnHandle
+    this.turnProc = new Map();     // threadId -> st：承载该 turn 的进程（LRU 不得回收、进程退出要失败它）
+    this.turnIds = new Map();      // threadId -> 当前 turnId（turn/steer 插话需要 expectedTurnId）
     this._homeLocks = new Map();  // 角色 home 目录 → spawn 串行锁（避免并发写同一 config.toml 竞态）
     this.pendingElicitations = new Set(); // requestId（mcpServer/elicitation/request 远程 MCP 工具授权门 待 UI 决策）
     this.globalListeners = new Set();     // 引擎级事件出口（沙箱状态等非 turn 绑定事件）
@@ -163,6 +243,13 @@ class CodexEngine {
    * `failed to load configuration: Model provider \`xxx\` not found`。
    */
   setConfigSource(fn) { this.configSource = typeof fn === 'function' ? fn : null; }
+
+  /** 反查：线程 → 会话（全局事件只有 threadId，需要映射回会话才能广播给正确的前端会话） */
+  sessionIdForThread(threadId) {
+    if (!threadId) return null;
+    for (const [sid, t] of this.threads) if (t && t.threadId === threadId) return sid;
+    return null;
+  }
 
   /** 取当前配置：优先实时读取，失败/未注入回退启动快照 */
   _getSettings() {
@@ -208,6 +295,8 @@ class CodexEngine {
     const safe = (s) => String(s || '').replace(/[^a-zA-Z0-9._-]/g, '_');
     const home = path.join(CODEX_HOME, 'runs', safe(roleId));
     fs.mkdirSync(home, { recursive: true });
+    // 角色 home 里有 config.toml（可能含 MCP 密钥）、sqlite 历史 → 只给本用户
+    try { fs.chmodSync(home, 0o700); } catch { /* 平台不支持时忽略 */ }
     return home;
   }
 
@@ -237,6 +326,24 @@ class CodexEngine {
     lines.push('max_depth = 1');
     lines.push('max_concurrent_threads_per_session = 2');
     lines.push('');
+
+    // ⚠️ TOML 顺序铁律：**顶层键必须写在任何 [table] 之前**。曾把 [features.token_budget] 插在
+    // developer_instructions 前面，导致后面的顶层键被吞进那张表 → 引擎报 "data did not match any
+    // variant of untagged enum FeatureToml" → **整份配置回落默认**（厂商/模型/人格全丢）→ 对话跑不通。
+    // ① L0 确定性裁剪：限制单条工具输出（不花模型调用、不改写历史，先剪后摘）
+    const toolLimitRaw = Number(settings.global && settings.global.toolOutputTokenLimit);
+    const toolLimit = Number.isFinite(toolLimitRaw) && toolLimitRaw >= 500 ? Math.round(toolLimitRaw) : 8000;
+    lines.push(`tool_output_token_limit = ${toolLimit}`);
+    lines.push('');
+
+    // ② 窗口与阈值：统一走 contextBudget（与设置页展示同一个函数，避免两处数字不一致）
+    const budget = contextBudget(settings, providerId, modelId);
+    if (budget.target > 0) {
+      lines.push(`model_context_window = ${budget.target}`);
+      lines.push(`model_auto_compact_token_limit = ${budget.threshold}`);
+      lines.push('');
+    }
+
     // developer_instructions = 角色人格（Soul）+ 角色记忆（激活条件已在全局 AGENTS 层维护）
     const soulTxt = mergeMemory(readRoleSoulFile(role.id), path.join(ROOT, 'roles', role.id, 'MEMORY.md'));
     if (soulTxt.trim()) {
@@ -286,6 +393,12 @@ class CodexEngine {
       }
       lines.push('');
     }
+    // 关掉引擎自带的「窗口预算提醒」（剩余 <6k token 时会打断模型让它写 notes 并换窗口，
+    // 用户侧看到的就是"任务做一半停了"）；压缩统一由上面的 autocompact 阈值控制。
+    // 注意：这是 [table]，必须放在所有顶层键之后。
+    lines.push('[features.token_budget]');
+    lines.push('enabled = false');
+    lines.push('');
     // 信任工作目录，允许沙箱读写 work/<role>
     lines.push(`[projects.${platform.tomlPath(ROOT)}]`);
     lines.push('trust_level = "trusted"');
@@ -293,7 +406,10 @@ class CodexEngine {
     const winMode = (settings.global && settings.global.windowsSandbox) || 'elevated';
     const winLines = platform.sandboxConfigLines(process.platform, winMode);
     if (winLines.length) { lines.push(''); lines.push(...winLines); }
-    fs.writeFileSync(path.join(home, 'config.toml'), lines.join('\n'));
+    // ⚠️ config.toml 里可能含 MCP 的 Authorization / env 密钥 → 必须 0600（默认 umask 会写成 0644）
+    const cfg = path.join(home, 'config.toml');
+    fs.writeFileSync(cfg, lines.join('\n'), { mode: 0o600 });
+    try { fs.chmodSync(cfg, 0o600); } catch { /* 平台不支持时忽略 */ }
   }
 
   // 每轮刷新运行资产（全局 AGENTS.md + 激活技能），保证提示词/技能改动即时生效，
@@ -324,6 +440,10 @@ class CodexEngine {
     const home = this._roleHome(role.id);
     return this._withHomeLock(home, () => {
       if (this.procs.has(key)) return this.procs.get(key); // 锁内二次检查
+      // 资产刷新（AGENTS.md + home/skills 的 rm -rf 后重建）必须在同一把 home 锁里：
+      // 否则同一角色的两个并发 createTurn 会互相删掉刚拷进去的技能目录，
+      // 运行中的另一个会话可能正好扫到这个空窗期。
+      this._refreshRuntimeAssets(role, home);
       this._writeConfig(role, providerId, modelId, sandbox, approval, home);
       clearXattr(home); // 容错：清 provenance 标记，避免 codex sqlite 初始化失败
       return this._bootProc(key, home, `${role.id}|${modelId}`);
@@ -347,11 +467,31 @@ class CodexEngine {
       this.recentStderr.push(String(d));
       if (this.recentStderr.length > 200) this.recentStderr.splice(0, this.recentStderr.length - 200);
     });
-    proc.on('exit', () => {
-      this.procs.delete(key);
+    // ⚠️ 必须挂 'error'：spawn 失败（EACCES/ENOENT-at-exec）或 stdin 写入已关闭的管道会发 error 事件，
+    // 流上没有监听者时 Node 直接抛出 → 整个 Electron 主进程崩掉（所有会话一起死）。
+    proc.on('error', (err) => {
+      const msg = `codex 进程启动/运行失败：${(err && err.message) || err}`;
+      process.stderr.write(`[codex:${label || key}] ${msg}\n`);
+      for (const { reject } of st.pending.values()) reject(new Error(msg));
+      st.pending.clear();
+      if (this.procs.get(key) === st) this.procs.delete(key);
+      this._failTurnsOnProc(st, msg);
+    });
+    if (proc.stdin) proc.stdin.on('error', (err) => {
+      process.stderr.write(`[codex:${label || key}] stdin 写入失败：${(err && err.message) || err}\n`);
+    });
+    proc.on('exit', (code, signal) => {
+      // ⚠️ 必须校验身份：killTree/invalidateProcs/reapIdleProcs 都是"先杀后清"，
+      // 下一轮可能已经 spawn 了新进程并登记在同一个 key 上；旧进程的 exit 迟到时若无脑
+      // delete(key)，会把**新进程**从表里删掉 → LRU/退出时杀不到它，还会再 spawn 一个 → 进程泄漏。
+      if (this.procs.get(key) === st) this.procs.delete(key);
       // 进程退出时立即失败所有未决 RPC，不让调用方干等到超时
       for (const { reject } of st.pending.values()) reject(new Error('codex 进程已退出'));
       st.pending.clear();
+      // 该进程上正在跑的 turn 必须**显式失败**：否则前端不会收到任何事件，
+      // 界面永远停在「处理中」——用户侧表现就是「工作流莫名停止」，且无法再用停止键收尾。
+      this._failTurnsOnProc(st,
+        `codex 引擎进程已退出（${code === null || code === undefined ? '' : 'code ' + code}${signal ? ' / ' + signal : ''}），本轮已中止；下一次发送会自动重启引擎并接回同一线程。`);
     });
     return st;
   }
@@ -480,12 +620,31 @@ class CodexEngine {
   // 标记进程被使用（每次 turn 前刷新），供 LRU 淘汰参考
   _touch(st) { if (st) st.lastUsed = Date.now(); }
 
+  /**
+   * 显式失败某个进程上所有活跃 turn（进程退出 / 被 invalidate 杀掉 / 启动失败时共用）。
+   * ⚠️ 必须**先**用它再清 map：否则 exit 事件迟到时 turnProc 已被清空，前端收不到任何事件，
+   * 界面永远停在「处理中」，用户只能按停止键收尾。
+   */
+  _failTurnsOnProc(st, message) {
+    for (const [threadId, owner] of [...this.turnProc.entries()]) {
+      if (owner !== st) continue;
+      this.turnProc.delete(threadId);
+      this.turnIds.delete(threadId);
+      const h = this.turnByThread.get(threadId);
+      if (!h) continue;
+      this.turnByThread.delete(threadId);
+      try { h.emit({ type: 'error', message }); } catch { /* 前端已断开也不能影响其他 turn */ }
+    }
+  }
+
   // LRU 闲置回收：杀掉超过 idleMs 未被使用、且当前无未决 RPC 的 codex 进程。
   // 多用户/多会话场景防止常驻进程无限堆积占内存。
   reapIdleProcs(idleMs) {
     const cutoff = Date.now() - idleMs;
     let killed = 0;
+    const busyProcs = new Set(this.turnProc.values());
     for (const [key, st] of this.procs) {
+      if (busyProcs.has(st)) continue;   // 正在跑 turn：无论闲置多久都不回收（曾导致长任务被"静默掐断"）
       if (st.lastUsed < cutoff && st.pending.size === 0) {
         platform.killTree(st.proc);   // Windows 走 taskkill /T 整树回收，POSIX 等价于 kill()
         this.procs.delete(key);
@@ -497,11 +656,15 @@ class CodexEngine {
 
   async _ensureReady(st) {
     if (st.ready) return;
-    await this._rpc(st, 'initialize', {
-      clientInfo: { name: 'ROSE', title: 'ROSE', version: '0.2.0' },
-      capabilities: { experimentalApi: true }, // 开启实验 API：turn/start.collaborationMode（Plan 模式）
-    }, 20000);
-    st.ready = true;
+    // 同一角色的两个会话可能并发首发：没有 in-flight 去重就会发两次 initialize，
+    // 第二次可能被引擎拒绝 → 其中一条会话的首轮以看不懂的 RPC 错误失败。
+    if (!st.readyPromise) {
+      st.readyPromise = this._rpc(st, 'initialize', {
+        clientInfo: { name: 'ROSE', title: 'ROSE', version: '0.2.0' },
+        capabilities: { experimentalApi: true }, // 开启实验 API：turn/start.collaborationMode（Plan 模式）
+      }, 20000).then(() => { st.ready = true; }).catch((e) => { st.readyPromise = null; throw e; });
+    }
+    await st.readyPromise;
   }
 
   _onStdout(st, chunk) {
@@ -518,8 +681,10 @@ class CodexEngine {
   }
 
   _handleMsg(st, msg) {
-    // 1) RPC 响应：错误必须 reject，否则失败会被静默吞掉
-    if (msg.id !== undefined && st.pending.has(msg.id)) {
+    // 1) RPC 响应：错误必须 reject，否则失败会被静默吞掉。
+    //    ⚠️ 必须排除带 `method` 的服务端请求（审批/询问也用数字 id，撞车时会把真正要处理的
+    //    请求当成"响应"吞掉 → 弹窗永不出现、工具调用挂死）。
+    if (msg.id !== undefined && msg.method === undefined && st.pending.has(msg.id)) {
       const { resolve, reject } = st.pending.get(msg.id);
       st.pending.delete(msg.id);
       if (msg.error) reject(new Error(msg.error.message || JSON.stringify(msg.error)));
@@ -615,10 +780,30 @@ class CodexEngine {
       }
       return;
     }
+    if (m === 'turn/started') {
+      // 兜底：turnId 也可能只在这条通知里出现
+      if (params.threadId) this._rememberTurnId(params.threadId, params);
+      return;
+    }
     if (m === 'turn/plan/updated') {
       // 结构化计划（update_plan 工具）：{explanation, plan:[{step,status: pending|inProgress|completed}]}
       const turn = this.turnByThread.get(params.threadId);
       if (turn) turn.emit({ type: 'plan', plan: params.plan || [], explanation: params.explanation || '' });
+      return;
+    }
+    if (m === 'item/plan/delta') {
+      // Plan 模式交付的 <proposed_plan> 正文走这条独立通道（与 update_plan 的 turn/plan/updated 不同）。
+      // 不接的后果：计划正文整段丢失，正文只剩「以下是实施计划。」后半句空白 —— 表现为「输出被截断」。
+      const turn = this.turnByThread.get(params.threadId);
+      const delta = typeof params.delta === 'string' ? params.delta
+        : (typeof params.text === 'string' ? params.text : '');
+      if (turn && delta) {
+        if (!turn.__planSeen) {
+          turn.__planSeen = true;
+          turn.emit({ type: 'plan-delivered' });   // 计划开始交付：供上层判断「Plan 已出稿」
+        }
+        turn.emit({ type: 'text-delta', delta });
+      }
       return;
     }
     if (m === 'item/commandExecution/outputDelta') {
@@ -636,14 +821,35 @@ class CodexEngine {
     if (m === 'thread/tokenUsage/updated') {
       // 记录最近一次 turn 的 token 用量，turn 完成时随 usage 事件上报
       const turn = this.turnByThread.get(params.threadId);
-      if (turn && params.tokenUsage && params.tokenUsage.last) turn.__usage = params.tokenUsage.last;
+      if (turn && params.tokenUsage) {
+        const tu = params.tokenUsage;
+        if (tu.last) turn.__usage = tu.last;
+        const win = tu.model_context_window ?? tu.modelContextWindow;
+        if (typeof win === 'number' && win > 0) turn.__contextWindow = win;
+        // 实时上下文占用：每轮内部会多次上报，节流后上浮，供界面"边跑边看"（而不是等回合结束）
+        const used = (tu.last && (tu.last.inputTokens || tu.last.totalTokens)) || 0;
+        const now = Date.now();
+        if (used > 0 && now - (turn.__ctxAt || 0) > 800) {
+          turn.__ctxAt = now;
+          turn.emit({ type: 'context-usage', used, window: turn.__contextWindow || null });
+        }
+      }
       return;
     }
     if (m === 'item/started' || m === 'item/updated' || m === 'item/completed') {
       const threadId = params.threadId;
+      const item = params.item || {};
       const turn = this.turnByThread.get(threadId);
-      if (!turn) return;
-      this._handleItem(turn, m, params.item || {});
+      if (!turn) {
+        // 没有活跃回合时的**会话级** item：典型是空闲会话的手动压缩
+        // （thread/compact/start → ContextCompaction 的 started/completed）。
+        // 原先这里直接 return → 事件被丢 → 前端蒙版等不到 compact-end，只能等超时。
+        if (item.type === 'contextCompaction' || item.type === 'ContextCompaction') {
+          this._emitGlobal({ type: 'session-item', threadId, phase: m, item });
+        }
+        return;
+      }
+      this._handleItem(turn, m, item);
       return;
     }
     if (m === 'error') {
@@ -661,15 +867,27 @@ class CodexEngine {
       const turn = this.turnByThread.get(params.threadId);
       if (!turn) return;
       this.turnByThread.delete(params.threadId);
+      this.turnProc.delete(params.threadId);
+      this.turnIds.delete(params.threadId);
       const status = params.turn && params.turn.status;
       if (status === 'failed') {
         turn.emit({ type: 'error', message: (params.turn && params.turn.error && params.turn.error.message) || 'turn failed' });
       } else {
-        if (turn.__usage) turn.emit({ type: 'usage', usage: turn.__usage });
+        if (turn.__usage) turn.emit({ type: 'usage', usage: turn.__usage, contextWindow: turn.__contextWindow || null });
         turn.emit({ type: 'turn-complete' });
       }
       return;
     }
+    // 3a-1) 配置告警：codex 解析 config.toml 失败时会**回落默认值**并只发一条通知——
+    // 不显式上浮的话，用户看到的是"对话跑不通/模型不存在"，而真因在配置里。
+    if (m === 'configWarning') {
+      const summary = (params && params.summary) || '配置有误';
+      const details = (params && params.details) || '';
+      process.stderr.write(`[codex] configWarning: ${summary} ${details}\n`);
+      this._emitGlobal({ type: 'config-warning', summary, details, path: (params && params.path) || null });
+      return;
+    }
+
     // 3b) Windows 沙箱：初始化完成通知 / 目录全局可写告警（引擎级事件，不绑定 turn）
     if (m === 'windowsSandbox/setupCompleted') {
       const success = !!params.success;
@@ -688,6 +906,13 @@ class CodexEngine {
       return;
     }
     // thread/started、thread/status/changed、warning、token-count 等忽略
+  }
+
+  // 从 turn/start 的返回或 turn/started 通知里记下 turnId（两种线上形态都兼容）
+  _rememberTurnId(threadId, resOrNotif) {
+    const id = (resOrNotif && (resOrNotif.turnId || (resOrNotif.turn && resOrNotif.turn.id))) || null;
+    if (id) this.turnIds.set(threadId, id);
+    return id;
   }
 
   _handleItem(turn, phase, item) {
@@ -731,17 +956,44 @@ class CodexEngine {
       else if (phase === 'item/completed') turn.emit({ type: 'tool-end', toolId: id, ok: true, output: '文件已修改' });
       return;
     }
+    if (type === 'contextCompaction' || type === 'ContextCompaction') {
+      // 手动/自动压缩在事件流里表现为 ContextCompaction item（Codex 无独立完成通知，这是唯一可靠信号）
+      if (phase === 'item/started') turn.emit({ type: 'compact-start', auto: item.trigger === 'auto' || item.auto === true });
+      else if (phase === 'item/completed') turn.emit({ type: 'compact-end', ok: true });
+      return;
+    }
+    if (type === 'plan') {
+      // 计划项（Plan 模式的 <proposed_plan>）：delta 通道已覆盖正文，仅在完全没收到 delta 时兜底
+      if (phase === 'item/completed' && !turn.__planSeen) {
+        const text = textOf(item) || (typeof item.text === 'string' ? item.text : '');
+        if (text) {
+          turn.__planSeen = true;
+          turn.emit({ type: 'plan-delivered' });
+          turn.emit({ type: 'text-delta', delta: text });
+        }
+      }
+      return;
+    }
     // userMessage / reasoning / webSearch 等暂不渲染
   }
 
   _rpc(st, method, params, timeoutMs) {
     const id = st.nextId++;
     return new Promise((resolve, reject) => {
-      st.pending.set(id, { resolve, reject });
-      st.proc.stdin.write(JSON.stringify({ jsonrpc: '2.0', id, method, params }) + '\n');
-      setTimeout(() => {
+      // 超时定时器必须随响应一起清掉，否则每个 RPC 都留下一个最长 60s 的活定时器
+      // （并一直持有 st 引用，invalidate 之后还留着死对象）
+      const timer = setTimeout(() => {
         if (st.pending.has(id)) { st.pending.delete(id); reject(new Error('rpc timeout: ' + method)); }
       }, timeoutMs || 60000);
+      const wrap = (fn) => (v) => { clearTimeout(timer); fn(v); };
+      st.pending.set(id, { resolve: wrap(resolve), reject: wrap(reject) });
+      try {
+        st.proc.stdin.write(JSON.stringify({ jsonrpc: '2.0', id, method, params }) + '\n');
+      } catch (e) {
+        clearTimeout(timer);
+        st.pending.delete(id);
+        reject(new Error('写入引擎失败：' + ((e && e.message) || e)));
+      }
     });
   }
 
@@ -772,7 +1024,10 @@ class CodexEngine {
         }
       }).catch(() => { /* 探测失败不阻断回合，由 UI 横幅兜底 */ });
     }
-    const cwd = path.join(ROOT, 'work', role.id);
+    // 工作目录：会话自带（新建会话时用户指定，创建后不可改）；历史会话无该字段时回退到旧的 work/<role>
+    const cwd = (session.workspace && path.isAbsolute(session.workspace))
+      ? session.workspace
+      : path.join(ROOT, 'work', role.id);
     fs.mkdirSync(cwd, { recursive: true });
     // 角色人格（Soul）已作为 developer_instructions 注入角色进程 config（见 _writeConfig），
     // 不再向 work/<role> 投射 AGENTS.md；work/ 只承担 agent 工作目录与附件职责。
@@ -821,6 +1076,7 @@ class CodexEngine {
 
     const turn = new TurnHandle(handlers);
     this.turnByThread.set(t.threadId, turn);
+    this.turnProc.set(t.threadId, st);   // 绑定承载进程：LRU 不得回收、进程退出要失败本轮
 
     // input：用户文本（含显式技能 $name 标记）→ 内联图片 → 显式技能引用
     const refs = (Array.isArray(skillRefs) ? skillRefs : []).filter((r) => r && r.name && r.path);
@@ -855,7 +1111,10 @@ class CodexEngine {
     }
 
     try {
-      await this._rpc(st, 'turn/start', turnParams);
+      const started = await this._rpc(st, 'turn/start', turnParams);
+      // ⚠️ turn/start 返回的是 { turn: { id } }（不是 { turnId }）——曾按 turnId 取值导致
+      // turnIds 永远为空，插话（turn/steer 需要 expectedTurnId）必然报"没有正在运行的任务"。
+      this._rememberTurnId(t.threadId, started);
     } catch (e1) {
       const msg = (e1 && e1.message) || 'turn failed';
       // 线程在库中丢失（sqlite 被清 / 线程被外部删除）→ 新建空线程重试一次
@@ -866,13 +1125,17 @@ class CodexEngine {
           this.threads.set(session.id, t);
           this._persistThreads();
           this.turnByThread.set(t.threadId, turn);
-          await this._rpc(st, 'turn/start', { ...turnParams, threadId: t.threadId });
+          this.turnProc.set(t.threadId, st);
+          const started2 = await this._rpc(st, 'turn/start', { ...turnParams, threadId: t.threadId });
+          this._rememberTurnId(t.threadId, started2);
         } catch (e2) {
           this.turnByThread.delete(t.threadId);
+          this.turnProc.delete(t.threadId);
           turn.emit({ type: 'error', message: (e2 && e2.message) || msg });
         }
       } else {
         this.turnByThread.delete(t.threadId);
+        this.turnProc.delete(t.threadId);
         turn.emit({ type: 'error', message: msg });
       }
     }
@@ -905,6 +1168,53 @@ class CodexEngine {
     return true;
   }
 
+  // 插话（turn/steer）：把一条消息直接送进正在跑的回合，不打断当前任务。
+  // 线上参数（0.152.1 实测）：{ threadId, expectedTurnId, input:[{type:'text',text}] }；
+  // 没有活跃回合时引擎会明确报 "no active turn to steer"。
+  async steer(session, text) {
+    const t = this.threads.get(session.id);
+    const st = this._procFor(session);
+    if (!t || !st) return { error: '会话尚未开始（先发一条消息再插话）' };
+    const expectedTurnId = this.turnIds.get(t.threadId);
+    if (!expectedTurnId || !this.turnByThread.has(t.threadId)) return { error: '当前没有正在执行的任务，无法插话' };
+    try {
+      await this._rpc(st, 'turn/steer', {
+        threadId: t.threadId,
+        expectedTurnId,
+        input: [{ type: 'text', text: String(text || '') }],
+      }, 30000);
+      return { ok: true };
+    } catch (e) {
+      return { error: (e && e.message) || 'steer failed' };
+    }
+  }
+
+  // 手动压缩上下文（thread/compact/start）。
+  // 实测（0.152.1，app-server 探针）：① 线程未在本进程 resume 时引擎直接报 `thread not found`；
+  // ② resume 之后该调用返回 {}，但**空闲线程上不会立刻产生压缩记录**——它是"请求在下一轮开始时压缩"，
+  //    真正的压缩发生在回合内（历史记录里每次 compacted 都出现在回合中/回合边界）。
+  // 因此这里如实按"请求"语义返回，界面不得假装已完成。
+  async compact(session) {
+    const t = this.threads.get(session.id);
+    if (!t) return { error: '该会话还没有引擎线程（先发一条消息再压缩）' };
+    if (this.turnByThread.has(t.threadId)) return { error: '有任务进行中，请先停止再压缩上下文' };
+    try {
+      // 进程可能被 LRU 回收或在应用重启后尚未拉起：按会话当前参数重新 spawn（与发消息同一条路径）
+      let st = this._procFor(session);
+      if (!st) {
+        const policy = policyFor(session, this._getSettings());
+        await this._refreshRuntimeAssets(session.role, this._roleHome(session.role.id));
+        st = await this._spawnServer(session.role, session.providerId, session.modelId, policy.sandbox, policy.approval);
+      }
+      // 关键：先 resume —— 新进程里线程尚未加载，直接 compact 会被引擎拒绝（thread not found）
+      await this._rpc(st, 'thread/resume', { threadId: t.threadId }, 30000);
+      const raw = await this._rpc(st, 'thread/compact/start', { threadId: t.threadId }, 60000);
+      return { ok: true, requested: true, raw: raw || null };
+    } catch (e) {
+      return { error: (e && e.message) || 'compact failed' };
+    }
+  }
+
   async interrupt(session) {
     const t = this.threads.get(session.id);
     const st = this._procFor(session);
@@ -918,6 +1228,8 @@ class CodexEngine {
     const h = this.turnByThread.get(t.threadId);
     if (h) h.cancel();
     this.turnByThread.delete(t.threadId);
+    this.turnProc.delete(t.threadId);
+    this.turnIds.delete(t.threadId);
     // 线程身份=会话：中断不丢弃线程映射，下一轮仍在同一线程续跑（上下文不丢）
     return true;
   }
@@ -1013,14 +1325,20 @@ class CodexEngine {
   }
 
   // 使全部缓存的 codex 进程失效（MCP 注册表变更后调用，下个 turn 重新 spawn 以加载新 config.toml）
-  invalidateProcs() {
+  invalidateProcs(reason) {
+    const why = reason || '引擎配置已变更（设置/角色/MCP 有更新），进程已重启';
     for (const st of this.procs.values()) {
+      // 先让正在跑的 turn 显式失败（否则前端停在「处理中」，见 _failTurnsOnProc）
+      this._failTurnsOnProc(st, `${why}；本轮已中止，下一次发送会自动重启引擎并接回同一线程。`);
       platform.killTree(st.proc);
     }
     this.procs.clear();
     // threads 映射保留：线程身份=会话，线程库在角色 home 的 sqlite 里，
     // 进程重启/参数变化均不影响线程续用 → MCP 变更也不会导致会话失忆
     this.turnByThread.clear();
+    this.turnProc.clear();
+    this.turnIds.clear();
+    this.turnIds.clear();
   }
 
   // 优雅退出：关闭全部 codex app-server 子进程，避免网关退出后遗留孤儿进程
@@ -1029,6 +1347,7 @@ class CodexEngine {
     this.procs.clear();
     this.threads.clear();
     this.turnByThread.clear();
+    this.turnProc.clear();
     await Promise.allSettled(procs.map(async (st) => {
       try {
         if (st.proc.exitCode === null) {
@@ -1065,4 +1384,4 @@ function createEngine(cfg) {
   return codex;
 }
 
-module.exports = { createEngine, CodexEngine, TurnHandle, CODEX_BIN, CODEX_HOME, resolveToolCommand, expandVars, TOOLS_DIR };
+module.exports = { createEngine, CodexEngine, TurnHandle, CODEX_BIN, CODEX_HOME, resolveToolCommand, expandVars, TOOLS_DIR, resolveContextWindow, familyWindow, FAMILY_CONTEXT_WINDOWS, contextBudget, ENGINE_CATALOG, engineCatalogEntry };
