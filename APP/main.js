@@ -3,7 +3,7 @@
  * ROSE 桌面主进程 —— 窗口 / IPC / rose:// 协议 / 生命周期
  * 业务核心在 desktop/services.js（原 gateway/server.js 去 HTTP 化）
  */
-const { app, BrowserWindow, ipcMain, protocol, shell, dialog, Menu, nativeImage } = require('electron');
+const { app, BrowserWindow, ipcMain, protocol, shell, dialog, Menu, nativeImage, screen } = require('electron');
 const path = require('path');
 
 /* ---------- 应用身份：开发态也显示为 ROSE（而不是 Electron） ----------
@@ -98,11 +98,17 @@ services.onBroadcast(({ event, data }) => {
 let mainWindow = null;
 
 function createWindow() {
+  // 默认窗口尺寸：macOS 主流观感（约 1200×800），按屏幕可用区自适应，
+  // 不再写死 1440×900（14" MacBook 上几乎顶满屏幕）。逻辑在 platform.defaultWindowSize（有测试）。
+  let workArea = null;
+  try { workArea = screen.getPrimaryDisplay().workAreaSize; } catch (e) { /* 无显示信息时用默认 */ }
+  const { width, height } = platform.defaultWindowSize(workArea);
   mainWindow = new BrowserWindow({
-    width: 1440,
-    height: 900,
-    minWidth: 1024,
+    width,
+    height,
+    minWidth: 1000,
     minHeight: 640,
+    center: true,          // 居中打开（macOS 主流行为；不再贴左上角）
     title: 'ROSE',
     icon: path.join(__dirname, 'build', 'icon.png'),   // Windows/Linux 窗口与任务栏图标（macOS 用打包图标）
     autoHideMenuBar: true,   // 兜底：即使菜单仍被设置也不显示（Windows/Linux）

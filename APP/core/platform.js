@@ -234,6 +234,31 @@ function assertPathUsable(p, platform = process.platform) {
   return true;
 }
 
+/**
+ * 启动时的默认窗口尺寸（设备无关的纯函数，便于测试）。
+ *
+ * 背景：以前写死 1440×900 —— 在 14" MacBook（可用区约 1512×944）上几乎顶满屏幕，
+ * 既不像 macOS 主流窗口，也把桌面挤得没有余地。macOS 主流应用首屏大致 1200×800 上下。
+ * 这里按屏幕**可用区**分档：常规屏取约 82%×84% 并封顶 1280×860；小屏自动收窄；
+ * 任何情况下都不超过可用区、也不小于最小可用尺寸（否则窗口会顶到屏幕外或被裁）。
+ */
+function defaultWindowSize(workArea, opts = {}) {
+  // 目标：macOS 主流首屏 ≈1360×860（比 1200 更宽、接近 14" MacBook 上主流应用的观感，
+  // 又不像 1440×900 那样顶满屏幕）；
+  // 屏幕不够大时按可用区收窄，四周留出少量边距（不要把窗口顶到边缘/被菜单栏或 Dock 压住）。
+  const wantW = opts.wantW || 1360, wantH = opts.wantH || 860;
+  const minW = opts.minW || 1000, minH = opts.minH || 640;
+  const marginX = opts.marginX || 60, marginY = opts.marginY || 50;
+  if (!workArea || !workArea.width || !workArea.height) return { width: wantW, height: wantH };
+  const waW = Math.max(1, Math.round(workArea.width));
+  const waH = Math.max(1, Math.round(workArea.height));
+  let width = Math.min(wantW, waW - marginX);
+  let height = Math.min(wantH, waH - marginY);
+  width = Math.min(Math.max(width, minW), waW);      // 不小于可用最小值，也不超过可用区
+  height = Math.min(Math.max(height, minH), waH);
+  return { width, height };
+}
+
 module.exports = {
   SUPPORTED,
   isWin, isMac, isSupported, assertSupported,
@@ -241,6 +266,6 @@ module.exports = {
   resolveCommand, tomlPath, sandboxConfigLines,
   killStrategy, killCommand, killTree, spawnOptions,
   unzipStrategy, unzipArgs, psQuote,
-  pathIssues, sanitizeFilename, assertPathUsable,
+  pathIssues, sanitizeFilename, assertPathUsable, defaultWindowSize,
   WIN_RESERVED, MAX_PATH_SAFE,
 };
