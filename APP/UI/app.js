@@ -58,7 +58,7 @@ const I18N = {
     'mode.needSess':'先打开或新建一个会话，再选择模式','mode.select':'选择会话模式','mode.plan':'✦ 计划','mode.default':'默认','mode.free':'零监管','mode.planT':'✦ 计划模式','mode.planD':'只读研究 · 产出计划 · 确认后实施（复杂任务建议）','mode.defaultT':'默认模式','mode.defaultD':'可写工作区 · 命令需审批 · 大改动前先说明方案','mode.freeT':'零监管模式','mode.freeD':'完全访问 · 自动执行 · 不审批（仅信任模型时使用）','search.clear':'清除','model.select':'选择本次对话使用的模型',
     'model.enableFirst':'（请先在 设置→模型配置 启用模型）','model.noModelTitle':'尚未配置模型','model.noModelMsg':'还没有启用任何模型。请先在「设置 → 模型配置」新增 Provider、填入 API Key 并启用模型。','model.goSettings':'去配置','att.remove':'移除','att.file':'附件','att.tooBig':'文件过大（>20MB）：','att.upload':'上传图片 / 文件','skill.choose':'选用技能','model.addProvTitle':'新增模型配置 · 选择厂商预设',
     'skill.noSess':'请先打开或新建一个会话，再选用技能','skill.noAvail':'当前会话暂无可用技能','skill.noAvailSub':'未导入/未激活；角色专用技能仅对绑定角色可见','skill.pickTitle':'选用技能（本次对话）',
-    'dial.hint':'提示','dial.gotit':'知道了','sm.sub':'配置','stop.title':'停止当前任务（Esc×2）','send.title':'发送（⏎）','queue.title':'排队中（本轮结束后依次发送）','queue.edit':'编辑','queue.del':'删除','queue.steer':'插话发送（直接送进正在执行的任务）','queue.steerFail':'插话失败：','modal.from':'来自：{r} · {s}','modal.queuedMore':'还有 {n} 条来自其它会话的请求在排队','gen.ctxTitle':'上下文与自动压缩','gen.ctxPct':'自动压缩阈值（%）','gen.l0Unit':'tokens','gen.ctxPctShort':'压缩阈值','gen.l0Short':'工具输出上限','gen.l0Label':'单条工具输出上限（tokens）','gen.ctxSave':'保存','gen.ctxSaved':'已保存（下次引擎进程启动生效）','cfg.badTitle':'引擎配置有误','ctx.none':'上下文 —','ctx.usedTok':'已用 {n} tokens','ctx.noWindow':'窗口大小未实测（跑一轮后补全，届时显示百分比）','ctx.noneTip':'该会话还没跑过对话；跑过一轮后这里会显示上下文占用比例，点击可压缩','cfg.badMsg':'ROSE 生成的 config.toml 未被引擎接受，codex 已回落默认配置（模型/厂商/人格/MCP 都不生效，对话基本跑不通）。信息：','ws.pickTitle':'选择这个会话的工作目录','ws.fail':'创建会话失败：','ws.locked':'工作目录创建后不可更改（要换目录请新建会话）','ctx.title':'上下文占用 · 点击压缩上下文','ctx.used':'上下文 {p}%','ctx.compact':'压缩上下文','ctx.compacting':'正在压缩…','ctx.done':'上下文已压缩','ctx.maskTitle':'正在压缩上下文…','ctx.maskSub':'压缩完成后本会话自动恢复；期间可以切换到其他会话继续工作。','ctx.maskElapsed':'已用 {n} 秒','ctx.fail':'压缩失败：','ctx.busy':'有任务进行中，请先停止再压缩上下文','ctx.timeout':'压缩等待超时，已解除本会话的等待状态（如仍需要压缩，可再次点击圆环重试）。','settings':'设置','nav.settings':'设置','side.collapse':'收起侧栏','side.expand':'展开侧栏','common.on':'开','common.off':'关','cmd.head':'指令','cmd.panelOpened':'已打开对应面板','cmd.fail':'执行失败：','cmd.needArg':'缺少参数：{n}','cmd.needSession':'请先打开一个会话再使用该指令',
+    'dial.hint':'提示','dial.gotit':'知道了','sm.sub':'配置','stop.title':'停止当前任务（Esc×2）','send.title':'发送（⏎）','queue.title':'排队中（本轮结束后依次发送）','queue.edit':'编辑','queue.del':'删除','queue.steer':'插话发送（直接送进正在执行的任务）','queue.steerFail':'插话失败：','modal.from':'来自：{r} · {s}','modal.queuedMore':'还有 {n} 条来自其它会话的请求在排队','gen.ctxTitle':'上下文与自动压缩','gen.ctxPct':'自动压缩阈值（%）','gen.l0Unit':'tokens','gen.ctxPctShort':'压缩阈值','gen.l0Short':'工具输出上限','gen.l0Label':'单条工具输出上限（tokens）','gen.ctxSave':'保存','gen.ctxSaved':'已保存（下次引擎进程启动生效）','cfg.badTitle':'引擎配置有误','ctx.none':'上下文 —','ctx.usedTok':'已用 {n} tokens','ctx.noWindow':'窗口大小未实测（跑一轮后补全，届时显示百分比）','ctx.noneTip':'该会话还没跑过对话；跑过一轮后这里会显示上下文占用比例，点击可压缩','cfg.badMsg':'ROSE 生成的 config.toml 未被引擎接受，codex 已回落默认配置（模型/厂商/人格/MCP 都不生效，对话基本跑不通）。信息：','ws.pickTitle':'选择这个会话的工作目录','ws.fail':'创建会话失败：','ws.locked':'工作目录创建后不可更改（要换目录请新建会话）','ctx.title':'上下文占用 · 点击压缩上下文','ctx.used':'上下文 {p}%','ctx.compact':'压缩上下文','ctx.compacting':'正在压缩…','ctx.done':'上下文已压缩','ctx.maskTitle':'正在压缩上下文…','ctx.maskSub':'压缩完成后本会话自动恢复；期间可以切换到其他会话继续工作。','ctx.maskElapsed':'已用 {n} 秒','ctx.fail':'压缩失败：','ctx.busy':'有任务进行中，请先停止再压缩上下文','ctx.timeout':'压缩等待超时，已解除本会话的等待状态（如仍需要压缩，可再次点击圆环重试）。','settings':'设置','nav.settings':'设置','side.collapse':'收起侧栏','side.expand':'展开侧栏','common.on':'开','common.off':'关','cmd.head':'指令','cmd.panelOpened':'已打开对应面板','cmd.fail':'执行失败：','cmd.needArg':'缺少参数：{n}','cmd.needSession':'请先打开一个会话再使用该指令','feed.noText':'（本轮无文本输出）',
     'cmd.compact.desc':'压缩上下文（codex 官方 thread/compact/start）','cmd.compact.done':'已发起压缩，完成后占用会刷新',
     'cmd.model.desc':'查看/切换本会话模型','cmd.model.none':'没有已启用的模型（去 设置→模型配置 启用）','cmd.model.list':'已启用模型：','cmd.model.current':'当前','cmd.model.unknown':'没有匹配的模型：{n}','cmd.model.set':'本会话模型已切到 {n}（下一轮生效）',
     'cmd.approvals.desc':'查看/切换审批策略','cmd.approvals.cur':'当前审批策略：{n}','cmd.approvals.onRequest':'按需审批（推荐）','cmd.approvals.never':'从不审批（高危）','cmd.approvals.bad':'取值只能是 on-request 或 never','cmd.approvals.set':'审批策略已切到 {n}（下一轮生效）',
@@ -120,7 +120,7 @@ const I18N = {
     'mode.needSess':'Open or start a session first, then pick a mode','mode.select':'Choose session mode','mode.plan':'✦ Plan','mode.default':'Default','mode.free':'Auto-run','mode.planT':'✦ Plan mode','mode.planD':'Read-only research · produce a plan · confirm before executing (recommended for complex tasks)','mode.defaultT':'Default mode','mode.defaultD':'Writable workspace · commands need approval · explain big changes first','mode.freeT':'Auto-run mode','mode.freeD':'Full access · auto-execute · no approvals (only when you trust the model)','search.clear':'Clear','model.select':'Choose the model used for this conversation',
     'model.enableFirst':'(Enable a model first in Settings → Models)','model.noModelTitle':'No model configured','model.noModelMsg':'No model is enabled yet. Add a provider, enter its API key, and enable a model in Settings → Models.','model.goSettings':'Open settings','att.remove':'Remove','att.file':'Attachment','att.tooBig':'File too large (>20MB): ','att.upload':'Upload image / file','skill.choose':'Choose skills','model.addProvTitle':'Add provider · choose a preset',
     'skill.noSess':'Open or start a session first, then pick skills','skill.noAvail':'No usable skills for the current session','skill.noAvailSub':'Not imported/activated; role-specific skills are visible only to their bound role','skill.pickTitle':'Choose skills (this chat)',
-    'dial.hint':'Notice','dial.gotit':'Got it','sm.sub':'config','stop.title':'Stop current task (Esc×2)','send.title':'Send (⏎)','queue.title':'Queued (sent in order when this task ends)','queue.edit':'Edit','queue.del':'Delete','queue.steer':'Interject now (inject into the running task)','queue.steerFail':'Interject failed: ','modal.from':'From: {r} · {s}','modal.queuedMore':'{n} more request(s) from other sessions queued','gen.ctxTitle':'Context & auto-compact','gen.ctxPct':'Auto-compact threshold (%)','gen.l0Unit':'tokens','gen.ctxPctShort':'Compact at','gen.l0Short':'Tool output cap','gen.l0Label':'Tool output cap (tokens)','gen.ctxSave':'Save','gen.ctxSaved':'Saved (applies when the engine process restarts)','cfg.badTitle':'Engine config rejected','ctx.none':'Context —','ctx.usedTok':'{n} tokens used','ctx.noWindow':'Window size not measured yet (shows a percentage after one turn)','ctx.noneTip':'No turn has run in this session yet; after one turn this shows context usage (click to compact)','cfg.badMsg':'codex rejected the config.toml ROSE generated and fell back to defaults (model/provider/persona/MCP are inactive, which usually breaks conversations). Detail:','ws.pickTitle':'Choose the working directory for this session','ws.fail':'Failed to create session: ','ws.locked':'The working directory is fixed once created (start a new session to change it)','ctx.title':'Context usage · click to compact','ctx.used':'Context {p}%','ctx.compact':'Compact context','ctx.compacting':'Compacting…','ctx.done':'Context compacted','ctx.maskTitle':'Compacting context…','ctx.maskSub':'This session resumes automatically once compaction finishes; you can switch to another session meanwhile.','ctx.maskElapsed':'{n}s elapsed','ctx.fail':'Compaction failed: ','ctx.busy':'A task is running — stop it before compacting','ctx.timeout':'Timed out waiting for compaction; this session is released (click the ring to retry if needed).','settings':'Settings','nav.settings':'Settings','side.collapse':'Collapse sidebar','side.expand':'Expand sidebar','common.on':'on','common.off':'off','cmd.head':'Commands','cmd.panelOpened':'Panel opened','cmd.fail':'Failed: ','cmd.needArg':'Missing argument: {n}','cmd.needSession':'Open a session first to use this command',
+    'dial.hint':'Notice','dial.gotit':'Got it','sm.sub':'config','stop.title':'Stop current task (Esc×2)','send.title':'Send (⏎)','queue.title':'Queued (sent in order when this task ends)','queue.edit':'Edit','queue.del':'Delete','queue.steer':'Interject now (inject into the running task)','queue.steerFail':'Interject failed: ','modal.from':'From: {r} · {s}','modal.queuedMore':'{n} more request(s) from other sessions queued','gen.ctxTitle':'Context & auto-compact','gen.ctxPct':'Auto-compact threshold (%)','gen.l0Unit':'tokens','gen.ctxPctShort':'Compact at','gen.l0Short':'Tool output cap','gen.l0Label':'Tool output cap (tokens)','gen.ctxSave':'Save','gen.ctxSaved':'Saved (applies when the engine process restarts)','cfg.badTitle':'Engine config rejected','ctx.none':'Context —','ctx.usedTok':'{n} tokens used','ctx.noWindow':'Window size not measured yet (shows a percentage after one turn)','ctx.noneTip':'No turn has run in this session yet; after one turn this shows context usage (click to compact)','cfg.badMsg':'codex rejected the config.toml ROSE generated and fell back to defaults (model/provider/persona/MCP are inactive, which usually breaks conversations). Detail:','ws.pickTitle':'Choose the working directory for this session','ws.fail':'Failed to create session: ','ws.locked':'The working directory is fixed once created (start a new session to change it)','ctx.title':'Context usage · click to compact','ctx.used':'Context {p}%','ctx.compact':'Compact context','ctx.compacting':'Compacting…','ctx.done':'Context compacted','ctx.maskTitle':'Compacting context…','ctx.maskSub':'This session resumes automatically once compaction finishes; you can switch to another session meanwhile.','ctx.maskElapsed':'{n}s elapsed','ctx.fail':'Compaction failed: ','ctx.busy':'A task is running — stop it before compacting','ctx.timeout':'Timed out waiting for compaction; this session is released (click the ring to retry if needed).','settings':'Settings','nav.settings':'Settings','side.collapse':'Collapse sidebar','side.expand':'Expand sidebar','common.on':'on','common.off':'off','cmd.head':'Commands','cmd.panelOpened':'Panel opened','cmd.fail':'Failed: ','cmd.needArg':'Missing argument: {n}','cmd.needSession':'Open a session first to use this command','feed.noText':'(no text output this turn)',
     'cmd.compact.desc':'Compact context (codex thread/compact/start)','cmd.compact.done':'Compaction started; usage refreshes when it finishes',
     'cmd.model.desc':'Show or switch this session\'s model','cmd.model.none':'No model enabled (Settings → Models)','cmd.model.list':'Enabled models:','cmd.model.current':'current','cmd.model.unknown':'No matching model: {n}','cmd.model.set':'Session model switched to {n} (applies next turn)',
     'cmd.approvals.desc':'Show or switch the approval policy','cmd.approvals.cur':'Approval policy: {n}','cmd.approvals.onRequest':'ask on request (recommended)','cmd.approvals.never':'never ask (risky)','cmd.approvals.bad':'Value must be on-request or never','cmd.approvals.set':'Approval policy switched to {n} (applies next turn)',
@@ -465,12 +465,34 @@ function renderRolePicker() {
 // 需要立即出结果时（全量重建结束）调用 flushAgentRender()。
 let agentRenderPending = false;
 function renderAgentNow() {
+  const md = (raw) => renderMarkdown(String(raw).replace(/\[(?:PLAN|REQUEST_PLAN_MODE)\]/g, ''));
+  const dirty = feedState.dirtyAgents;
+  if (dirty && dirty.size) {
+    for (const a of [...dirty]) {
+      dirty.delete(a);
+      if (!a || !a.bodyEl) continue;
+      if (!a.bodyEl.isConnected) {
+        // 该行已随重建被摘掉：正在重建则由重建流程负责；不在重建中说明游标失效 → 整体自愈一次
+        if (!feedState.rebuilding && a === feedState.curAgent) { renderFeed(); return; }
+        continue;
+      }
+      const html = md(a._raw);
+      if (!html.trim()) {
+        // 两种情况都会渲染成空：① 这一轮确实没有文本（只调用了工具）
+        // ② 正文只有 [PLAN]/[REQUEST_PLAN_MODE] 标记（被剥离后什么都不剩）。
+        // 空白的头像+名字看起来就像渲染坏了，这里给一行明确的灰字。
+        a.bodyEl.innerHTML = `<span class="body-note">${esc(tr('feed.noText'))}</span>`;
+      } else {
+        a.bodyEl.innerHTML = html;
+      }
+    }
+    return;
+  }
+  // 兜底：没有登记脏标记但 curAgent 有正文要渲染（例如外部直接调用）
   const a = feedState.curAgent;
   if (!a) return;
-  // 自愈：目标节点若已不在文档里（列表被重建/节点被移除），继续写进去等于"新消息永远不显示"。
-  // 这时整体重建一次（重建会把游标指向新节点），保证面板与数据一致。
-  if (a.bodyEl && !a.bodyEl.isConnected) { renderFeed(); return; }
-  a.bodyEl.innerHTML = renderMarkdown(a._raw.replace(/\[(?:PLAN|REQUEST_PLAN_MODE)\]/g, ''));
+  if (a.bodyEl && !a.bodyEl.isConnected) { if (!feedState.rebuilding) { renderFeed(); return; } return; }
+  a.bodyEl.innerHTML = md(a._raw);
 }
 function scheduleAgentRender() {
   if (agentRenderPending) return;
@@ -489,7 +511,7 @@ function renderFeed() {
   const feed = $('#feed');
   feed.innerHTML = '';
   // 全量重建后重置增量渲染游标
-  feedState = { rendered: 0, curAgent: null, openCard: null, planCard: null, reasoning: null, lastPlanSig: null };
+  feedState = { rendered: 0, curAgent: null, dirtyAgents: new Set(), rebuilding: true, openCard: null, planCard: null, reasoning: null, lastPlanSig: null };
   if (!state.currentSession) {
     feed.innerHTML = `<div class="empty">${tr('feed.empty')}</div>`;
     return;
@@ -510,12 +532,13 @@ function renderFeed() {
     console.error(`[rose] 有 ${renderFailed} 条消息渲染失败（首条：#${firstFail.i} type=${firstFail.type}：${firstFail.msg}）；其余已正常显示`);
   }
   flushAgentRender();                                                     // 重建结束：立刻成型（不等下一帧）
+  feedState.rebuilding = false;
   if (curBusy()) feed.appendChild(genRow(role));   // 与 syncGenRow() 一致：busy 时末尾保留一行
   scrollBottom();
 }
 
 // 增量渲染游标：rendered=已上屏消息数；curAgent/openCard 为正在累积的 DOM 节点
-let feedState = { rendered: 0, curAgent: null, openCard: null, planCard: null, reasoning: null, lastPlanSig: null };
+let feedState = { rendered: 0, curAgent: null, dirtyAgents: new Set(), rebuilding: false, openCard: null, planCard: null, reasoning: null, lastPlanSig: null };
 // 把一条消息追加到 feed（全量重建与 SSE 流式增量共用同一套状态机，保证行为一致）
 function feedAppendMsg(m, idx) {
   const feed = $('#feed');
@@ -525,6 +548,9 @@ function feedAppendMsg(m, idx) {
   } else if (m.t === 'a-delta') {
     if (!feedState.curAgent) { feedState.curAgent = agentMsg(m.ts); feed.appendChild(feedState.curAgent); }
     feedState.curAgent._raw += m.v;
+    // ⚠️ 必须按"行"登记脏标记：重建时 curAgent 会被下一条消息换成新行，
+    // 只渲染 curAgent 会导致**除最后一条外所有回复的正文都是空的**（头像/名字在、内容空白）。
+    feedState.dirtyAgents.add(feedState.curAgent);
     scheduleAgentRender();      // 每帧最多解析一次（流式/重建共用）
   } else if (m.t === 'plan') {
     // 结构化计划：同回合的计划更新复用同一张卡片；内容与上一条完全相同时跳过重绘

@@ -296,6 +296,7 @@ button:disabled{transition:none}
 /* 压缩蒙版：盖住对话列的**可视区域**。⚠️ 必须挂在 .main（position:relative、不滚动）上：
    挂在滚动容器 #chatroom 上时，绝对定位的 inset:0 会锚在"内容原点"——用户滚到长对话底部时
    蒙版直接滚出视口（看不见），但发送键已禁用 → 用户只看到"发不出去又没有提示"。 */
+.body-note{color:var(--faint);font-size:12.5px;font-style:italic}
 .compact-mask{position:absolute;inset:0;z-index:20;display:flex;align-items:center;justify-content:center;background:var(--scrim);backdrop-filter:blur(6px)}
 .compact-mask[hidden]{display:none}
 .compact-mask .cm-card{display:flex;flex-direction:column;align-items:center;gap:11px;padding:24px 30px;border:1px solid var(--border-strong);border-radius:14px;background:var(--panel);box-shadow:var(--shadow-lg,0 18px 44px rgba(18,24,45,.18));width:300px;text-align:center}
