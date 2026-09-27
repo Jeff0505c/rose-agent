@@ -429,6 +429,15 @@ async function engineNativeCall(method, ...args) {
   }
 }
 
+/** requestId 合法性：**显式判空**，不用 truthy 判断 —— codex 的 server→client 请求 id 可以是 0
+ *  （JSON-RPC 从 0 起），`!requestId` 会把 0 / '0' 一起挡掉 → 审批永远送不到引擎、
+ *  响应不回写、看门狗也不 arm（看门狗只在 approve 成功后起）→ 引擎无限等待。
+ *  空串同样视为缺失（UI 误传 ''）；undefined / null 视为缺失。 */
+function hasRequestId(v) { return v !== undefined && v !== null && v !== ''; }
+function describeRequestId(v) {
+  return v === undefined ? 'undefined' : (typeof v === 'string' ? JSON.stringify(v) : String(v));
+}
+
 /** 按 id 取会话（索引损坏时返回 null，不把异常抛给调用方） */
 function findSession(id) {
   const sessions = loadSessions();
@@ -589,7 +598,7 @@ function closeOpenTools(sid, why) {
   const set = sessionOpenTools.get(sid);
   if (!set || !set.size) { sessionOpenTools.delete(sid); return; }
   for (const toolId of [...set]) {
-    const v = { type: 'tool-end', toolId, ok: false, output: '（已' + why + '，未收到完成结果）' };
+    const v = { type: 'tool-end', toolId, ok: false, output: '（' + why + '，未收到完成结果）' };
     appendMessage(sid, { t: 'tool-end', v, ts: Date.now() });
     broadcast('message', { sessionId: sid, kind: 'tool-end', ...v });
   }
@@ -1772,8 +1781,15 @@ route('POST', /^\/api\/approve$/, async (ctx) => {
   const body = ctx.body;
   const sessions = sessionsList();
   const s = sessions.find((x) => x.id === body.sessionId);
-  if (!s) return { status: 404, body: { error: 'session not found' } };
-  if (!body.requestId) return { status: 400, body: { error: '缺少 requestId' } };
+  // 失败 body 里也带 status（双保险：即便调用方不走 preload 垫片也能读到状态码）
+  if (!s) return { status: 404, body: { error: 'session not found', status: 404 } };
+  if (!hasRequestId(body.requestId)) {
+    // 拒收也要留痕：下次一眼能看到"审批被服务层挡下"（0 曾被 falsy 判断误挡，引擎无限等）
+    const shown = describeRequestId(body.requestId);
+    recordNativeAudit({ kind: 'approval-rejected', ok: false,
+      note: `审批被拒收：requestId 缺失（原值 ${shown}，session=${body.sessionId || '-'}）—— 未送达引擎` });
+    return { status: 400, body: { error: `缺少 requestId（原值 ${shown}）——审批未送达引擎，请重新发起一轮`, status: 400 } };
+  }
   const role = loadRoles().find((r) => r.id === s.roleId);
   await engine.approve({ ...s, role }, body.requestId, !!body.decision);
   // B7：技能依赖安装走的就是这条既有审批通道 —— 每次应答登记一条审计行（诊断导出可见），
@@ -1791,12 +1807,20 @@ route('POST', /^\/api\/ask$/, async (ctx) => {
   const sessions = sessionsList();
   const s = sessions.find((x) => x.id === body.sessionId);
   if (s) {
+    // 与 /api/approve 同口径：显式判空（0 / '0' 合法），缺失则 400 + 审计，绝不静默
+    if (!hasRequestId(body.requestId)) {
+      const shown = describeRequestId(body.requestId);
+      recordNativeAudit({ kind: 'ask-rejected', ok: false,
+        note: `询问应答被拒收：requestId 缺失（原值 ${shown}，session=${s.id}）—— 未送达引擎` });
+      return { status: 400, body: { error: `缺少 requestId（原值 ${shown}）——询问应答未送达引擎`, status: 400 } };
+    }
     const role = loadRoles().find((r) => r.id === s.roleId);
     const ok = engine.respondAsk({ ...s, role }, body.requestId, body.answers || {});
     const answers = body.answers || {};
     // 把答案写进对应的 ask 消息（历史回显），并广播解析事件
     const msgs = loadMessages(s.id);
-    const askMsg = [...msgs].reverse().find((mm) => mm.t === 'ask' && mm.v && mm.v.requestId === body.requestId);
+    // 数值/字符串 id 统一按字符串比较（引擎发 0、UI 往返可能变 '0'，严格相等会找不到消息 → 答案丢历史）
+    const askMsg = [...msgs].reverse().find((mm) => mm.t === 'ask' && mm.v && String(mm.v.requestId) === String(body.requestId));
     if (askMsg) {
       askMsg.v.answer = answers;
       saveMessages(s.id, msgs);
@@ -1804,7 +1828,7 @@ route('POST', /^\/api\/ask$/, async (ctx) => {
     broadcast('ask-resolved', { sessionId: s.id, requestId: body.requestId, answers });
     return { status: 200, body: { ok } };
   }
-  return { status: 404, body: { error: 'session not found' } };
+  return { status: 404, body: { error: 'session not found', status: 404 } };
 });
 
 // #12b POST /api/compact { sessionId } —— 手动压缩上下文（thread/compact/start）

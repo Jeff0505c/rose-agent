@@ -282,8 +282,11 @@ class CodexEngine {
     // 引擎发起的请求（审批/升权/询问/MCP 授权/取时间）**不答就会永久挂起该轮**（实测）。
     // 这里登记"哪个进程、哪个请求、期望什么形状的应答"，既解决应答送错进程，也让诊断能看到全过程。
     this.pendingServerRequests = new Map(); // key=String(id) → { st, rawId, method, kind, threadId, at }
-    this.requestAudit = [];                 // 最近 200 条：{at, method, id, threadId, kind, response|error}
-    this._watchdogs = new Map();            // threadId → { warn, fail, info }（审批回送后等待引擎执行）
+    this.requestAudit = [];                 // 最近 200 条（内存）：{at, method, id, threadId, kind, response|error}
+    this._watchdogs = new Map();            // threadId → { warn, fail, info }（等待人工审批 / 等待引擎执行）
+    // 落盘审计（有界 JSONL，0600）：进程重启后仍能查"点了同意为什么没反应"
+    this._auditFilePath = path.join(ROOT, 'work', 'data', 'engine-requests.jsonl');
+    this._auditLines = null;                // 懒加载行数（首次写时统计）
     this._loadThreads();          // 从磁盘恢复会话线程映射（线程在角色线程库中，进程重启后经 thread/resume 恢复）
   }
 
@@ -844,8 +847,10 @@ class CodexEngine {
    * ================================================================================== */
 
   _auditRequest(rec) {
-    this.requestAudit.push(Object.assign({ at: Date.now() }, rec));
+    const row = Object.assign({ at: Date.now() }, rec);
+    this.requestAudit.push(row);
     if (this.requestAudit.length > 200) this.requestAudit.splice(0, this.requestAudit.length - 200);
+    this._persistRequestAudit(row);   // 落盘（有界 + 0600 + 绝不抛错）
   }
 
   _trackRequest(st, rawId, method, params, kind) {
@@ -883,6 +888,7 @@ class CodexEngine {
     if (method === 'item/permissions/requestApproval') {
       write({ result: { permissions: {} } });
       this._auditRequest({ method, id, threadId, kind: 'permissions', response: { permissions: {} } });
+      if (threadId) { const t0 = this.turnByThread.get(threadId); if (t0) this._armWatchdog(threadId, t0, { requestId: id, method, phase: 'engine' }); }
       process.stderr.write(`[codex] item/permissions/requestApproval（能力升级）→ 空授予拒绝（threadId=${threadId || '?'}）\n`);
       return true;
     }
@@ -905,6 +911,8 @@ class CodexEngine {
       this._trackRequest(st, id, method, params, 'mcp-tool');
       this.pendingElicitations.add(id);
       this._auditRequest({ method, id, threadId, kind: 'mcp-tool', toolName, response: null, ui: !!turn });
+      // 请求一发出就计时：否则"人没点/点了没送到"期间引擎侧没有任何超时或可见事件（本次事故 33 分钟干等）
+      if (turn) this._armWatchdog(threadId, turn, { requestId: id, method, phase: 'approval-pending' });
       if (turn) {
         turn.emit({
           type: 'approval-request', requestId: id, kind: 'mcp-tool',
@@ -929,6 +937,7 @@ class CodexEngine {
       const raw = Array.isArray(params.command) ? params.command.join(' ') : (params.command || '');
       const detail = raw || params.reason || (params.changes ? `${(params.changes || []).length} 个文件` : '');
       this._auditRequest({ method, id, threadId, kind, command: String(detail).slice(0, 500), response: null, ui: !!turn });
+      if (turn) this._armWatchdog(threadId, turn, { requestId: id, method, phase: 'approval-pending' });
       if (turn) {
         turn.emit({
           type: 'approval-request', requestId: id, kind,
@@ -950,6 +959,7 @@ class CodexEngine {
       const turn = this._turnForThread(threadId);
       this._trackRequest(st, id, method, params, 'ask');
       this._auditRequest({ method, id, threadId, kind: 'ask', response: null, ui: !!turn });
+      if (turn) this._armWatchdog(threadId, turn, { requestId: id, method, phase: 'approval-pending' });
       if (turn) {
         turn.emit({ type: 'ask', requestId: id, questions: params.questions || [] });
       } else {
@@ -1001,28 +1011,43 @@ class CodexEngine {
     if (threadId && this._watchdogs.has(threadId)) this._clearWatchdog(threadId);
   }
 
-  _armWatchdog(threadId, turn, info) {
+  /**
+   * 看门狗：等待人工审批 / 等待引擎执行。
+   * `info.phase`：
+   *   'approval-pending' —— 引擎已发审批请求、**还没收到人的决定**（本次事故：用户干等 33 分钟无任何事件）
+   *   'engine'（默认）    —— 决定已回送，等引擎真的动起来
+   */
+  _armWatchdog(threadId, turn, info = {}) {
     this._clearWatchdog(threadId);
     const { warnMs, failMs } = this._waitPolicy();
     const sessionId = this.sessionIdForThread(threadId);
+    const pendingApproval = info.phase === 'approval-pending';
+    const warnMsg = pendingApproval
+      ? `引擎已请求人工审批（${info.method || 'approval'}），已等待 ${Math.round(warnMs / 1000)} 秒——等待人工审批中…`
+      : `审批已回送引擎，但 ${Math.round(warnMs / 1000)} 秒内没有任何进展——正在等待引擎执行…`;
     const warn = setTimeout(() => {
       this._emitGlobal({
         type: 'engine-waiting', sessionId, threadId, requestId: info.requestId, method: info.method,
-        waitedMs: warnMs,
-        message: `审批已回送引擎，但 ${Math.round(warnMs / 1000)} 秒内没有任何进展——正在等待引擎执行…`,
+        phase: pendingApproval ? 'approval-pending' : 'engine', waitedMs: warnMs, message: warnMsg,
       });
     }, warnMs);
     const fail = setTimeout(() => {
       if (!this.turnByThread.has(threadId)) return;
       const waitS = Math.round(failMs / 1000);
-      const message = `审批已回送引擎，但 ${waitS} 秒内没有任何进展，本轮已释放（避免永久挂起）。`
-        + '可重试该操作；若反复出现，请用「诊断导出」反馈请求类型。';
-      process.stderr.write(`[codex] 等待引擎执行超时（threadId=${threadId}，method=${info.method || '?'}）→ 释放本轮\n`);
+      const message = pendingApproval
+        ? `引擎请求人工审批后 ${waitS} 秒内未收到决定，本轮已释放（避免永久挂起）。`
+          + '可直接重新发送该请求。'
+        : `审批已回送引擎，但 ${waitS} 秒内没有任何进展，本轮已释放（避免永久挂起）。`
+          + '可重试该操作；若反复出现，请用「诊断导出」反馈请求类型。';
+      process.stderr.write(`[codex] ${pendingApproval ? '等待人工审批' : '等待引擎执行'}超时（threadId=${threadId}，method=${info.method || '?'}）→ 释放本轮\n`);
       this.turnByThread.delete(threadId);
       this.turnProc.delete(threadId);
       this.turnIds.delete(threadId);
       this._clearWatchdog(threadId);
-      this._emitGlobal({ type: 'engine-waiting-timeout', sessionId, threadId, requestId: info.requestId, method: info.method, waitedMs: failMs, message });
+      this._emitGlobal({
+        type: 'engine-waiting-timeout', sessionId, threadId, requestId: info.requestId, method: info.method,
+        phase: pendingApproval ? 'approval-pending' : 'engine', waitedMs: failMs, message,
+      });
       try { turn.emit({ type: 'error', message }); } catch { /* 前端已断开 */ }
     }, failMs);
     if (warn.unref) warn.unref();
@@ -1030,9 +1055,66 @@ class CodexEngine {
     this._watchdogs.set(threadId, { warn, fail, info, at: Date.now() });
   }
 
+  /* ---------- D3 追加：请求审计落盘（内存环形 + 有界 JSONL） ---------- */
+
+  _auditPolicy() {
+    const g = (this._getSettings() && this._getSettings().global) || {};
+    const max = Number(g.engineRequestAuditMax);
+    return { maxLines: Number.isFinite(max) && max >= 10 ? Math.floor(max) : 2000 };
+  }
+
+  /** 有界轮转：超过上限时保留后半段（原子替换 + 0600），失败不影响主流程 */
+  _rotateRequestAudit(file, maxLines) {
+    try {
+      const lines = fs.readFileSync(file, 'utf8').split('\n').filter(Boolean);
+      if (lines.length <= maxLines) { this._auditLines = lines.length; return; }
+      const keep = lines.slice(-Math.floor(maxLines / 2));
+      const tmp = file + '.tmp-' + process.pid;
+      fs.writeFileSync(tmp, keep.join('\n') + '\n', { mode: 0o600 });
+      fs.renameSync(tmp, file);
+      this._auditLines = keep.length;
+    } catch { /* 轮转失败不影响主流程 */ }
+  }
+
+  /**
+   * 把一次 server→client 请求或应答追加写 ROOT/work/data/engine-requests.jsonl。
+   * 目的：卡死时 30 秒内可证（内存审计进程一重启就没了）。有界 + 0600 + 绝不抛错。
+   */
+  _persistRequestAudit(rec) {
+    try {
+      const file = this._auditFilePath;
+      const idType = rec.id === undefined || rec.id === null ? 'none' : typeof rec.id;
+      const line = JSON.stringify({
+        ts: new Date(rec.at || Date.now()).toISOString(),
+        method: rec.method || null,
+        id: rec.id === undefined ? null : rec.id,
+        idType,
+        threadId: rec.threadId || null,
+        sessionId: rec.sessionId || this.sessionIdForThread(rec.threadId) || null,
+        kind: rec.kind || null,
+        ui: rec.ui === undefined ? null : !!rec.ui,
+        response: rec.response === undefined ? null : rec.response,
+        note: rec.note || rec.error || null,
+      });
+      fs.mkdirSync(path.dirname(file), { recursive: true });
+      const { maxLines } = this._auditPolicy();
+      if (this._auditLines === null) {
+        try { this._auditLines = fs.readFileSync(file, 'utf8').split('\n').filter(Boolean).length; }
+        catch { this._auditLines = 0; }
+      }
+      fs.appendFileSync(file, line + '\n', { mode: 0o600 });
+      try { fs.chmodSync(file, 0o600); } catch { /* 平台不支持时忽略 */ }
+      this._auditLines += 1;
+      if (this._auditLines > maxLines) this._rotateRequestAudit(file, maxLines);
+    } catch (e) {
+      process.stderr.write('[engine] 请求审计落盘失败：' + ((e && e.message) || e) + '\n');
+    }
+  }
+
   /** 诊断：待决请求 + 最近请求审计 + 看门狗（服务层「诊断导出」可直接取用） */
   diagnostics() {
     return {
+      auditFile: this._auditFilePath,
       pendingRequests: [...this.pendingServerRequests.entries()].map(([k, v]) => ({
         key: k, method: v.method, kind: v.kind, threadId: v.threadId, at: v.at,
       })),
@@ -1541,7 +1623,7 @@ class CodexEngine {
     // 回送成功 → 起看门狗：N 秒无进展就报「等待引擎执行…」，M 秒无进展则显式释放该轮（D3 要求③）
     if (threadId) {
       const t = this.turnByThread.get(threadId);
-      if (t) this._armWatchdog(threadId, t, { requestId: rawId, method });
+      if (t) this._armWatchdog(threadId, t, { requestId: rawId, method, phase: 'engine' });
     }
     return true;
   }

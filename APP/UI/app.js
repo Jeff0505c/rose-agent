@@ -8,13 +8,13 @@ const $ = (s) => document.querySelector(s);
 /* ---------- i18n（中/英，分批覆盖；settings.global.language: zh | en） ---------- */
 const I18N = {
   zh: { newChat:'新会话', searchPh:'搜索会话…', settingsBtn:'设置', sendBtn:'发送', stopBtn:'■ 停止', inputPh:'发消息…（⏎ 发送 / ⇧⏎ 换行）',
-    'status.ready':'就绪','status.running':'处理中…','status.error':'出错',
+    'status.ready':'就绪','status.running':'处理中…','status.error':'出错','status.approvalWait':'等待人工审批',
     'usage.loading':'加载中…','usage.totalTokens':'累计 Tokens','usage.totalTurns':'累计轮次','usage.today':'今日轮次','usage.week':'近 7 天轮次','usage.input':'输入','usage.output':'输出','usage.cached':'其中缓存命中','usage.byModel':'按模型分布','usage.trend':'近 14 天趋势','usage.byRole':'按角色','usage.none':'暂无数据',
     'prompt.title':'全局提示词 AGENTS-GLOBAL.md','prompt.desc':'对所有角色生效；保存后同步到每个运行实例，新对话生效。',
     'common.save':'保存','common.ok':'知道了','common.saveOk':'✓ 已保存','common.polish':'AI 润色',
     'model.enabledHint':'展开 Provider → 点「获取模型」→ 勾选即启用（取消勾选即停用）。每行右侧「改请求名」可就地修改发给供应商的 model 字段。保存后生效。','model.providersTitle':'模型来源 · Provider','model.addProvider':'新增模型配置','model.badgeLocal':'本地·无需Key','model.badgeSet':'已配Key','model.badgeUnset':'无Key','model.delProvider':'删除该 Provider','model.nameLabel':'供应商名称（显示名，可自定义）','model.apiKey':'API Key','model.noKey':'本地模型，无需 API Key','model.keepBlank':'••••••••（留空保持不变）','model.fetch':'获取模型','model.fetchHint':'拉取该 endpoint 的可用模型','model.cachedHas':'已缓存 {n} 个模型','model.metaHas':'{m} 个模型 · {e} 个已启用','model.unset':'未配置','model.filter':'过滤模型…','model.save':'保存模型配置','model.choosePh':'（请选择模型）','model.reqName':'请求名称','model.editReq':'改请求名','model.custom':'自定义','model.listEmpty':'（尚未获取模型；可点上方「获取模型」，或在下方直接填请求名添加）','model.editReqHint':'修改发给供应商的请求名称（model 字段）','model.reqNameHint':'请求名称＝发给供应商的 model 字段（名称下排小字）。列表里没有的模型可在此直接添加：别名、自建网关、预览版都适用。','model.reqNamePh':'例如 deepseek-chat','model.addReq':'添加','model.dupReq':'该请求名称「{n}」已在此供应商下启用','model.reqAdded':'已添加 {n} —— 记得点下方「保存模型配置」','model.renamedSync':'请求名已改为 {to}（原 {from}）；已同步更新 {n} 个使用该模型的会话','model.saveFail':'保存失败：',
     'unsaved.title':'有未保存的更改','unsaved.msg':'模型配置里有改动尚未保存。现在保存吗？','unsaved.save':'保存并关闭','unsaved.discard':'不保存','model.pruned':'已移除 {n} 个失效模型','model.pickTitle':'请选择模型','model.pickMsg':'这个会话还没有选择模型。请在发送框旁的模型下拉里选择本次对话要用的模型。',
-    'dlg.close':'关闭','dlg.closeDeny':'关闭（视为拒绝）','dlg.closeSkip':'关闭（跳过，不回答）','ask.title':'需要你的选择','ask.submit':'提交回答','appr.deny':'拒绝','appr.allow':'允许','mcpUI.title':'新增 MCP 服务器','mcpUI.type':'服务器类型','mcpUI.typeStdio':'本地进程（stdio：uvx / npx / node 命令）','mcpUI.typeHttp':'远程 · Streamable HTTP（填 URL）','mcpUI.typeSse':'远程 · SSE（旧式 HTTP+SSE，填 URL）','mcpUI.name':'名称（唯一）','mcpUI.namePh':'例如 my-server','mcpUI.args':'参数（空格分隔，可空）','mcpUI.env':'环境变量（每行 KEY=VALUE，可空）','mcpUI.headers':'请求头（每行 Key: Value，可空；鉴权如 Authorization: Bearer xxx）','mcpUI.scope':'绑定范围','mcpUI.test':'测试连接',
+    'dlg.close':'关闭','dlg.closeDeny':'关闭（视为拒绝）','dlg.closeSkip':'关闭（跳过，不回答）','ask.title':'需要你的选择','ask.submit':'提交回答','appr.deny':'拒绝','appr.allow':'允许','appr.waitChip':'等待人工审批','appr.waitNote':'该命令正在等待你的人工审批（尚未开始执行）：{c}','appr.deniedChip':'已拒绝，命令未执行','appr.deniedNote':'你已拒绝该操作，命令未执行。','appr.undeliverableChip':'审批未送达','appr.undeliverable':'审批未能送达引擎（{r}）；该操作未执行。','appr.turnEnded':'审批未完成（回合已结束）','appr.submitting':'提交中…','appr.sendFailMsg':'审批提交失败：{e}。任务仍在等待你的决定，请重试或用「拒绝」结束。','appr.sendFailThrown':'IPC/网络异常：{e}','appr.sendFailUnknown':'服务端未返回可读原因','mcpUI.title':'新增 MCP 服务器','mcpUI.type':'服务器类型','mcpUI.typeStdio':'本地进程（stdio：uvx / npx / node 命令）','mcpUI.typeHttp':'远程 · Streamable HTTP（填 URL）','mcpUI.typeSse':'远程 · SSE（旧式 HTTP+SSE，填 URL）','mcpUI.name':'名称（唯一）','mcpUI.namePh':'例如 my-server','mcpUI.args':'参数（空格分隔，可空）','mcpUI.env':'环境变量（每行 KEY=VALUE，可空）','mcpUI.headers':'请求头（每行 Key: Value，可空；鉴权如 Authorization: Bearer xxx）','mcpUI.scope':'绑定范围','mcpUI.test':'测试连接',
 
     'skill.bar':'技能 · 全局通用 / 角色专用',
     'mcpX.scopeGlobal':'全局（所有角色可用）','mcpX.roleScope':'角色专属','mcpX.testNeedUrl':'请先填 URL','mcpX.testNeedCmd':'请先填 command','mcpX.testing':'测试中…','mcpX.connOk':'✓ 连接成功，{n} 个工具：','mcpX.connFail':'连接失败',
@@ -77,12 +77,12 @@ const I18N = {
     'cmd.help.desc':'列出全部可用指令','cmd.help.title':'可用指令：','free.confirm':'将授予模型完全访问权限并自动执行所有命令，不做任何审批。\n\n仅在你完全信任模型且确知后果时使用。','free.enable':'仍然启用',
 },
   en: { newChat:'New Chat', searchPh:'Search sessions…', settingsBtn:'Settings', sendBtn:'Send', stopBtn:'■ Stop', inputPh:'Message… (⏎ send / ⇧⏎ newline)',
-    'status.ready':'Ready','status.running':'Working…','status.error':'Error',
+    'status.ready':'Ready','status.running':'Working…','status.error':'Error','status.approvalWait':'Waiting for approval',
     'usage.loading':'Loading…','usage.totalTokens':'Cumulative Tokens','usage.totalTurns':'Cumulative Turns','usage.today':'Turns Today','usage.week':'Last 7 Days','usage.input':'Input','usage.output':'Output','usage.cached':'of which cached','usage.byModel':'By Model','usage.trend':'Last 14 Days','usage.byRole':'By Role','usage.none':'No data',
     'prompt.title':'Global Prompt — AGENTS-GLOBAL.md','prompt.desc':'Applies to all roles; synced to every running instance, effective on new chats.',
     'common.save':'Save','common.ok':'Got it','common.saveOk':'✓ Saved','common.polish':'AI Polish',
     'model.enabledHint':'Expand a provider → tap "Fetch models" → tick to enable (untick to disable). Use "Rename" on a row to edit the model field sent to the provider. Takes effect after saving.','model.providersTitle':'Model Sources · Providers','model.addProvider':'Add provider','model.badgeLocal':'Local · no key','model.badgeSet':'Key set','model.badgeUnset':'No key','model.delProvider':'Delete this provider','model.nameLabel':'Provider name (display, editable)','model.apiKey':'API Key','model.noKey':'Local model — no API key needed','model.keepBlank':'•••••••• (blank keeps current)','model.fetch':'Fetch models','model.fetchHint':'Load available models from this endpoint','model.cachedHas':'{n} model(s) cached','model.metaHas':'{m} models · {e} enabled','model.unset':'Not configured','model.filter':'Filter models…','model.save':'Save model config','model.choosePh':'(choose a model)','model.reqName':'Request name','model.editReq':'Rename','model.custom':'custom','model.listEmpty':'(no models fetched yet — use "Fetch models" above, or type a request name below)', 'model.editReqHint':'Edit the request name (model field) sent to the provider','model.reqNameHint':'The request name is the "model" field sent to the provider (small text under the name). Add any model missing from the list — aliases, self-hosted gateways, preview builds.','model.reqNamePh':'e.g. deepseek-chat','model.addReq':'Add','model.dupReq':'Request name "{n}" is already enabled for this provider','model.reqAdded':'Added {n} — remember to click Save model config below','model.renamedSync':'Request name changed to {to} (was {from}); {n} session(s) using it were updated','model.saveFail':'Save failed: ','unsaved.title':'Unsaved changes','unsaved.msg':'The model configuration has unsaved changes. Save them now?','unsaved.save':'Save & close','unsaved.discard':'Discard','model.pruned':'removed {n} stale model(s)','model.pickTitle':'Choose a model','model.pickMsg':'This session has no model selected yet. Pick one from the model dropdown next to the send box.',
-    'dlg.close':'Close','dlg.closeDeny':'Close (treated as deny)','dlg.closeSkip':'Close (skip, no answer)','ask.title':'Your input is needed','ask.submit':'Submit answers','appr.deny':'Deny','appr.allow':'Allow','mcpUI.title':'Add MCP Server','mcpUI.type':'Server type','mcpUI.typeStdio':'Local process (stdio: uvx / npx / node command)','mcpUI.typeHttp':'Remote · Streamable HTTP (URL)','mcpUI.typeSse':'Remote · SSE (legacy HTTP+SSE, URL)','mcpUI.name':'Name (unique)','mcpUI.namePh':'e.g. my-server','mcpUI.args':'Arguments (space-separated, optional)','mcpUI.env':'Environment (one KEY=VALUE per line, optional)','mcpUI.headers':'Request headers (one per line, Key: Value; auth e.g. Authorization: Bearer xxx)','mcpUI.scope':'Bind scope','mcpUI.test':'Test connection',
+    'dlg.close':'Close','dlg.closeDeny':'Close (treated as deny)','dlg.closeSkip':'Close (skip, no answer)','ask.title':'Your input is needed','ask.submit':'Submit answers','appr.deny':'Deny','appr.allow':'Allow','appr.waitChip':'Waiting for approval','appr.waitNote':'This command is waiting for your approval (not running yet): {c}','appr.deniedChip':'Denied — command not run','appr.deniedNote':'You denied this action; the command was not executed.','appr.undeliverableChip':'Approval not delivered','appr.undeliverable':'The approval could not be delivered to the engine ({r}); the action was not executed.','appr.turnEnded':'Approval unfinished (turn ended)','appr.submitting':'Submitting…','appr.sendFailMsg':'Could not submit your decision: {e}. The task is still waiting — retry, or click Deny to finish.','appr.sendFailThrown':'IPC/network error: {e}','appr.sendFailUnknown':'the server returned no readable reason','mcpUI.title':'Add MCP Server','mcpUI.type':'Server type','mcpUI.typeStdio':'Local process (stdio: uvx / npx / node command)','mcpUI.typeHttp':'Remote · Streamable HTTP (URL)','mcpUI.typeSse':'Remote · SSE (legacy HTTP+SSE, URL)','mcpUI.name':'Name (unique)','mcpUI.namePh':'e.g. my-server','mcpUI.args':'Arguments (space-separated, optional)','mcpUI.env':'Environment (one KEY=VALUE per line, optional)','mcpUI.headers':'Request headers (one per line, Key: Value; auth e.g. Authorization: Bearer xxx)','mcpUI.scope':'Bind scope','mcpUI.test':'Test connection',
 
     'skill.bar':'Skills · global / role-specific',
     'mcpX.scopeGlobal':'Global (available to all roles)','mcpX.roleScope':'Role-specific','mcpX.testNeedUrl':'Please fill in the URL','mcpX.testNeedCmd':'Please fill in the command','mcpX.testing':'Testing…','mcpX.connOk':'✓ Connected, {n} tool(s):','mcpX.connFail':'Connection failed',
@@ -157,7 +157,9 @@ function applyStatic() {
 function initI18n() { lang = langFromSettings(); applyStatic(); }
 function setAgentStatusLang() {
   const st = $('#agentStatus'); if (!st) return;
-  let m='ready'; if (st.classList.contains('running')) m='running'; else if (st.classList.contains('error')) m='error';
+  let m='ready'; if (st.classList.contains('running')) m='running';
+  else if (st.classList.contains('wait')) m='approvalWait';
+  else if (st.classList.contains('error')) m='error';
   const t = $('#agentStatusText'); if (t) t.textContent = tr('status.' + m);
 }
 async function setLang(l) {
@@ -190,6 +192,7 @@ const state = {
   goalSupported: {},   // sessionId -> 该会话是否支持 goals（路由/引擎未就绪时为 false）
   goalEditing: false,  // 目标栏是否处于就地编辑态
   configWarnings: null, // 最近一次设置保存回包的 configWarnings（引擎拒绝某项能力的可读原因）
+  approvals: {},   // requestId -> { sessionId, kind, command, toolId }（"等待人工审批"的可见状态来源）
   winResetPending: {}, // 非当前会话收到的窗口续接提示：sessionId -> [{t:'win-reset',...}]
   subagents: {},   // sessionId -> { agentId: {id,title,state,lastText,ts} }（只读；SSE + GET 同步）
   subSupported: {}, // sessionId -> 引擎是否接线了子代理（GET 的 supported）
@@ -585,7 +588,7 @@ function feedAppendMsg(m, idx) {
   } else if (m.t === 'ask') {
     // 询问只读摘要行（交互在独立弹窗，历史中只留"题目 → 已答"记录）
     const msgs = state.currentSession.messages;
-    const ans = (idx !== undefined ? msgs.slice(idx + 1) : []).find((x) => x.t === 'ask-answer' && x.v.requestId === m.v.requestId);
+    const ans = (idx !== undefined ? msgs.slice(idx + 1) : []).find((x) => x.t === 'ask-answer' && ridOf(x.v.requestId) === ridOf(m.v.requestId));
     const answers = (ans && ans.v.answers) || m.v.answer || null;
     const el = askSummaryEl(m.v, answers);
     feed.appendChild(el);
@@ -618,6 +621,7 @@ function feedAppendMsg(m, idx) {
     feedState.openCard = toolCard({ name: m.v.name, args: m.v.args, status: 'run', output: '', server: m.v.server || '' });
     feedState.openCard.dataset.toolId = m.v.toolId || '';
     feedState.openCard.dataset.toolName = m.v.name || '';
+    feedState.openCard.dataset.done = '';
     if (m.v.server) feedState.openCard.dataset.server = m.v.server;
     feed.appendChild(feedState.openCard);
   } else if (m.t === 'error') {
@@ -632,6 +636,7 @@ function feedAppendMsg(m, idx) {
     // ok:false = 引擎明确回报失败（如联网不可达）：如实显示失败 + 那段可读错误，不吞成空结果
     const toolOk = m.v.ok !== false;
     if (feedState.openCard) {
+      feedState.openCard.dataset.done = '1';
       feedState.openCard.fill({ status: toolOk ? 'ok' : 'error', output });
       // 联网工具（web_search）成功时：卡片内追加来源链接（普通工具调用展示 + 来源可点）
       const toolName = m.v.name || feedState.openCard.dataset.toolName || '';
@@ -896,6 +901,9 @@ function askSummaryEl(v, answers) {
 }
 
 // ---- 模型提问弹窗（独立模态，收集多题后统一提交） ----
+/** requestId 归一化：0 是合法 id（falsy 判断会丢事件），且数字 0 与字符串 '0' 必须等价 */
+const ridOf = (v) => (v === undefined || v === null) ? '' : String(v);
+
 const askModalState = { requestId: null, v: null };
 // 询问/审批弹窗队列：多角色并行时可能同时来多条，必须逐条处理且**按请求所属会话应答**，
 // 旧实现是「新请求直接顶掉旧请求」+ 用当前会话 id 应答 → 两条并行线程都会卡死。
@@ -912,8 +920,9 @@ function modalFromLine(sid) {
   return `<div class="modal-from">${esc(tr('modal.from').replace('{r}', role).replace('{s}', title))}</div>`;
 }
 function enforceModals(sid) { // 被应答/取消后，把它从队列里摘掉
-  for (let i = modalQueue.length - 1; i >= 0; i--) if (modalQueue[i].requestId === sid) modalQueue.splice(i, 1);
-  if (activeModal && activeModal.requestId === sid) { activeModal = null; pumpModals(); }
+  const rid = ridOf(sid);
+  for (let i = modalQueue.length - 1; i >= 0; i--) if (ridOf(modalQueue[i].requestId) === rid) modalQueue.splice(i, 1);
+  if (activeModal && ridOf(activeModal.requestId) === rid) { activeModal = null; pumpModals(); }
 }
 function pumpModals() {
   if (activeModal) return;
@@ -924,8 +933,9 @@ function pumpModals() {
   else renderApprovalModal(next);
 }
 function queueModal(item) {
-  if (activeModal && activeModal.requestId === item.requestId) return;
-  if (modalQueue.some((x) => x.requestId === item.requestId)) return;
+  item.requestId = ridOf(item.requestId);
+  if (activeModal && ridOf(activeModal.requestId) === item.requestId) return;
+  if (modalQueue.some((x) => ridOf(x.requestId) === item.requestId)) return;
   modalQueue.push(item);
   pumpModals();
   // 已有弹窗在显示时，新来的请求只更新"还有 N 条"角标（等当前这条处理完自动接上）
@@ -945,7 +955,7 @@ function modalQueueBadge() {
 function showAskModal(d) { queueModal({ kind: 'ask', ...d }); }
 function renderAskModal(d) {
   // 已有一个提问弹窗开着时，直接替换内容（新请求优先）；旧弹窗未提交的答案丢弃但请求不阻塞
-  askModalState.requestId = d.requestId;
+  askModalState.requestId = ridOf(d.requestId);
   askModalState.v = d;
   const mask = $('#askModalMask');
   const body = $('#askModalBody');
@@ -1024,12 +1034,12 @@ function renderAskModal(d) {
   $('#askModalSubmit').onclick = () => {
     const finalAns = {};
     for (const q of qs) if (picks[q.id] && picks[q.id].length) finalAns[q.id] = { answers: picks[q.id] };
-    api('POST', '/api/ask', { sessionId: d.sessionId, requestId: d.requestId, answers: finalAns });
+    api('POST', '/api/ask', { sessionId: d.sessionId, requestId: ridOf(d.requestId), answers: finalAns });
     hideAskModal();
   };
   // 右上角 ✕：跳过不回答（回空 answers，避免 turn 空等）
   $('#askModalClose').onclick = () => {
-    api('POST', '/api/ask', { sessionId: d.sessionId, requestId: d.requestId, answers: {} });
+    api('POST', '/api/ask', { sessionId: d.sessionId, requestId: ridOf(d.requestId), answers: {} });
     hideAskModal();
   };
   updateSubmit();
@@ -1107,6 +1117,90 @@ function thinkCardEl() {
 // 审批弹窗：收到工具/命令权限申请时弹出，允许/拒绝后回传
 // 入队（真正的弹窗渲染在 renderApprovalModal：由 pumpModals 调度）
 function showApprovalModal(ev) { queueModal({ kind: 'appr', ...ev }); }
+/* ---------- 审批可见状态：把"在等我点审批"与"在执行"区分开 ----------
+   现场问题：点同意后工具卡一直"运行中"，其实是在等人工审批；被拒后卡片只剩一句莫名的"运行中"。
+   这里把审批请求映射到对应工具卡（按命令文本匹配，退化为"最后一个未结束的 exec 卡"），
+   并在卡状态 chip 上给出「等待人工审批 / 已拒绝，命令未执行 / 审批未送达」等明确状态。 */
+const EXEC_TOOL_NAMES = /shell|exec|command|apply_patch|patch/i;
+
+function isExecToolCard(card) {
+  if (!card || card.dataset.done === '1') return false;
+  return EXEC_TOOL_NAMES.test(card.dataset.toolName || '');
+}
+/** 找到该审批请求对应的工具卡：先按命令文本精确匹配，再退化为最后一个未结束的 exec 卡 */
+function findApprovalCard(ev) {
+  const cards = [...document.querySelectorAll('#feed > .tool-card')].filter(isExecToolCard);
+  const cmd = String((ev && ev.command) || '').trim();
+  if (cmd) {
+    for (let i = cards.length - 1; i >= 0; i--) {
+      const args = String(cards[i].querySelector('.ta') ? cards[i].querySelector('.ta').textContent : '').trim();
+      if (args && (args === cmd || args.includes(cmd) || cmd.includes(args))) return cards[i];
+    }
+  }
+  return cards.length ? cards[cards.length - 1] : null;
+}
+/** 卡片状态 chip：wait / err / run 三态（wait 必须一眼区别于"运行中"） */
+function setCardChip(card, mode, label) {
+  if (!card) return;
+  const st = card.querySelector('.st');
+  if (!st) return;
+  if (mode === 'wait') { st.className = 'st wait'; st.innerHTML = '<span class="spin"></span>' + esc(label); }
+  else if (mode === 'err') { st.className = 'st err'; st.innerHTML = '✗ ' + esc(label); }
+  else if (mode === 'run') { st.className = 'st'; st.innerHTML = '<span class="spin"></span>' + esc(label || tr('tool.run')); }
+  else { st.className = 'st ok'; st.innerHTML = ICONS.check + ' ' + esc(label || tr('tool.done')); }
+}
+function setCardNote(card, text, isErr) {
+  if (!card) return;
+  let note = card.querySelector('.appr-note');
+  if (!note) { note = document.createElement('div'); note.className = 'appr-note'; card.appendChild(note); }
+  note.className = 'appr-note' + (isErr ? ' err' : '');
+  note.textContent = text;
+}
+/** 会话头状态：有未决审批 → 「等待人工审批」；否则回到 busy/ready 的真实状态 */
+function syncAgentStatus() {
+  const sid = state.currentSession && state.currentSession.id;
+  const waiting = sid && Object.values(state.approvals).some((a) => a.sessionId === sid);
+  if (waiting) setAgentStatus('wait');
+  else if (curBusy()) setAgentStatus('running');
+  else setAgentStatus('ready');
+}
+/** 审批请求到达：登记 + 卡片进入等待态 + 会话头状态 */
+function markApprovalPending(ev) {
+  const rid = ridOf(ev && ev.requestId);
+  if (!ev || !rid) return;
+  const card = findApprovalCard(ev);
+  state.approvals[rid] = {
+    sessionId: ev.sessionId, kind: ev.kind, command: ev.command || '',
+    toolId: card ? (card.dataset.toolId || '') : '',
+  };
+  if (card) {
+    card.dataset.approvalId = rid;
+    setCardChip(card, 'wait', tr('appr.waitChip'));
+    setCardNote(card, tr('appr.waitNote').replace('{c}', String(ev.command || '').slice(0, 300)), false);
+  }
+  syncAgentStatus();
+}
+/** 审批已应答：允许 → 恢复"运行中"（命令真的开始跑了）；拒绝/关闭 → 明确"已拒绝，命令未执行" */
+function resolveApprovalPending(ev, decision) {
+  const rid = ridOf(ev && ev.requestId);
+  if (rid) delete state.approvals[rid];
+  const card = rid
+    ? document.querySelector(`#feed > .tool-card[data-approval-id="${rid}"]`)
+    : null;
+  if (card) {
+    delete card.dataset.approvalId;
+    if (decision === 'accept') setCardChip(card, 'run', tr('tool.run'));
+    else if (decision === 'decline') {
+      setCardChip(card, 'err', tr('appr.deniedChip'));
+      setCardNote(card, tr('appr.deniedNote'), true);
+    } else {
+      setCardChip(card, 'err', tr('appr.turnEnded'));
+      setCardNote(card, tr('appr.turnEnded'), true);
+    }
+  }
+  syncAgentStatus();
+}
+
 function renderApprovalModal(ev) {
   const mask = $('#apprMask');
   const titleEl = mask.querySelector('.appr-title');
@@ -1137,11 +1231,35 @@ function renderApprovalModal(ev) {
   titleEl.innerHTML = titleInner;
   const body = mask.querySelector('.modal-body');
   body.innerHTML = modalFromLine(ev.sessionId) + bodyHtml + modalQueueBadge();
+  const errEl = $('#apprErr');
+  if (errEl) { errEl.hidden = true; errEl.textContent = ''; }
   const finish = async (ok) => {
     // 关键：用请求自带的 sessionId（不是"当前正在看的会话"）——否则并行时会答到别的线程上，两边都卡
-    await api('POST', '/api/approve', { sessionId: ev.sessionId, requestId: ev.requestId, decision: ok });
+    const allowBtn = $('#apprAllow'), denyBtn = $('#apprDeny'), closeBtn = $('#apprClose');
+    for (const b of [allowBtn, denyBtn, closeBtn]) if (b) b.disabled = true;
+    const keep = denyBtn ? denyBtn.textContent : '';
+    if (denyBtn) denyBtn.textContent = tr('appr.submitting');
+    let r = null, thrown = null;
+    try { r = await api('POST', '/api/approve', { sessionId: ev.sessionId, requestId: ridOf(ev.requestId), decision: ok }); }
+    catch (e) { thrown = (e && e.message) || String(e); }
+    for (const b of [allowBtn, denyBtn, closeBtn]) if (b) b.disabled = false;
+    if (denyBtn) denyBtn.textContent = keep;
+    const failed = thrown || !r || r.error || r.ok === false;
+    if (failed) {
+      // ★ 禁止静默：弹窗留在原地 + 明确错误（状态码/服务端 error/异常文本），并在消息流留一条系统行
+      const status = (r && (r.status || r.code)) ? (' [' + (r.status || r.code) + ']') : '';
+      const detail = thrown ? tr('appr.sendFailThrown').replace('{e}', thrown)
+        : ((r && (r.error || r.message)) || tr('appr.sendFailUnknown'));
+      const msg = tr('appr.sendFailMsg').replace('{e}', status + ' ' + detail);
+      if (errEl) { errEl.hidden = false; errEl.textContent = '⚠ ' + msg; }
+      noticeLine('⚠ ' + msg);
+      syncAgentStatus();
+      return;   // 不关窗、不当作已应答：用户可以重试或改用关闭（关闭=拒绝）
+    }
     mask.classList.remove('show');
     activeModal = null;
+    // 本地先落定状态（引擎随后会广播 approval-resolved / tool-end 覆盖为最终结果）
+    resolveApprovalPending(ev, ok ? 'accept' : 'decline');
     pumpModals();
   };
   $('#apprAllow').onclick = async () => { await finish(true); };
@@ -1176,13 +1294,15 @@ function currentRole() {
 /* ---------- 顶栏：智能体状态 + 会话角色 ---------- */
 
 function setAgentStatus(mode, text) {
-  // mode: 'ready' | 'running' | 'error'
+  // mode: 'ready' | 'running' | 'error' | 'wait'（wait = 等待人工审批，与"处理中"必须能区分）
   const pill = $('#agentStatus');
   if (!pill) return;
   const label = $('#agentStatusText');
-  if (label) label.textContent = text || tr(mode === 'running' ? 'status.running' : mode === 'error' ? 'status.error' : 'status.ready');
-  pill.classList.remove('running', 'error');
-  if (mode === 'running' || mode === 'error') pill.classList.add(mode);
+  const def = mode === 'running' ? 'status.running' : mode === 'error' ? 'status.error'
+    : mode === 'wait' ? 'status.approvalWait' : 'status.ready';
+  if (label) label.textContent = text || tr(def);
+  pill.classList.remove('running', 'error', 'wait');
+  if (mode === 'running' || mode === 'error' || mode === 'wait') pill.classList.add(mode);
 }
 
 /** 联网开关的视觉状态（默认开；关闭后本轮不搜） */
@@ -1617,6 +1737,7 @@ async function openSession(id) {
   await syncRunning(); // 打开即与服务端对账任务状态（含其它标签页/断线期间开始的任务）
   if (seq !== openSeq) return;
   renderSidebar(); renderFeed(); renderTopbar();
+  syncAgentStatus();   // 该会话若有未决审批，会话头直接显示「等待人工审批」
   loadGoal(id);        // 目标以服务端为准（异步，不阻塞首屏）
   loadSubagents(id);   // 子代理列表与服务端对账（路由未就绪时静默回落 SSE）
 }
@@ -1654,6 +1775,9 @@ async function stopCurrent() {
   // 乐观复位（即使中断广播因断线未收到也不卡死）；服务端随后会广播 turn/interrupted
   clearBusy(sid);
   settleSubagents(sid);   // 中断=回合结束：子代理不会再有事件，收口为已完成
+  for (const rid of Object.keys(state.approvals)) {
+    if (state.approvals[rid].sessionId === sid) resolveApprovalPending({ requestId: rid }, 'cancel');
+  }
   renderFeed(); renderTopbar(); renderSubPanel();
 }
 
@@ -2501,6 +2625,20 @@ function connectSSE() {
     } else if (d.type === 'sandbox-readiness') {
       state.sandbox = { ...(state.sandbox || {}), supported: true, readiness: d };
       renderSandboxBanner();
+    } else if (d.type === 'approval-undeliverable') {
+      // 审批没能送达引擎（进程换了/线程不见/写 stdin 失败）：卡片必须显示"未送达"，不能停在等待态
+      const rid = ridOf(d.requestId);
+      const rec = rid ? state.approvals[rid] : null;
+      if (rec) {
+        delete state.approvals[rid];
+        const card = document.querySelector(`#feed > .tool-card[data-approval-id="${rid}"]`);
+        if (card) {
+          delete card.dataset.approvalId;
+          setCardChip(card, 'err', tr('appr.undeliverableChip'));
+          setCardNote(card, tr('appr.undeliverable').replace('{r}', String(d.reason || '')), true);
+        }
+        syncAgentStatus();
+      }
     } else if (d.type === 'world-writable-warning') {
       state.sandbox = state.sandbox || { supported: true };
       state.sandbox.worldWritable = [d.detail];
@@ -2514,15 +2652,16 @@ function connectSSE() {
   });
   es.addEventListener('approval', (e) => {
     const d = JSON.parse(e.data);
-    showApprovalModal(d);   // 后台会话的审批也要弹（否则那条线程永远等不到应答）
+    markApprovalPending(d);   // 卡片/会话头先进入「等待人工审批」，与"运行中"区分开
+    showApprovalModal(d);     // 后台会话的审批也要弹（否则那条线程永远等不到应答）
   });
   es.addEventListener('ask', (e) => {
     const d = JSON.parse(e.data);
     // 只把占位追加到"正在看的那个会话"的消息流；后台会话的提问照样弹窗处理
     if (state.currentSession && d.sessionId === state.currentSession.id) {
       const msgs = state.currentSession.messages;
-      if (!msgs.some((m) => m.t === 'ask' && m.v.requestId === d.requestId)) {
-        msgs.push({ t: 'ask', v: { requestId: d.requestId, questions: d.questions }, ts: Date.now() });
+      if (!msgs.some((m) => m.t === 'ask' && ridOf(m.v.requestId) === ridOf(d.requestId))) {
+        msgs.push({ t: 'ask', v: { requestId: ridOf(d.requestId), questions: d.questions }, ts: Date.now() });
         appendFeedEvent({ kind: 'ask' });
       }
     }
@@ -2553,26 +2692,38 @@ function connectSSE() {
     const d = JSON.parse(e.data);
     if (!state.currentSession || d.sessionId !== state.currentSession.id) return;
     const msgs = state.currentSession.messages;
-    const ask = msgs.find((m) => m.t === 'ask' && m.v.requestId === d.requestId);
+    const ask = msgs.find((m) => m.t === 'ask' && ridOf(m.v.requestId) === ridOf(d.requestId));
     if (ask) ask.v.answer = d.answers;
     // 追加应答记录（供刷新后重建已解决状态）
-    if (ask && !msgs.some((m) => m.t === 'ask-answer' && m.v.requestId === d.requestId)) {
-      msgs.push({ t: 'ask-answer', v: { requestId: d.requestId, answers: d.answers }, ts: Date.now() });
+    if (ask && !msgs.some((m) => m.t === 'ask-answer' && ridOf(m.v.requestId) === ridOf(d.requestId))) {
+      msgs.push({ t: 'ask-answer', v: { requestId: ridOf(d.requestId), answers: d.answers }, ts: Date.now() });
     }
     // 关闭对应弹窗（如有）
-    if (askModalState.requestId === d.requestId) hideAskModal();
+    if (ridOf(askModalState.requestId) === ridOf(d.requestId)) hideAskModal();
     else enforceModals(d.requestId);
   });
   es.addEventListener('approval-resolved', (e) => {
     const d = JSON.parse(e.data);
     enforceModals(d.requestId);
     if (!activeModal) { $('#apprMask').classList.remove('show'); $('#askModalMask').classList.remove('show'); }
+    // 服务端裁决为准（可能是别的窗口/别的路径应答的）：有裁决值就据此落定卡片状态
+    const rid = ridOf(d.requestId);
+    if (d.decision === 'accept' || d.decision === 'decline' || d.decision === 'cancel') {
+      resolveApprovalPending({ requestId: rid }, d.decision === 'accept' ? 'accept' : (d.decision === 'decline' ? 'decline' : 'cancel'));
+    } else if (state.approvals[rid]) {
+      // 没有裁决值（例如回合结束/进程回收清理）：至少解除"等待审批"，不让卡片永远停在等待态
+      resolveApprovalPending({ requestId: rid }, 'cancel');
+    }
   });
   es.addEventListener('turn', (e) => {
     const d = JSON.parse(e.data);
     // busy 状态按会话记录：无论当前是否正在看该会话都先解除任务标记
     clearBusy(d.sessionId);
     settleSubagents(d.sessionId);   // 回合结束：仍在"运行中"的子代理行按已完成收口（不再有事件会来）
+    // 回合结束：该会话不可能再有审批结果了 → 把还挂在"等待人工审批"的卡片收口，不留假等待
+    for (const rid of Object.keys(state.approvals)) {
+      if (state.approvals[rid].sessionId === d.sessionId) resolveApprovalPending({ requestId: rid }, 'cancel');
+    }
     flushQueue(d.sessionId);   // 有排队消息则接着发（本轮结束不再空转）
     closeStaleModals(d.sessionId);   // 回合已结束：该会话没来得及应答的审批弹窗必须撤掉
     if (!state.currentSession || d.sessionId !== state.currentSession.id) return;

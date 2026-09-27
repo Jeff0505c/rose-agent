@@ -6,10 +6,18 @@
  */
 const { contextBridge, ipcRenderer } = require('electron');
 
-/* ---- api 垫片：语义对齐原 fetch 版——无论 2xx/4xx/5xx 都 resolve 业务 body ---- */
+/* ---- api 垫片：语义对齐原 fetch 版——无论 2xx/4xx/5xx 都 resolve 业务 body ----
+   额外附加 HTTP 状态码（`{ ...body, status }`）：渲染进程的失败提示需要显示 `[503]` 这类码，
+   而 IPC 回包形状是 `{ status, body }`。**只加不改**：body 自带 `status` 时以它为准
+   （`??`），非对象 body（数组等）原样返回 —— 对既有调用方向后兼容。 */
 async function invokeApi(method, path, body) {
   const r = await ipcRenderer.invoke('rose:api', { method, path, body });
-  return r ? r.body : undefined;
+  if (!r) return undefined;
+  const b = r.body;
+  if (b && typeof b === 'object' && !Array.isArray(b)) {
+    return { ...b, status: b.status ?? r.status };
+  }
+  return b;
 }
 
 /* ---- EventSource 垫片：接口与浏览器 EventSource 对齐 ----

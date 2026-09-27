@@ -151,6 +151,8 @@ button:disabled{transition:none}
 .topbar .right{margin-left:auto;display:flex;gap:8px;align-items:center}
 .pill{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);border:1px solid var(--border);padding:4px 12px;border-radius:999px}
 .pill i{width:6px;height:6px;border-radius:50%;background:var(--ok);font-style:normal}
+.pill.agent-status.wait{border-color:var(--warn-border);background:var(--warn-soft);color:var(--warn)}
+.pill.agent-status.wait i{background:var(--warn)}
 
 /* ===== 聊天 ===== */
 .chatroom{flex:1;overflow-y:auto}
@@ -193,6 +195,15 @@ button:disabled{transition:none}
 .tool-card .st svg{width:12px;height:12px}
 .tool-card .st.ok{color:var(--ok)}
 .tool-card .st.err{color:var(--danger)}
+.tool-card .st.wait{color:var(--warn)}
+.tool-card .st.wait .spin{width:9px;height:9px;border:2px solid var(--warn-border);border-top-color:var(--warn);border-radius:50%;animation:sp .9s linear infinite}
+.tool-card .appr-note{display:none;margin:0;padding:7px 13px;font-size:11.5px;line-height:1.6;border-top:1px solid var(--border);background:var(--warn-soft);color:var(--text)}
+.tool-card.open .appr-note{display:block}
+.tool-card .appr-note.err{background:rgba(220,38,38,.08);color:var(--danger)}
+html[data-theme="dark"] .tool-card .appr-note{background:rgba(217,119,6,.16)}
+html[data-theme="dark"] .tool-card .appr-note.err{background:rgba(220,38,38,.16)}
+.modal-err{margin:0 0 10px;padding:9px 11px;border:1px solid rgba(220,38,38,.35);border-radius:9px;background:rgba(220,38,38,.08);color:var(--danger);font-size:12px;line-height:1.6;white-space:pre-wrap;word-break:break-word}
+.modal-err[hidden]{display:none}
 .tool-card .st .spin{width:10px;height:10px;border:2px solid #dbeafe;border-top-color:var(--accent);border-radius:50%;animation:sp .7s linear infinite}
 .tool-card .caret{flex-shrink:0;color:var(--faint);font-size:10px;line-height:1;transition:transform .15s}
 .tool-card.open .caret{transform:rotate(180deg)}
@@ -1055,6 +1066,7 @@ html[data-theme="dark"] .cfg-warn{background:rgba(217,119,6,.16);border-color:rg
   <div class="modal appr-modal">
     <div class="modal-head"><span class="appr-title"></span><button class="modal-x" id="apprClose" title="" data-i18n-title="dlg.closeDeny"><svg viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg></button></div>
     <div class="modal-body"></div>
+    <div class="modal-err" id="apprErr" hidden></div>
     <div class="modal-actions"><button class="btn ghost-deny" id="apprDeny" data-i18n="appr.deny">拒绝</button><button class="btn pri" id="apprAllow" data-i18n="appr.allow">允许</button></div>
   </div>
 </div>
