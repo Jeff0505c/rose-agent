@@ -58,7 +58,7 @@ const I18N = {
     'feed.empty':'选择左侧会话，或新建一个','feed.you':'你','session.newChat':'新建会话','session.rename':'重命名','session.delete':'删除','session.noMatch':'无匹配会话','ask.allDone':'全部已答','ask.done':'已答 {a}/{n} 题',
     'role.title':'选择会话角色','role.noRoles':'暂无角色，需先创建','role.newRole':'新建角色',
     'think.title':'思考内容不保存，仅记录耗时','think.seconds':'思考了 {n} 秒','think.inProgress':'思考中','err.generic':'出错了',
-    'tool.run':'运行中','tool.done':'完成','tool.fail':'失败','tool.processing':'正在处理…','plan.title':'执行计划',
+    'tool.run':'运行中','tool.done':'完成','tool.fail':'失败','tool.provisionalChip':'回合已结束，结果可能迟到…','tool.lateChip':'结果迟到（回合结束后到达）','tool.processing':'正在处理…','plan.title':'执行计划',
     'ask.confirmed':'已确认','ask.pendingTitle':'待回答的问题','ask.pending':'待回答','ask.skipped':'（跳过）','ask.otherPh':'其他…','ask.answerPh':'输入你的回答…',
     'appr.needPrefix':'需要审批 · ','appr.operation':'操作','appr.mcpEscalateTitle':'提权授权 · 远程 MCP 工具','appr.mcpConfirmTitle':'确认 · MCP 请求','appr.mcpRun':'允许远程 MCP 执行工具：{t}','appr.patch':'写入审批 · apply_patch','appr.exec':'执行审批 · exec_command','appr.outPolicy':'该操作超出当前角色的沙箱/审批策略',
     'mode.needSess':'先打开或新建一个会话，再选择模式','mode.select':'选择会话模式','mode.plan':'✦ 计划','mode.default':'默认','mode.free':'零监管','mode.planT':'✦ 计划模式','mode.planD':'只读研究 · 产出计划 · 确认后实施（复杂任务建议）','mode.defaultT':'默认模式','mode.defaultD':'可写工作区 · 命令需审批 · 大改动前先说明方案','mode.freeT':'零监管模式','mode.freeD':'完全访问 · 自动执行 · 不审批（仅信任模型时使用）','search.clear':'清除','model.select':'选择本次对话使用的模型',
@@ -126,7 +126,7 @@ const I18N = {
     'feed.empty':'Select a session on the left, or start a new one','feed.you':'You','session.newChat':'New chat','session.rename':'Rename','session.delete':'Delete','session.noMatch':'No matching sessions','ask.allDone':'All answered','ask.done':'{a}/{n} answered',
     'role.title':'Choose a role for this session','role.noRoles':'No roles yet — create one first','role.newRole':'New Role',
     'think.title':'Reasoning is not saved; only its duration is recorded','think.seconds':'Reasoned for {n} seconds','think.inProgress':'Thinking','err.generic':'Something went wrong',
-    'tool.run':'Running','tool.done':'Done','tool.fail':'Failed','tool.processing':'Working…','plan.title':'Execution plan',
+    'tool.run':'Running','tool.done':'Done','tool.fail':'Failed','tool.provisionalChip':'Turn ended — the result may still arrive…','tool.lateChip':'Late result (arrived after the turn ended)','tool.processing':'Working…','plan.title':'Execution plan',
     'ask.confirmed':'Confirmed','ask.pendingTitle':'Awaiting your answer','ask.pending':'Awaiting answer','ask.skipped':'(skipped)','ask.otherPh':'Other…','ask.answerPh':'Type your answer…',
     'appr.needPrefix':'Approval needed · ','appr.operation':'action','appr.mcpEscalateTitle':'Escalation · remote MCP tool','appr.mcpConfirmTitle':'Confirm · MCP request','appr.mcpRun':'Allow the remote MCP tool to run: {t}','appr.patch':'Write approval · apply_patch','appr.exec':'Execution approval · exec_command','appr.outPolicy':"This action is outside the role's sandbox / approval policy",
     'mode.needSess':'Open or start a session first, then pick a mode','mode.select':'Choose session mode','mode.plan':'✦ Plan','mode.default':'Default','mode.free':'Auto-run','mode.planT':'✦ Plan mode','mode.planD':'Read-only research · produce a plan · confirm before executing (recommended for complex tasks)','mode.defaultT':'Default mode','mode.defaultD':'Writable workspace · commands need approval · explain big changes first','mode.freeT':'Auto-run mode','mode.freeD':'Full access · auto-execute · no approvals (only when you trust the model)','search.clear':'Clear','model.select':'Choose the model used for this conversation',
@@ -618,12 +618,17 @@ function feedAppendMsg(m, idx) {
   } else if (m.t === 'tool') {
     feedState.curAgent = null;
     if (feedState.reasoning) feedState.reasoning.el.fold();
-    feedState.openCard = toolCard({ name: m.v.name, args: m.v.args, status: 'run', output: '', server: m.v.server || '' });
+    // 停止后引擎会补送 late:true 的真实事件：同 toolId 已有卡就复用它（不再追加第二张）
+    const tid0 = (m.v.toolId === undefined || m.v.toolId === null) ? '' : String(m.v.toolId);
+    const exist0 = tid0 ? document.querySelector(`#feed > .tool-card[data-tool-id="${tid0}"]`) : null;
+    feedState.openCard = exist0 || toolCard({ name: m.v.name, args: m.v.args, status: 'run', output: '', server: m.v.server || '' });
     feedState.openCard.dataset.toolId = m.v.toolId || '';
     feedState.openCard.dataset.toolName = m.v.name || '';
     feedState.openCard.dataset.done = '';
+    delete feedState.openCard.dataset.settled;
+
     if (m.v.server) feedState.openCard.dataset.server = m.v.server;
-    feed.appendChild(feedState.openCard);
+    if (!exist0) feed.appendChild(feedState.openCard);
   } else if (m.t === 'error') {
     feedState.curAgent = null;
     const d = document.createElement('div');
@@ -635,17 +640,25 @@ function feedAppendMsg(m, idx) {
     const output = typeof m.v.output === 'string' ? m.v.output : JSON.stringify(m.v.output || '');
     // ok:false = 引擎明确回报失败（如联网不可达）：如实显示失败 + 那段可读错误，不吞成空结果
     const toolOk = m.v.ok !== false;
-    if (feedState.openCard) {
-      feedState.openCard.dataset.done = '1';
-      feedState.openCard.fill({ status: toolOk ? 'ok' : 'error', output });
+    const provisional = m.v.provisional === true;   // 临时收口：不是结论
+    const late = m.v.late === true;                 // 迟到的真实结果：就地覆盖
+    // ★ 该 toolId 已有卡片就**就地更新那一行**（迟到结果不追加第二条；历史重建同理）
+    const tid = (m.v.toolId === undefined || m.v.toolId === null) ? '' : String(m.v.toolId);
+    const card = (tid ? document.querySelector(`#feed > .tool-card[data-tool-id="${tid}"]`) : null) || feedState.openCard || null;
+    if (card) {
+      card.dataset.done = '1';
+      if (provisional || late) card.dataset.settled = '1';
+      card.fill(provisional
+        ? { status: 'provisional', output }
+        : { status: late ? 'late' : (toolOk ? 'ok' : 'error'), ok: toolOk, output });
       // 联网工具（web_search）成功时：卡片内追加来源链接（普通工具调用展示 + 来源可点）
-      const toolName = m.v.name || feedState.openCard.dataset.toolName || '';
-      const toolServer = m.v.server || feedState.openCard.dataset.server || '';
-      if (toolOk && isSearchTool(toolServer, toolName)) {
+      const toolName = m.v.name || card.dataset.toolName || '';
+      const toolServer = m.v.server || card.dataset.server || '';
+      if (toolOk && !provisional && isSearchTool(toolServer, toolName)) {
         const web = parseWebToolOutput(toolName, output);
-        if (web) feedState.openCard.fillWeb(web);
+        if (web) card.fillWeb(web);
       }
-      feedState.openCard = null;
+      if (feedState.openCard === card) feedState.openCard = null;
     } else {
       feed.appendChild(toolCard({ name: 'tool', args: '', status: 'ok', output }));
     }
@@ -690,8 +703,13 @@ function appendReasoningDelta(d) {
 
 // 工具输出增量：追加到正在运行的工具卡片
 function appendToolOutputDelta(d) {
-  const card = feedState.openCard;
-  if (!card || card.dataset.toolId !== d.toolId) return;
+  const tid = (d.toolId === undefined || d.toolId === null) ? '' : String(d.toolId);
+  const open = feedState.openCard;
+  // 停止后补送的真实增量：openCard 已随回合结束清空，这里按 toolId 找回卡片续写（不丢弃）
+  const card = (open && String(open.dataset.toolId) === tid)
+    ? open
+    : (tid ? document.querySelector(`#feed > .tool-card[data-tool-id="${tid}"]`) : null);
+  if (!card) return;
   card.appendOutput(d.delta);
 }
 
@@ -766,7 +784,14 @@ function toolCard(o) {
       const st = d.querySelector('.st');
       // 三种状态如实区分：运行中 / 成功 / 失败（引擎回 ok:false 时绝不能显示成"完成"）
       if (o.status === 'run') { st.className = 'st'; st.innerHTML = '<span class="spin"></span>' + tr('tool.run'); }
-      else if (o.status === 'error') { st.className = 'st err'; st.innerHTML = '✗ ' + tr('tool.fail'); }
+      else if (o.status === 'provisional') {
+        // 临时态=疑问/进行中语气（不是结论）
+        st.className = 'st wait'; st.innerHTML = '<span class="spin"></span>' + esc(tr('tool.provisionalChip'));
+      } else if (o.status === 'late') {
+        // 迟到的真实结果：给出成功/失败 + 标注"回合结束后到达"
+        st.className = 'st ' + (o.ok === false ? 'err' : 'ok');
+        st.innerHTML = (o.ok === false ? '✗ ' : ICONS.check) + ' ' + esc(tr('tool.lateChip'));
+      } else if (o.status === 'error') { st.className = 'st err'; st.innerHTML = '✗ ' + tr('tool.fail'); }
       else { st.className = 'st ok'; st.innerHTML = ICONS.check + ' ' + tr('tool.done'); }
     }
     if (o.output !== undefined) d.querySelector('.tb').textContent = o.output || '';
@@ -1189,11 +1214,13 @@ function resolveApprovalPending(ev, decision) {
     : null;
   if (card) {
     delete card.dataset.approvalId;
+    // 已经被"临时态/迟到结果"接管的卡片不再被审批收口覆盖：后者比"审批未完成"更接近事实
+    const takenOver = card.dataset.settled === '1';   // 已被临时态/迟到结果接管：不再被审批收口覆盖
     if (decision === 'accept') setCardChip(card, 'run', tr('tool.run'));
     else if (decision === 'decline') {
       setCardChip(card, 'err', tr('appr.deniedChip'));
       setCardNote(card, tr('appr.deniedNote'), true);
-    } else {
+    } else if (!takenOver) {
       setCardChip(card, 'err', tr('appr.turnEnded'));
       setCardNote(card, tr('appr.turnEnded'), true);
     }

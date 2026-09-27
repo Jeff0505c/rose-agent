@@ -594,13 +594,20 @@ const activeTurns = new Map(); // sessionId -> TurnHandle
 // 引擎已发 tool-start 但尚未发 tool-end 的工具集合（按会话）。MCP 远程调用若一直收不到完成，
 // 会让 UI 永久显示"运行中"；在出错/中断/回合收尾时把这些未闭合工具补一个 tool-end 关闭。
 const sessionOpenTools = new Map(); // sessionId -> Set<toolId>
+// 被补写过"临时 tool-end"（provisional）的工具：sessionId -> Set<toolId>。
+// 只为在真实结果迟到时标注 `late: true`（最小实现：不做历史合并、不改读取路径）。
+const sessionProvisionalTools = new Map();
+
 function closeOpenTools(sid, why) {
   const set = sessionOpenTools.get(sid);
   if (!set || !set.size) { sessionOpenTools.delete(sid); return; }
   for (const toolId of [...set]) {
-    const v = { type: 'tool-end', toolId, ok: false, output: '（' + why + '，未收到完成结果）' };
+    // ⚠️ 临时态、非结论表述：命令可能仍在跑、真实结果稍后才到 → 绝不断言"未收到完成结果"
+    const v = { type: 'tool-end', toolId, ok: false, provisional: true, output: `（${why}：回合已结束，结果可能迟到）` };
     appendMessage(sid, { t: 'tool-end', v, ts: Date.now() });
     broadcast('message', { sessionId: sid, kind: 'tool-end', ...v });
+    const mark = sessionProvisionalTools.get(sid) || sessionProvisionalTools.set(sid, new Set()).get(sid);
+    mark.add(toolId);
   }
   sessionOpenTools.delete(sid);
 }
@@ -734,17 +741,28 @@ function runTurn(session, userText, media, skillIds, opts) {
     // Plan 模式的 <proposed_plan> 正文开始交付（正文本身走 text-delta 落盘，与正文同序）
     'plan-delivered': () => { planDelivered = true; },
     'ask': (ev) => { appendMessage(session.id, { t: 'ask', v: { requestId: ev.requestId, questions: ev.questions }, ts: Date.now() }); broadcast('ask', { sessionId: session.id, requestId: ev.requestId, questions: ev.questions }); },
-    'tool-output-delta': (ev) => broadcast('message', { sessionId: session.id, kind: 'tool-output-delta', toolId: ev.toolId, delta: ev.delta }),
+    'tool-output-delta': (ev) => broadcast('message', { sessionId: session.id, kind: 'tool-output-delta', toolId: ev.toolId, delta: ev.delta, ...(ev.late === true ? { late: true } : {}) }),
     // server 是 task-12 新增的附加字段（内置搜索 MCP = rose_search）：透传给界面以便标注"内置搜索"，
     // 老字段与 name 前缀（mcp:）不变 → UI 老逻辑不受影响
     'tool-start': (ev) => {
       const s1 = sessionOpenTools.get(session.id) || sessionOpenTools.set(session.id, new Set()).get(session.id);
       s1.add(ev.toolId);
       const server = typeof ev.server === 'string' && ev.server ? ev.server.slice(0, 64) : undefined;
-      appendMessage(session.id, { t: 'tool', v: { name: ev.name, args: ev.args, status: 'run', toolId: ev.toolId, ...(server ? { server } : {}) }, ts: Date.now() });
-      broadcast('message', { sessionId: session.id, kind: 'tool-start', toolId: ev.toolId, name: ev.name, args: ev.args, ...(server ? { server } : {}) });
+      // late：回合已结束/超时后引擎仍会补送真实工具事件 → 一律照常落盘 + 广播，绝不因"回合已结束"丢弃
+      const lateFlag = ev.late === true ? { late: true } : {};
+      appendMessage(session.id, { t: 'tool', v: { name: ev.name, args: ev.args, status: 'run', toolId: ev.toolId, ...(server ? { server } : {}), ...lateFlag }, ts: Date.now() });
+      broadcast('message', { sessionId: session.id, kind: 'tool-start', toolId: ev.toolId, name: ev.name, args: ev.args, ...(server ? { server } : {}), ...lateFlag });
     },
-    'tool-end': (ev) => { const s2 = sessionOpenTools.get(session.id); if (s2) s2.delete(ev.toolId); appendMessage(session.id, { t: 'tool-end', v: ev, ts: Date.now() }); broadcast('message', { sessionId: session.id, kind: 'tool-end', ...ev }); },
+    'tool-end': (ev) => {
+      const s2 = sessionOpenTools.get(session.id); if (s2) s2.delete(ev.toolId);
+      // 真实结果到达：若此前补写过临时记录，只加一个 late 标记（前端可标注"结果迟到"）
+      const mark = sessionProvisionalTools.get(session.id);
+      const late = !!(mark && mark.has(ev.toolId));
+      if (late) mark.delete(ev.toolId);
+      const v = late ? { ...ev, late: true } : ev;
+      appendMessage(session.id, { t: 'tool-end', v, ts: Date.now() });
+      broadcast('message', { sessionId: session.id, kind: 'tool-end', ...v });
+    },
     'usage': (ev) => { turnUsage = ev.usage; if (ev.contextWindow) turnContextWindow = ev.contextWindow; },
     // 实时上下文占用（引擎在回合进行中多次上报）：直接推给前端，让圆环边跑边动
     'context-usage': (ev) => {
@@ -873,6 +891,7 @@ function deleteSession(id) {
   try { fs.unlinkSync(messagePath(id)); } catch {}
   engine.dropSession(id);
   sessionOpenTools.delete(id);
+  sessionProvisionalTools.delete(id);
   return true;
 }
 

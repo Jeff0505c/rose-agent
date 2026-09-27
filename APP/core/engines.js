@@ -869,6 +869,35 @@ class CodexEngine {
     return { decision: ok ? 'accept' : 'decline' };
   }
 
+  /** 停止/超时后**保留**回合句柄的时长（命令可能还在跑）：到期才真正清理，避免登记泄漏 */
+  _lateTtlMs() {
+    const g = (this._getSettings() && this._getSettings().global) || {};
+    const v = Number(g.engineLateTurnTtlMs);
+    return Number.isFinite(v) && v > 0 ? v : 10 * 60 * 1000;
+  }
+
+  /**
+   * 停止/超时：**不删句柄**，只置 done（TurnHandle.emit 会放行工具类事件并标 late:true）。
+   * 原因（真机实测）：删了句柄 → 引擎随后发回的真实 tool-end 无处分发 → 界面只剩假记录
+   * 「未收到完成结果」，而命令其实已经跑完。这里靠"留着 + 到期清理"实现，**不新增路由/队列**。
+   * ⚠️ 保留 turnProc：命令可能还在跑，LRU 回收进程会把真实结果一起杀掉。
+   */
+  _retireTurn(threadId, reason) {
+    const h = this.turnByThread.get(threadId);
+    if (!h) { this.turnIds.delete(threadId); return false; }
+    h.cancel();
+    this.turnIds.delete(threadId);
+    if (h.__lateTimer) clearTimeout(h.__lateTimer);
+    h.__lateTimer = setTimeout(() => {
+      if (this.turnByThread.get(threadId) === h) {
+        this.turnByThread.delete(threadId);
+        this.turnProc.delete(threadId);
+      }
+    }, this._lateTtlMs());
+    if (h.__lateTimer.unref) h.__lateTimer.unref();
+    return true;
+  }
+
   _turnForThread(threadId) {
     return this.turnByThread.get(threadId || '')
       || (this.turnByThread.size === 1 ? [...this.turnByThread.values()][0] : null);
@@ -980,11 +1009,9 @@ class CodexEngine {
     const turn = this._turnForThread(threadId);
     if (turn) {
       const key = threadId || [...this.turnByThread.keys()][0];
-      this.turnByThread.delete(key);
-      this.turnProc.delete(key);
-      this.turnIds.delete(key);
-      this._clearWatchdog(key);
       try { turn.emit({ type: 'error', message: reason }); } catch { /* 前端已断开也不能影响别的 turn */ }
+      this._retireTurn(key, 'unsupported-request');
+      this._clearWatchdog(key);
     }
     return true;
   }
@@ -1040,15 +1067,14 @@ class CodexEngine {
         : `审批已回送引擎，但 ${waitS} 秒内没有任何进展，本轮已释放（避免永久挂起）。`
           + '可重试该操作；若反复出现，请用「诊断导出」反馈请求类型。';
       process.stderr.write(`[codex] ${pendingApproval ? '等待人工审批' : '等待引擎执行'}超时（threadId=${threadId}，method=${info.method || '?'}）→ 释放本轮\n`);
-      this.turnByThread.delete(threadId);
-      this.turnProc.delete(threadId);
-      this.turnIds.delete(threadId);
+      // 先发 error（终态），再退休 —— 退休会把句柄置 done，之后 error 会被 late 过滤吃掉
+      try { turn.emit({ type: 'error', message }); } catch { /* 前端已断开 */ }
+      this._retireTurn(threadId, 'watchdog-timeout');   // 退休：真跑完的结果仍能上浮（late:true）
       this._clearWatchdog(threadId);
       this._emitGlobal({
         type: 'engine-waiting-timeout', sessionId, threadId, requestId: info.requestId, method: info.method,
         phase: pendingApproval ? 'approval-pending' : 'engine', waitedMs: failMs, message,
       });
-      try { turn.emit({ type: 'error', message }); } catch { /* 前端已断开 */ }
     }, failMs);
     if (warn.unref) warn.unref();
     if (fail.unref) fail.unref();
@@ -1286,6 +1312,7 @@ class CodexEngine {
     if (m === 'turn/completed') {
       const turn = this.turnByThread.get(params.threadId);
       if (!turn) return;
+      if (turn.__lateTimer) clearTimeout(turn.__lateTimer);
       this.turnByThread.delete(params.threadId);
       this.turnProc.delete(params.threadId);
       this.turnIds.delete(params.threadId);
@@ -1632,12 +1659,11 @@ class CodexEngine {
   _releaseTurn(threadId, message) {
     if (!threadId) return false;
     const t = this.turnByThread.get(threadId);
-    this.turnByThread.delete(threadId);
-    this.turnProc.delete(threadId);
-    this.turnIds.delete(threadId);
-    this._clearWatchdog(threadId);
-    if (!t) return false;
+    if (!t) { this._retireTurn(threadId, 'released'); this._clearWatchdog(threadId); return false; }
+    // 顺序很重要：error 是终态，必须在退休（置 done）**之前**发，否则会被 late 过滤吃掉
     try { t.emit({ type: 'error', message }); } catch { /* 前端已断开 */ }
+    this._retireTurn(threadId, 'released');
+    this._clearWatchdog(threadId);
     return true;
   }
 
@@ -1950,7 +1976,8 @@ class CodexEngine {
     const st = this._procFor(session);
     if (!t || !st) return { error: '会话尚未开始（先发一条消息再插话）' };
     const expectedTurnId = this.turnIds.get(t.threadId);
-    if (!expectedTurnId || !this.turnByThread.has(t.threadId)) return { error: '当前没有正在执行的任务，无法插话' };
+    const liveH = this.turnByThread.get(t.threadId);
+    if (!expectedTurnId || !liveH || liveH.done) return { error: '当前没有正在执行的任务，无法插话' };
     try {
       await this._rpc(st, 'turn/steer', {
         threadId: t.threadId,
@@ -1971,7 +1998,8 @@ class CodexEngine {
   async compact(session) {
     const t = this.threads.get(session.id);
     if (!t) return { error: '该会话还没有引擎线程（先发一条消息再压缩）' };
-    if (this.turnByThread.has(t.threadId)) return { error: '有任务进行中，请先停止再压缩上下文' };
+    const liveTurn = this.turnByThread.get(t.threadId);
+    if (liveTurn && !liveTurn.done) return { error: '有任务进行中，请先停止再压缩上下文' };
     // 手动压缩打标：window-reset（"引擎自发换窗口"）不得对用户主动 /compact 重复提示（见 _onCompaction）
     this._manualCompaction.set(t.threadId, Date.now());
     try {
@@ -2000,12 +2028,9 @@ class CodexEngine {
       this._rpc(st, 'turn/interrupt', { threadId: t.threadId }).catch(() => {}),
       new Promise((r) => setTimeout(r, 3000)),
     ]);
-    // 关键：让该 turn 的 handler 失效，阻止 codex 残留输出继续上屏/落盘
-    const h = this.turnByThread.get(t.threadId);
-    if (h) h.cancel();
-    this.turnByThread.delete(t.threadId);
-    this.turnProc.delete(t.threadId);
-    this.turnIds.delete(t.threadId);
+    // 关键：停止**流式文本**，但工具结果绝不丢 —— 句柄留在表里并置 done：
+    // 命令可能已经跑完，引擎随后发回的 tool-end（含完整输出）仍要上屏/落盘，并带 late:true。
+    this._retireTurn(t.threadId, 'interrupted');
     // 线程身份=会话：中断不丢弃线程映射，下一轮仍在同一线程续跑（上下文不丢）
     return true;
   }
@@ -2139,15 +2164,24 @@ class CodexEngine {
 
 /* ---------------- 公共 ---------------- */
 
+/**
+ * 停止/超时后**只放行工具类事件**（并标 late:true），其余保持原语义丢弃。
+ * 背景（用户实测）：提权放行的命令**真的跑完了**（exit=0、数据已刷新），但停止路径把 turn 置 done 后，
+ * 引擎发回的 tool-end（含完整输出）被静默丢弃 → 界面只显示前几行 + 服务层补写的假记录
+ * 「未收到完成结果」。**界面必须与真实执行一致**，所以工具结果绝不丢。
+ */
+const LATE_TOOL_EVENTS = new Set(['tool-start', 'tool-end', 'tool-output-delta']);
+
 class TurnHandle {
   constructor(handlers) { this.handlers = handlers || {}; this.done = false; }
   emit(ev) {
-    if (this.done && ev.type !== 'turn-complete') return;
+    if (this.done && ev.type !== 'turn-complete' && !LATE_TOOL_EVENTS.has(ev.type)) return;
+    if (this.done && LATE_TOOL_EVENTS.has(ev.type)) ev = Object.assign({}, ev, { late: true });
     const fn = this.handlers[ev.type] || this.handlers['*'];
     if (fn) fn(ev);
     if (ev.type === 'turn-complete' || ev.type === 'error') this.done = true;
   }
-  // 中断后调用：置位 done，使该 turn 后续任何事件（delta/tool/approval）都不再上屏/落盘
+  // 停止/超时后调用：置位 done（此后仅工具类事件带 late:true 继续上浮，见 emit）
   cancel() { this.done = true; }
 }
 
