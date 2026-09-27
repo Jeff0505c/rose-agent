@@ -12,6 +12,7 @@ const { createEngine, CODEX_HOME, resolveToolCommand, expandVars, TOOLS_DIR, COD
 const platform = require('./core/platform');
 const envcheck = require('./core/envcheck');
 const skills = require('./core/skills');
+const websearch = require('./core/websearch');   // 内置联网搜索（无 MCP、零依赖）
 const mcp = require('./core/mcp');
 
 const ROOT = process.env.ROSE_ROOT || path.resolve(__dirname, '..');
@@ -101,6 +102,8 @@ function sessionPath(id) { return path.join(DATA, 'sessions.json'); }
  * POST /api/sessions 就把损坏文件覆盖成"只含新会话"的数组 —— 用户所有会话记录一次全没。
  * 现在损坏时把原文件隔离成 sessions.json.corrupt-<ts> 并抛错，宁可让这次操作失败。
  */
+// 最近一次索引损坏的隔离记录（诊断导出可见；数据本体仍在 .corrupt-<ts> 文件里）
+let sessionIndexCorruption = null;
 function loadSessionsStrict() {
   const f = sessionPath();
   let raw;
@@ -112,7 +115,14 @@ function loadSessionsStrict() {
     return v;
   } catch (e) {
     const bak = f + '.corrupt-' + Date.now();
-    try { fs.renameSync(f, bak); } catch {}
+    let isolated = null;
+    try { fs.renameSync(f, bak); isolated = path.basename(bak); } catch {}
+    sessionIndexCorruption = { at: Date.now(), file: isolated, error: (e && e.message) || String(e) };
+    try {
+      recordNativeAudit({ kind: 'sessions-corrupt', ok: false,
+        note: `会话索引损坏，已隔离为 ${isolated || '(隔离失败)'}（${sessionIndexCorruption.error}）` });
+    } catch {}
+    console.error('[rose] 会话索引损坏，已隔离为 ' + (isolated || '(隔离失败)') + '：' + sessionIndexCorruption.error);
     throw new Error(`会话索引损坏（${(e && e.message) || e}），已隔离为 ${path.basename(bak)}；`
       + '请检查该文件或从备份恢复后重试（不会用空列表覆盖它）。');
   }
@@ -123,6 +133,20 @@ function loadSessions() {
     console.error('[rose] ' + e.message);
     return { __corrupt: true, error: e.message };
   }
+}
+/**
+ * 遍历/查询用：索引损坏时返回空数组（隔离已由 loadSessionsStrict 完成），**绝不抛错**。
+ * 启动路径（init/sweep）与事件回调必须用它 —— 否则一个损坏的 sessions.json 会让
+ * sweepExpiredSessions 抛 TypeError 冒到 init，表现为"应用打不开，重启一次才好"（C1 缺陷）。
+ * 写入路径（新建会话）仍走 loadSessionsStrict —— 那是"宁可失败也不覆盖用户数据"的语义。
+ */
+function sessionsList() {
+  const v = loadSessions();
+  if (Array.isArray(v)) return v;
+  if (v && v.__corrupt && !sessionIndexCorruption) {
+    sessionIndexCorruption = { at: Date.now(), file: null, error: v.error || '会话索引损坏' };
+  }
+  return [];
 }
 function saveSessions(list) {
   writeFileAtomic(sessionPath(), JSON.stringify(list, null, 2));
@@ -179,6 +203,383 @@ let broadcastSink = () => {};
 function onBroadcast(fn) { broadcastSink = fn; }
 function broadcast(event, data) { broadcastSink({ event, data }); }
 
+/* ---------------- 原生能力（子代理/目标/窗口续接）：归一化 → 去重 → 广播 + 审计 ----------------
+ * 引擎侧（core/engines.js）把 codex 原生事件桥接出来后，可能从**两条通道**到达服务层：
+ *   ① 回合内：engine.createTurn(...) 的 handler（'subagent' | 'goal' | 'window-reset'）
+ *   ② 回合外：engine.onGlobal(ev)（ev.type 同名，可能只带 threadId）
+ * 两条都接（Lead 裁定 Q1），但**同一事件绝不允许双份渲染**：emitNativeEvent 按事件自带
+ * id 去重，缺失时退化为 (kind,id,state,ts) + 正文指纹，2s 窗口内同键只广播一次。
+ * 所有字段走白名单归一化：state/phase 必须命中枚举，长度全部设上限 —— 引擎形状变化时
+ * 宁可丢弃（并写审计）也不把垃圾透给界面。
+ */
+const SUBAGENT_STATES = ['spawned', 'running', 'waiting', 'done', 'closed'];
+// goal 状态三态（Lead 契约定稿 2026-09-26）：pending | active | done
+const GOAL_STATUSES = ['pending', 'active', 'done'];
+const MAX_GOAL_TEXT = 2000;
+// B7 技能依赖安装的审计阶段（服务层只登记，不执行安装）
+const DEP_AUDIT_PHASES = ['requested', 'approved', 'denied', 'done', 'failed'];
+// goal 事件洪水治理（engine-native 实测：active 目标自动续跑时 60s 758 条）
+const GOAL_COALESCE_MS = 500;        // 按会话合并窗口：窗口内只广播最新一条
+const GOAL_BURST_WINDOW_MS = 10000;  // 全局速率上限窗口
+const GOAL_BURST_MAX = 40;           // 窗口内最多广播 40 条，超出丢弃并写审计
+const NATIVE_DEDUP_MS = 2000;
+const NATIVE_AUDIT_MAX = 100;
+
+const nativeEventSeen = new Map();   // dedupKey -> ts（双通道重复投递抑制）
+const goalPending = new Map();       // sessionId -> { data, ev, timer }（goal 事件 500ms 合并槽）
+const goalBurst = [];                // 最近 goal 广播时间戳（全局速率上限）
+const nativeAudit = [];              // 诊断导出用：原生事件 / 技能依赖安装 / 配置被拒
+let nativeConfigWarning = null;      // 最近一次「配置被引擎拒」（引擎 configWarning 通知）
+
+function nativeText(v, max) { return typeof v === 'string' ? v.slice(0, max) : undefined; }
+function nativeHash(s) { return crypto.createHash('sha1').update(String(s)).digest('hex').slice(0, 8); }
+
+function recordNativeAudit(row) {
+  try {
+    nativeAudit.push({ ts: Date.now(), ...row });
+    if (nativeAudit.length > NATIVE_AUDIT_MAX) nativeAudit.splice(0, nativeAudit.length - NATIVE_AUDIT_MAX);
+  } catch {}
+}
+
+// 事件未带 sessionId 时按 threadId 反查（引擎已有映射查询）；解析不到就丢弃，绝不广播无主事件
+function nativeSessionId(ev, hint) {
+  if (hint) return hint;
+  if (ev && typeof ev.sessionId === 'string' && ev.sessionId) return ev.sessionId;
+  const tid = ev && ev.threadId;
+  if (tid && engine && typeof engine.sessionIdForThread === 'function') {
+    try { return engine.sessionIdForThread(tid) || null; } catch { return null; }
+  }
+  return null;
+}
+
+/** goal 负载归一化：统一为契约定稿 { id?, text, status, tokensUsed?, tokenBudget? }。
+ *  mode='broadcast' 时额外带 tokens（SSE 契约里 goal.tokens 的兼容字段，UI 用 tokensUsed）。 */
+function normalizeGoalPayload(g, mode) {
+  if (!g || typeof g !== 'object') return null;
+  // 引擎可能用 codex 原生字段名（objective）→ 兼容读取，出口统一为 text
+  const text = nativeText(g.text || g.objective, MAX_GOAL_TEXT + 1);
+  if (!text || !text.trim() || text.length > MAX_GOAL_TEXT) return null;
+  const out = { text: text.trim(), status: GOAL_STATUSES.includes(g.status) ? g.status : 'pending' };
+  const id = nativeText(g.id, 128); if (id) out.id = id;
+  const used = Number(g.tokensUsed != null ? g.tokensUsed : g.tokens);
+  if (Number.isFinite(used) && used >= 0) out.tokensUsed = Math.round(used);
+  const budget = Number(g.tokenBudget);
+  if (Number.isFinite(budget) && budget > 0) out.tokenBudget = Math.round(budget);
+  if (mode === 'broadcast' && out.tokensUsed != null) out.tokens = out.tokensUsed;
+  return out;
+}
+
+/** 白名单归一化：只放行契约字段，state/phase 必须命中枚举 */
+function normalizeNativeEvent(kind, ev, sessionIdHint) {
+  if (!ev || typeof ev !== 'object') return null;
+  const sessionId = nativeSessionId(ev, sessionIdHint);
+  if (!sessionId) return null;
+  if (kind === 'subagent') {
+    const id = nativeText(ev.id, 128);
+    if (!id || !SUBAGENT_STATES.includes(ev.state)) return null;
+    const out = { sessionId, kind, id, state: ev.state };
+    const title = nativeText(ev.title, 200); if (title) out.title = title;
+    const lastText = nativeText(ev.lastText, 4000); if (lastText) out.lastText = lastText;
+    return out;
+  }
+  if (kind === 'goal') {
+    const g = ev.goal && typeof ev.goal === 'object' ? ev.goal : null;
+    if (!g) return null;
+    // 引擎可能用 codex 原生字段名（objective）→ 兼容读取，出口统一为 text
+    const goal = normalizeGoalPayload(g, 'broadcast');
+    if (!goal) return null;
+    return { sessionId, kind, goal };
+  }
+  if (kind === 'window-reset') {
+    // 契约（Lead 2026-09-26 变更）：{ sessionId, count, reason:'engine-compaction' }
+    // ⚠️ 引擎**没有 windowId 概念**（compact 后 threadId 不变），所以不设 prevWindowId，
+    // 也不填 null 占位（会让界面误以为存在窗口 id）。发射规则由引擎侧判定（仅引擎自发压缩），
+    // 服务层只原样透传，不再自己判一次（避免两处判定漂移）。
+    const out = { sessionId, kind };
+    const count = Number(ev.count);
+    out.count = Number.isFinite(count) && count >= 0 ? Math.round(count) : 0;
+    const reason = nativeText(ev.reason, 64); if (reason) out.reason = reason;
+    return out;
+  }
+  return null;
+}
+
+function nativeDedupKey(kind, data, ev) {
+  // Lead 裁定：**优先用事件自带 id**；id 缺失时才退化为 (kind,id,state,ts)。
+  // 注意不能无条件纳入 ts：服务层自己广播的 PUT 结果与引擎随后的 thread/goal/updated
+  // 通知必须落到同一个键上，否则同一次变更会渲染两遍。引擎侧对无 id 的事件会带 eventId。
+  const eventId = ev && typeof ev.eventId === 'string' ? ev.eventId : '';
+  const id = data.id || (data.goal && data.goal.id) || data.name || eventId || '';
+  const state = data.state || (data.goal && data.goal.status) || data.phase || '';
+  const parts = [kind, data.sessionId, id, state];
+  if (!id) {
+    const rawTs = ev && (ev.ts != null ? ev.ts : ev.at);
+    parts.push(Number.isFinite(Number(rawTs)) ? Number(rawTs) : '');
+  }
+  // 增量更新（子代理输出片段 / 目标正文变化）不能被当成重复 → 纳入正文指纹
+  if (data.lastText) parts.push('t' + nativeHash(data.lastText));
+  if (data.goal && data.goal.text) parts.push('g' + nativeHash(data.goal.text));
+  return parts.join('|');
+}
+
+function pruneNativeDedup(now) {
+  if (nativeEventSeen.size < 256) return;
+  for (const [k, v] of nativeEventSeen) if (now - v > NATIVE_DEDUP_MS) nativeEventSeen.delete(k);
+}
+
+/** 会话级原生快照（goal / window-reset）：只在内容变化时写盘，避免高频事件刷 sessions.json */
+function persistSessionNative(sessionId, pick, apply) {
+  try {
+    const sessions = loadSessions();
+    if (!Array.isArray(sessions)) return;
+    const s = sessions.find((x) => x.id === sessionId);
+    if (!s) return;
+    const before = JSON.stringify(pick(s));
+    apply(s);
+    if (JSON.stringify(pick(s)) === before) return;
+    saveSessions(sessions);
+  } catch (e) { console.error('[native] 快照写入失败：' + ((e && e.message) || e)); }
+}
+
+/** 四类原生事件 → SSE（沿用 broadcast('message', { sessionId, kind }) 机制） */
+function emitNativeEvent(kind, ev, sessionIdHint) {
+  const data = normalizeNativeEvent(kind, ev, sessionIdHint);
+  if (!data) {
+    recordNativeAudit({ kind, ok: false, note: `${kind} 事件形状非法或无法定位会话，已丢弃` });
+    console.error(`[native] 丢弃无法归一化的 ${kind} 事件：${JSON.stringify(ev).slice(0, 200)}`);
+    return null;
+  }
+  const key = nativeDedupKey(kind, data, ev);
+  const now = Date.now();
+  const prev = nativeEventSeen.get(key);
+  if (prev != null && now - prev < NATIVE_DEDUP_MS) return null;   // 双通道重复投递 → 只渲染一次
+  nativeEventSeen.set(key, now);
+  pruneNativeDedup(now);
+  if (kind === 'goal') {
+    // 实测洪水（active 目标自动续跑时 60s 758 条）→ 按会话 500ms 合并：窗口内只保留最新载荷，
+    // 定时到点后统一走 deliverNativeEvent（再受速率上限约束）。用户主动设置目标时用
+    // flushGoalBroadcast() 立即发出，不受合并窗口影响。
+    const slot = goalPending.get(data.sessionId);
+    if (slot) { slot.data = data; slot.ev = ev; return null; }
+    const pending = { data, ev, timer: null };
+    pending.timer = setTimeout(() => {
+      goalPending.delete(data.sessionId);
+      deliverNativeEvent(pending.data, pending.ev);
+    }, GOAL_COALESCE_MS);
+    pending.timer.unref?.();
+    goalPending.set(data.sessionId, pending);
+    return null;
+  }
+  return deliverNativeEvent(data, ev);
+}
+
+/** 合并窗口到点（或用户主动改目标）后的真正广播 + 落盘 + 审计 */
+function deliverNativeEvent(data, ev) {
+  const kind = data.kind;
+  const now = Date.now();
+  if (kind === 'goal') {
+    // 速率上限：即便多会话同时洪水，也不允许超过 GOAL_BURST_MAX / GOAL_BURST_WINDOW_MS
+    while (goalBurst.length && now - goalBurst[0] > GOAL_BURST_WINDOW_MS) goalBurst.shift();
+    if (goalBurst.length >= GOAL_BURST_MAX) {
+      recordNativeAudit({ kind: 'goal', ok: false,
+        note: `目标事件超过速率上限（>${GOAL_BURST_MAX} 条/${GOAL_BURST_WINDOW_MS / 1000}s），已丢弃` });
+      return null;
+    }
+    goalBurst.push(now);
+  }
+  broadcast('message', data);
+  if (kind === 'goal') {
+    const { tokens, ...snap } = data.goal;   // 快照存契约字段（tokens 仅用于广播兼容）
+    persistSessionNative(data.sessionId,
+      (s) => ({ goal: s.goal || null }),
+      (s) => { s.goal = { ...snap, at: now, source: 'engine' }; });
+  } else if (kind === 'window-reset') {
+    persistSessionNative(data.sessionId,
+      (s) => ({ lastWindowReset: s.lastWindowReset || null }),
+      (s) => { s.lastWindowReset = { count: data.count, reason: data.reason || null, at: now }; });
+  }
+  recordNativeAudit({
+    kind, ok: true,
+    note: data.id || data.name || (data.goal && (data.goal.text || '').slice(0, 40)) || data.state || '',
+  });
+  return data;
+}
+
+/** 用户主动设置/清除目标时立即广播（不等 500ms 合并窗口） */
+function flushGoalBroadcast(sessionId) {
+  const slot = goalPending.get(sessionId);
+  if (!slot) return false;
+  clearTimeout(slot.timer);
+  goalPending.delete(sessionId);
+  deliverNativeEvent(slot.data, slot.ev);
+  return true;
+}
+
+/** 引擎原生查询/操作调用：方法缺失或抛错一律降级为 { supported:false, reason }（不 500、不假装空） */
+async function engineNativeCall(method, ...args) {
+  if (!engine || typeof engine[method] !== 'function') {
+    return { supported: false, reason: `当前引擎未提供 ${method}()（codex 版本或原生接线未就绪）` };
+  }
+  try {
+    const out = await engine[method](...args);
+    if (out && out.supported === false) return { supported: false, reason: out.reason || `${method}() 不受支持` };
+    return { supported: true, value: out == null ? null : out };
+  } catch (e) {
+    return { supported: false, reason: `${method}() 调用失败：${(e && e.message) || e}` };
+  }
+}
+
+/** 按 id 取会话（索引损坏时返回 null，不把异常抛给调用方） */
+function findSession(id) {
+  const sessions = loadSessions();
+  if (!Array.isArray(sessions)) return null;
+  return sessions.find((x) => x.id === id) || null;
+}
+
+/** 子代理列表项归一化（列表接口与事件共用同一套枚举/上限） */
+function normalizeSubagentItem(a) {
+  if (!a || typeof a !== 'object') return null;
+  const id = a.id == null ? '' : nativeText(String(a.id), 128);
+  if (!id || !SUBAGENT_STATES.includes(a.state)) return null;
+  const out = { id, state: a.state };
+  const title = nativeText(a.title, 200); if (title) out.title = title;
+  const lastText = nativeText(a.lastText, 4000); if (lastText) out.lastText = lastText;
+  const updatedAt = Number(a.updatedAt);
+  if (Number.isFinite(updatedAt) && updatedAt > 0) out.updatedAt = Math.round(updatedAt);
+  return out;
+}
+
+/** 会话上的 goal 本地快照 → 契约形状（引擎不可用时的降级数据源） */
+function goalSnapshot(s) {
+  const g = s && s.goal;
+  if (!g || typeof g !== 'object' || typeof g.text !== 'string' || !g.text) return null;
+  const out = { text: g.text, status: GOAL_STATUSES.includes(g.status) ? g.status : 'pending' };
+  if (typeof g.id === 'string' && g.id) out.id = g.id;
+  if (Number.isFinite(Number(g.tokensUsed)) && Number(g.tokensUsed) >= 0) out.tokensUsed = Math.round(Number(g.tokensUsed));
+  if (Number.isFinite(Number(g.tokenBudget)) && Number(g.tokenBudget) > 0) out.tokenBudget = Math.round(Number(g.tokenBudget));
+  return out;
+}
+
+/** 落一条技能依赖安装审计（走既有审批通道；服务层只登记，不执行安装） */
+function recordDepsAudit(ev) {
+  const packages = (Array.isArray(ev && ev.packages) ? ev.packages : [])
+    .filter((p) => typeof p === 'string' && p.trim()).map((p) => p.trim().slice(0, 200)).slice(0, 50);
+  recordNativeAudit({
+    kind: 'skill-deps',
+    ok: ev && ev.ok !== false,
+    note: `${(ev && ev.phase) || 'requested'} skill=${(ev && ev.skillId) || '-'}`
+      + (packages.length ? ` packages=${packages.join(',')}` : ''),
+  });
+}
+
+/** 确认引擎接受候选配置（rolloutTokenLimit 等会写进 config.toml 的字段）。
+ *  引擎未提供 validateConfig() 时返回 verified:false —— 不阻塞保存，但响应与审计必须显式标注，
+ *  因为配置一旦被拒会**回落默认**（模型/厂商/persona 全丢，v0.24.2 踩过）。 */
+async function verifyNativeConfig(patch) {
+  if (!engine || typeof engine.validateConfig !== 'function') {
+    return { verified: false, reason: '引擎未提供 validateConfig()，无法确认该配置被接受（若被拒会回落默认）' };
+  }
+  try {
+    const r = await engine.validateConfig(patch);
+    if (!r || r.ok !== false) return { verified: true, ok: true, warnings: (r && r.warnings) || [] };
+    return { verified: true, ok: false, warnings: r.warnings || [], reason: r.reason || '引擎拒绝该配置（写入会回落默认：模型/厂商/persona 全丢）' };
+  } catch (e) {
+    return { verified: false, reason: 'validateConfig() 调用失败：' + ((e && e.message) || e) };
+  }
+}
+
+/**
+ * 回包/诊断统一出口。
+ * ⚠️ hooks（引擎级钩子）功能已**整体删除**（引擎判 untrusted 且不执行、无信任 RPC，保留=永不生效的假能力）：
+ * 老 settings.json 里若有 `hooks` 残留，既不回传也不再写回 —— 这里直接剥掉。
+ * 联网 = 工具，没有开关/档位：`enabled`/`mode` 不回传；第三方 key（tavily/brave/exa）只报"是否已配置"。
+ */
+function sanitizeGlobalForClient(g) {
+  if (!g || typeof g !== 'object') return g;
+  const { hooks, ...rest } = g;   // 删功能后的历史残留：不回传
+  const out = { ...rest };
+  if (g.web && typeof g.web === 'object') {
+    const keysSet = {};
+    for (const [k, v] of Object.entries(g.web.keys || {})) keysSet[k] = !!v;
+    const { keys, enabled, mode, ...restWeb } = g.web;
+    out.web = { ...restWeb, keysSet };
+  }
+  return out;
+}
+
+/* ---------------- 原生能力支持矩阵（engine.nativeSupport() 优先，实测常量兜底） ----------------
+ * 有些开关"能存但不能生效"，API 必须如实回报，否则界面会假装已生效：
+ *  - rolloutTokenLimit：0.152.1 写 rollout_budget 不生效；enabled=true 需要
+ *    reminder_at_remaining_tokens，而写该键会让**整份 config.toml 被拒**（回落默认 = 厂商/模型/persona
+ *    全丢）→ 引擎选择不写它。字段保留（校验照旧）但不进 config.toml，回包 supported:false。
+ */
+const NATIVE_SUPPORT_FALLBACK = {
+  rolloutTokenLimit: { supported: false, trustStatus: null,
+    reason: 'codex 0.152.1 无法启用 rollout_budget（写 limit_tokens 不生效；enabled=true 需 '
+      + 'reminder_at_remaining_tokens，而该键会让整份 config.toml 被拒）→ 字段已保存但不会写进配置、不会生效' },
+  // task-12：内置搜索 MCP（rose_search）。引擎未接线时无法确认脚本是否就位 → 如实说"未接线"，
+  // 界面据此显示降级提示，而不是假装联网可用。
+  searchMcp: { supported: false, trustStatus: null,
+    reason: '引擎未提供 nativeSupport()，无法确认内置搜索工具（rose_search）是否就位' },
+};
+
+let nativeSupportCache = null;   // { at, value } —— 5s 缓存，避免每次 GET 设置都问引擎
+async function nativeSupportReport() {
+  const now = Date.now();
+  if (nativeSupportCache && now - nativeSupportCache.at < 5000) return nativeSupportCache.value;
+  let value = null;
+  if (engine && typeof engine.nativeSupport === 'function') {
+    try { const r = await engine.nativeSupport(); value = (r && typeof r === 'object') ? r : null; } catch { value = null; }
+  }
+  // ⚠️ 只缓存**成功**的报告：引擎可能那时还没接线/刚重启，缓存 null 会让后续 5s 继续按兜底常量走
+  nativeSupportCache = value ? { at: now, value } : null;
+  return value;
+}
+
+/** 从 nativeSupport 报告里按键名模式取一项（键名由 engine-native 定，模式匹配避免硬编码） */
+function nativeSupportOf(report, keys, re) {
+  if (!report) return null;
+  const pick = (v) => (v && typeof v === 'object'
+    ? {
+      supported: v.supported !== false,
+      trustStatus: v.trustStatus || null,
+      reason: v.reason || null,
+      // rollout_budget.requested：引擎按当前设置按需计算（数字=用户已请求的 token 上限；null=未设置）
+      ...(typeof v.requested === 'number' || v.requested === null ? { requested: v.requested } : {}),
+    }
+    : null);
+  for (const k of keys) { const hit = pick(report[k]); if (hit) return hit; }   // 1) 精确键名（camelCase/snake_case 别名）
+  for (const [k, v] of Object.entries(report)) {                               // 2) 兜底：模式匹配
+    if (!re.test(k)) continue;
+    const hit = pick(v);
+    if (hit) return hit;
+  }
+  return null;
+}
+
+/** 各原生能力的如实支持状态（引擎报告优先，否则用实测常量兜底） */
+async function nativeSupportFor(which) {
+  const rep = await nativeSupportReport();
+  const SPEC = {
+    rollout: { keys: ['rollout_budget', 'rolloutBudget', 'rolloutTokenLimit'], re: /rollout/i, fb: 'rolloutTokenLimit' },
+    // task-12 内置搜索 MCP：engine.nativeSupport().searchMcp（别名 search_mcp）
+    search: { keys: ['search_mcp', 'searchMcp'], re: /search_mcp|searchMcp/i, fb: 'searchMcp' },
+  };
+  const spec = SPEC[which] || SPEC.rollout;
+  const hit = nativeSupportOf(rep, spec.keys, spec.re);
+  if (hit) return hit;
+  return { ...NATIVE_SUPPORT_FALLBACK[spec.fb] };
+}
+
+/* ---------------- 关窗行为（消费方 = main.js 的 close 分支 / 退出确认） ---------------- */
+
+const CLOSE_BEHAVIORS = ['hide', 'quit'];
+/** 缺省/非法一律 hide —— main.js 尚未实现该分支时，未知值不得影响启动 */
+function getCloseBehavior() {
+  const g = (currentSettings() || {}).global || {};
+  return CLOSE_BEHAVIORS.includes(g.closeBehavior) ? g.closeBehavior : 'hide';
+}
+
 /* ---------------- 引擎 / 回合状态 ---------------- */
 
 let engine = null;
@@ -213,7 +614,7 @@ function currentSettings() {
 // 角色上一次使用的模型：取该角色最近一次带模型的会话；没有则返回空（交由用户选择）
 // —— 取代旧的「全局默认模型」概念（新会话不再自动取启用列表第一项）
 function lastModelForRole(roleId) {
-  const list = loadSessions()
+  const list = sessionsList()
     .filter((s) => s.roleId === roleId && s.providerId && s.modelId)
     .sort((a, b) => (b.updatedAt || b.createdAt || 0) - (a.updatedAt || a.createdAt || 0));
   const s = list[0];
@@ -306,6 +707,8 @@ function runTurn(session, userText, media, skillIds, opts) {
   // 给引擎的文本：silent 续问时 o.context 携带用户原始需求，保证模型知晓任务目标
   let engineText = filesHint ? userText + '\n\n' + filesHint : userText;
   if (o.context) engineText = o.context + '\n\n' + engineText;
+  // ⚠️ 联网已改为"模型可调用的内置 MCP 工具"（task-12）：**没有每轮预搜、没有 <web_context> 注入、没有开关**。
+  // 需要联网时由模型自己调 `web_search`（内置 MCP），人的便利入口是 `POST /api/web/search`（/web 指令）。
   if (!engineText.trim() && (images.length || filesHint)) engineText = '请查看我上传的附件/图片并回应。' + (filesHint ? '\n\n' + filesHint : '');
   if (!engineText.trim() && skillRefs.length) engineText = '请按所选技能完成本次任务。';
   let turnUsage = null; // 本轮 token 用量（usage 事件先于 turn-complete 到达）
@@ -325,7 +728,15 @@ function runTurn(session, userText, media, skillIds, opts) {
     'plan-delivered': () => { planDelivered = true; },
     'ask': (ev) => { appendMessage(session.id, { t: 'ask', v: { requestId: ev.requestId, questions: ev.questions }, ts: Date.now() }); broadcast('ask', { sessionId: session.id, requestId: ev.requestId, questions: ev.questions }); },
     'tool-output-delta': (ev) => broadcast('message', { sessionId: session.id, kind: 'tool-output-delta', toolId: ev.toolId, delta: ev.delta }),
-    'tool-start': (ev) => { const s1 = sessionOpenTools.get(session.id) || sessionOpenTools.set(session.id, new Set()).get(session.id); s1.add(ev.toolId); appendMessage(session.id, { t: 'tool', v: { name: ev.name, args: ev.args, status: 'run', toolId: ev.toolId }, ts: Date.now() }); broadcast('message', { sessionId: session.id, kind: 'tool-start', toolId: ev.toolId, name: ev.name, args: ev.args }); },
+    // server 是 task-12 新增的附加字段（内置搜索 MCP = rose_search）：透传给界面以便标注"内置搜索"，
+    // 老字段与 name 前缀（mcp:）不变 → UI 老逻辑不受影响
+    'tool-start': (ev) => {
+      const s1 = sessionOpenTools.get(session.id) || sessionOpenTools.set(session.id, new Set()).get(session.id);
+      s1.add(ev.toolId);
+      const server = typeof ev.server === 'string' && ev.server ? ev.server.slice(0, 64) : undefined;
+      appendMessage(session.id, { t: 'tool', v: { name: ev.name, args: ev.args, status: 'run', toolId: ev.toolId, ...(server ? { server } : {}) }, ts: Date.now() });
+      broadcast('message', { sessionId: session.id, kind: 'tool-start', toolId: ev.toolId, name: ev.name, args: ev.args, ...(server ? { server } : {}) });
+    },
     'tool-end': (ev) => { const s2 = sessionOpenTools.get(session.id); if (s2) s2.delete(ev.toolId); appendMessage(session.id, { t: 'tool-end', v: ev, ts: Date.now() }); broadcast('message', { sessionId: session.id, kind: 'tool-end', ...ev }); },
     'usage': (ev) => { turnUsage = ev.usage; if (ev.contextWindow) turnContextWindow = ev.contextWindow; },
     // 实时上下文占用（引擎在回合进行中多次上报）：直接推给前端，让圆环边跑边动
@@ -334,12 +745,18 @@ function runTurn(session, userText, media, skillIds, opts) {
       broadcast('message', { sessionId: session.id, kind: 'context-usage', used: ev.used, window: ev.window || turnContextWindow || null });
     },
     'approval-request': (ev) => broadcast('approval', { sessionId: session.id, ...ev }),
+    // codex 原生能力事件（task-2 契约）：**回合内通道**。
+    // 回合外的同类事件走 engine.onGlobal（同名 ev.type），两条通道共用 emitNativeEvent 去重，
+    // 同一事件绝不会双份渲染（Lead 裁定 Q1）。
+    'subagent': (ev) => emitNativeEvent('subagent', ev, session.id),
+    'goal': (ev) => emitNativeEvent('goal', ev, session.id),
+    'window-reset': (ev) => emitNativeEvent('window-reset', ev, session.id),
     // 压缩过程（引擎的 ContextCompaction item）：让界面能显示"压缩中 → 压缩完成"
     'compact-start': (ev) => broadcast('message', { sessionId: session.id, kind: 'compact-start', auto: !!ev.auto }),
     'compact-end': () => {
       broadcast('message', { sessionId: session.id, kind: 'compact-end' });
       // 压缩完成后占用必然变化 → 让前端重新取一次会话（拿最新的 contextUsed）
-      const fresh = loadSessions().find((x) => x.id === session.id);
+      const fresh = sessionsList().find((x) => x.id === session.id);
       if (fresh && fresh.contextUsed) broadcast('message', { sessionId: session.id, kind: 'context-usage', used: fresh.contextUsed, window: fresh.contextWindow || null });
     },
     'turn-complete': () => {
@@ -347,7 +764,7 @@ function runTurn(session, userText, media, skillIds, opts) {
       closeOpenTools(session.id, '结束');
       // 自动进入 Plan 模式：默认模式下模型判定需计划 → 自动置位并续问，无需用户确认
       if (!session.planMode && (turnText.includes('[PLAN]') || turnText.includes('[REQUEST_PLAN_MODE]'))) {
-        const sessions = loadSessions();
+        const sessions = sessionsList();
         const s = sessions.find((x) => x.id === session.id);
         if (s) {
           // 自动进 Plan：同步持久化只读沙箱（引擎 policyFor 已按 planMode 强制只读，落盘保持一致）
@@ -369,7 +786,7 @@ function runTurn(session, userText, media, skillIds, opts) {
       // Plan 出稿即自动切回普通模式：计划已交付（正文含 proposed_plan 或引擎走 plan 通道），
       // 会话不应继续卡在只读 —— 否则用户回「执行」时写不了文件，表现为「说完计划就停住」。
       if (session.planMode && (planDelivered || /<\/?proposed_plan>/.test(turnText))) {
-        const sessions2 = loadSessions();
+        const sessions2 = sessionsList();
         const s2 = sessions2.find((x) => x.id === session.id);
         if (s2) {
           s2.planMode = false;
@@ -404,7 +821,7 @@ function runTurn(session, userText, media, skillIds, opts) {
       }
       if (turnUsage && (turnUsage.inputTokens || turnUsage.totalTokens)) {
         const used = turnUsage.inputTokens || turnUsage.totalTokens || 0;
-        const sessions3 = loadSessions();
+        const sessions3 = sessionsList();
         const s3 = sessions3.find((x) => x.id === session.id);
         if (s3) {
           s3.contextUsed = used;
@@ -438,7 +855,7 @@ function runTurn(session, userText, media, skillIds, opts) {
 /* ---------------- 会话彻底删除（手动删除 & 30 天自动清理共用） ---------------- */
 
 function deleteSession(id) {
-  const sessions = loadSessions();
+  const sessions = sessionsList();
   const s = sessions.find((x) => x.id === id);
   if (!s) return false;
   if (activeTurns.has(id)) return false; // 运行中不删
@@ -455,15 +872,21 @@ function deleteSession(id) {
 // 30 天自动删除：会话超过 RETENTION_MS 未活动（updatedAt）即彻底删除全部磁盘内容
 const RETENTION_MS = 30 * 24 * 3600 * 1000;
 function sweepExpiredSessions() {
-  const sessions = loadSessions();
-  const cutoff = Date.now() - RETENTION_MS;
-  let removed = 0;
-  for (const s of sessions) {
-    if ((s.updatedAt || s.createdAt || 0) < cutoff && !activeTurns.has(s.id)) {
-      if (deleteSession(s.id)) removed++;
+  // ⚠️ C1：本函数在 init() 里被调用，**绝不能抛错**（sessions.json 损坏时 loadSessions 返回
+  // {__corrupt:true}，直接 for…of 会 TypeError → 启动失败，且要重启一次才恢复）。
+  try {
+    const sessions = sessionsList();
+    const cutoff = Date.now() - RETENTION_MS;
+    let removed = 0;
+    for (const s of sessions) {
+      if ((s.updatedAt || s.createdAt || 0) < cutoff && !activeTurns.has(s.id)) {
+        if (deleteSession(s.id)) removed++;
+      }
     }
+    if (removed > 0) console.log(`[清理] 自动删除超过 30 天未活动的会话 ${removed} 个`);
+  } catch (e) {
+    console.error('[rose] 会话清扫失败（不影响启动）：' + ((e && e.message) || e));
   }
-  if (removed > 0) console.log(`[清理] 自动删除超过 30 天未活动的会话 ${removed} 个`);
 }
 
 /* ---------------- 用量：内存增量聚合 ---------------- */
@@ -687,6 +1110,11 @@ function diagFilename() {
   return `rose-diag-${d.getFullYear()}${p(d.getMonth() + 1)}${p(d.getDate())}-${p(d.getHours())}${p(d.getMinutes())}.txt`;
 }
 
+/** 诊断用：maintenance 模块（D 阶段产物）。延迟 require + 容错，绝不让诊断导出因它失败。 */
+function maintenanceModule() {
+  try { return require('./core/maintenance'); } catch { return null; }
+}
+
 function buildDiagnostics() {
   const cur = currentSettings();
   const L = [];
@@ -707,6 +1135,37 @@ function buildDiagnostics() {
 
   const probe = envcheck.probeBinary(engineBinPath());
   L.push('codex --version → ' + JSON.stringify(probe));
+
+  // D 阶段（task-6 ④）：诊断导出必须带上「日志目录 + 是否打包 + 最近崩溃报告路径」，
+  // 数据源 = platform-lifecycle 的 core/maintenance.js（main.js 启动时写 work/data/runtime.json）。
+  // 延迟 require + 整体 try/catch：诊断导出绝不能因为维护模块缺失/异常而失败。
+  L.push('');
+  L.push('--- 运行环境（日志目录 / 打包态 / 崩溃报告）---');
+  try {
+    const maint = maintenanceModule();
+    const rt = (maint && typeof maint.readRuntimeInfo === 'function') ? (maint.readRuntimeInfo(ROOT) || {}) : {};
+    // 打包态兜底：与 main.js 同一规则（!process.defaultApp），不依赖 electron
+    const packaged = typeof rt.packaged === 'boolean' ? rt.packaged : !process.defaultApp;
+    L.push('日志目录      ' + (rt.logsDir || '（未记录：work/data/runtime.json 缺失）'));
+    L.push('是否打包      ' + String(packaged));
+    if (maint && typeof maint.crashSummary === 'function') {
+      const cs = maint.crashSummary(rt.logsDir) || {};
+      L.push('最近崩溃报告  ' + (cs.latest ? cs.latest.path : '（无）') + `（保留 ${cs.count || 0} 份）`);
+    } else {
+      L.push('最近崩溃报告  （maintenance 模块不可用）');
+    }
+    if (maint && typeof maint.readMaintenanceStatus === 'function') {
+      const ms = maint.readMaintenanceStatus(ROOT);
+      if (ms) {
+        L.push('上次出厂维护  ' + ms.action + (ms.from ? ` ${ms.from} → ${ms.to}` : '') + `（未投递 ${((ms.notDelivered || []).length)}）`);
+        // 维护计数（platform-lifecycle 新增字段；都是数组 → 打条数）
+        L.push('维护计数      ' + ['overwritten', 'upgradeAvailable', 'retired', 'retireConflicts', 'orphanEntries']
+          .map((k) => `${k}=${Array.isArray(ms[k]) ? ms[k].length : (ms[k] == null ? 0 : ms[k])}`).join('  '));
+      }
+    }
+  } catch (e) {
+    L.push('（运行环境信息读取失败：' + ((e && e.message) || e) + '）');
+  }
 
   L.push('');
   L.push('--- 环境自检 ---');
@@ -743,8 +1202,26 @@ function buildDiagnostics() {
   }
 
   L.push('');
+  L.push('--- 原生能力（子代理/目标/窗口续接）---');
+  L.push('关窗行为     ' + getCloseBehavior() + '（缺省 hide；消费方 = main.js close 分支）');
+  L.push('rollout 单轮上限 ' + ((cur.global || {}).rolloutTokenLimit || '（未设置）'));
+  L.push('最近配置警告 ' + (nativeConfigWarning ? JSON.stringify(nativeConfigWarning) : '（无）'));
+  L.push('原生事件（最近 20 条）：');
+  L.push(nativeAudit.length
+    ? nativeAudit.slice(-20).map((r) => `${new Date(r.ts).toISOString()} ${r.ok === false ? '✗' : '·'} ${r.kind} ${r.note || ''}`.trim()).join('\n')
+    : '（本次运行无原生事件）');
+
+  L.push('');
+  L.push('--- 技能依赖安装审计（服务层只登记，不执行安装）---');
+  const depsAudit = nativeAudit.filter((r) => r.kind === 'skill-deps').slice(-20);
+  L.push(depsAudit.length
+    ? depsAudit.map((r) => `${new Date(r.ts).toISOString()} ${r.ok === false ? '✗' : '·'} ${r.note || ''}`.trim()).join('\n')
+    : '（本次运行无安装尝试）');
+
+  L.push('');
   L.push('--- 配置（已脱敏）---');
-  L.push('global     ' + JSON.stringify(cur.global || {}, null, 2));
+  // 统一出口：剥掉已删除功能的残留（hooks）+ 掩码联网第三方 key
+  L.push('global     ' + JSON.stringify(sanitizeGlobalForClient(cur.global) || {}, null, 2));
   const provs = Object.entries(cur.providers || {}).map(([id, p]) => ({
     id, name: p.name, baseUrl: p.baseUrl, wireApi: p.wireApi,
     apiKey: p.apiKey ? '（已设置，已脱敏）' : '（未设置）',
@@ -752,10 +1229,13 @@ function buildDiagnostics() {
   }));
   L.push('providers  ' + JSON.stringify(provs, null, 2));
 
-  const sessions = loadSessions();
+  const sessions = sessionsList();
   L.push('');
   L.push('--- 会话 ---');
   L.push('会话数 ' + sessions.length + '；有模型 ' + sessions.filter((s) => s.providerId && s.modelId).length);
+  L.push('索引损坏隔离 ' + (sessionIndexCorruption
+    ? `⚠ 最近一次：${sessionIndexCorruption.file || '(未记录文件名)'} @ ${new Date(sessionIndexCorruption.at).toISOString()}｜${sessionIndexCorruption.error}`
+    : '（本次运行未检测到）'));
 
   const result = redact(L.join('\n'));
   return result;
@@ -802,7 +1282,7 @@ function init() {
           if (/item\/started$/.test(ev.phase)) broadcast('message', { sessionId: sid, kind: 'compact-start', auto: false });
           else if (/item\/completed$/.test(ev.phase)) {
             broadcast('message', { sessionId: sid, kind: 'compact-end' });
-            const fresh = loadSessions().find((x) => x.id === sid);
+            const fresh = sessionsList().find((x) => x.id === sid);
             if (fresh && fresh.contextUsed) broadcast('message', { sessionId: sid, kind: 'context-usage', used: fresh.contextUsed, window: fresh.contextWindow || null });
           }
         }
@@ -811,6 +1291,16 @@ function init() {
         sandboxInfo.readiness = null;          // 状态已变，强制下次重新查询
       } else if (ev.type === 'world-writable-warning') {
         sandboxInfo.worldWritable = [ev.detail];
+      } else if (ev.type === 'subagent' || ev.type === 'goal' || ev.type === 'window-reset') {
+        // 回合外的原生能力事件（goals 通知、窗口续接、子代理生命周期）→ 与回合内同一条出口
+        emitNativeEvent(ev.type, ev);
+      } else if (ev.type === 'skill-deps') {
+        // B7：技能依赖安装（引擎原生 skill_mcp_dependency_install）——服务层只登记审计，不执行安装
+        recordDepsAudit(ev);
+      } else if (ev.type === 'config-warning') {
+        // 既有「配置被拒」路径：写进审计与 GET /api/settings，界面据此提示"配置未生效"
+        nativeConfigWarning = { summary: ev.summary || '', details: ev.details || '', path: ev.path || null, at: Date.now() };
+        recordNativeAudit({ kind: 'config-warning', ok: false, note: ev.summary || '引擎配置被拒' });
       }
       broadcast('engine-event', ev);
     } catch (e2) { console.error('[engine] 事件广播失败：' + ((e2 && e2.message) || e2)); }
@@ -967,7 +1457,7 @@ route('POST', /^\/api\/models\/rename$/, async (ctx) => {
   saveSettings({ ...cur, global: { ...(cur.global || {}), enabledModels: list } });
 
   // 2) 所有正用旧名字的会话 → 换到新名字（这是"与改名同步"的关键）
-  const sessions = loadSessions();
+  const sessions = sessionsList();
   let touched = 0;
   for (const session of sessions) {
     if (session.providerId === providerId && session.modelId === fromV) { session.modelId = toV; touched++; }
@@ -1015,7 +1505,10 @@ route('GET', /^\/api\/running$/, () => {
 
 // #3 GET /api/sessions —— 会话列表
 route('GET', /^\/api\/sessions$/, () => {
-  const sessions = loadSessions().map((s) => {
+  const loaded = loadSessions();
+  // 索引损坏：明确 409（索引已被隔离，重启/刷新后即恢复为空表），不再 500
+  if (!Array.isArray(loaded)) return { status: 409, body: { error: loaded.error || '会话索引损坏' } };
+  const sessions = loaded.map((s) => {
     const out = { ...s, role: undefined, roleId: s.roleId };
     // 老会话（本版之前）没有 contextUsed：用该会话最后一次用量行的输入 token 回填，
     // 并把引擎实测的窗口按 provider|model 补上 —— 否则界面看不到"上下文占用"。
@@ -1087,7 +1580,7 @@ route('POST', /^\/api\/sessions$/, async (ctx) => {
 // #5 PATCH /api/sessions/:id { title } —— 会话重命名
 route('PATCH', /^\/api\/sessions\/[^/]+$/, async (ctx) => {
   const id = ctx.pathname.split('/')[3];
-  const sessions = loadSessions();
+  const sessions = sessionsList();
   const s = sessions.find((x) => x.id === id);
   if (!s) return { status: 404, body: { error: 'session not found' } };
   const body = ctx.body;
@@ -1128,7 +1621,7 @@ route('GET', /^\/api\/sessions\/[^/]+\/messages$/, async (ctx) => {
 route('POST', /^\/api\/sessions\/[^/]+\/messages$/, async (ctx) => {
   const id = ctx.pathname.split('/')[3];
   const body = ctx.body;
-  const sessions = loadSessions();
+  const sessions = sessionsList();
   const s = sessions.find((x) => x.id === id);
   if (!s) return { status: 404, body: { error: 'session not found' } };
   const role = loadRoles().find((r) => r.id === s.roleId);
@@ -1172,19 +1665,118 @@ route('POST', /^\/api\/sessions\/[^/]+\/messages$/, async (ctx) => {
   if (leavingPlan) { delete s.prePlanSandbox; delete s.prePlanApproval; }   // 手动出 Plan：快照用完即弃
   saveSessions(sessions);
   const media = processAttachments(s.id, body.attachments);
+  // 联网 = 工具（task-12，用户口径"联网就是工具，没有开关"）：
+  // 这里不再做"发消息即预搜 + 注入检索上下文 + 落 web 消息行"，也不读取客户端的联网开关字段。
+  // 模型需要联网时自行调用内置 MCP `web_search`；界面/人工查询走 POST /api/web/search。
   runTurn({ ...s, role }, text, media, body.skills);
   return { status: 200, body: { ok: true } };
+});
+
+// #9c GET /api/sessions/:id/subagents —— 运行中子代理列表（只读）
+// codex app-server 未暴露任何子代理控制 RPC（无 thread/subagent/*、无 agent/close|resume，Lead 裁定 Q4），
+// 所以这里只提供只读数据；界面的「停止」复用 POST /api/interrupt（停本回合，含其子代理）。
+route('GET', /^\/api\/sessions\/[^/]+\/subagents$/, async (ctx) => {
+  const id = ctx.pathname.split('/')[3];
+  if (!findSession(id)) return { status: 404, body: { error: 'session not found' } };
+  const r = await engineNativeCall('subagents', id);
+  const raw = r.value && Array.isArray(r.value.subagents) ? r.value.subagents : (Array.isArray(r.value) ? r.value : []);
+  const subagents = [];
+  for (const a of raw) { const one = normalizeSubagentItem(a); if (one) subagents.push(one); }
+  // 引擎侧不支持时显式 supported:false + reason，让界面提示「引擎未接线」而不是假装空列表
+  return { status: 200, body: { ok: true, sessionId: id, supported: r.supported, subagents, ...(r.supported ? {} : { reason: r.reason }) } };
+});
+
+// #9d GET /api/sessions/:id/goal —— 会话目标（引擎 thread/goal/get；不可用时降级本地快照）
+route('GET', /^\/api\/sessions\/[^/]+\/goal$/, async (ctx) => {
+  const id = ctx.pathname.split('/')[3];
+  const s = findSession(id);
+  if (!s) return { status: 404, body: { error: 'session not found' } };
+  const r = await engineNativeCall('goal', id);
+  if (r.supported) {
+    const g = r.value && typeof r.value === 'object' && 'goal' in r.value ? r.value.goal : r.value;
+    const goal = normalizeGoalPayload(g, 'route');
+    persistSessionNative(id, (x) => ({ goal: x.goal || null }),
+      (x) => { x.goal = goal ? { ...goal, at: Date.now(), source: 'engine' } : null; });
+    return { status: 200, body: { ok: true, supported: true, goal } };
+  }
+  return { status: 200, body: { ok: true, supported: false, goal: goalSnapshot(s), reason: r.reason } };
+});
+
+// #9e PUT /api/sessions/:id/goal { text?, status?, clear? } —— 手动设置/清除会话目标
+route('PUT', /^\/api\/sessions\/[^/]+\/goal$/, async (ctx) => {
+  const id = ctx.pathname.split('/')[3];
+  const s = findSession(id);
+  if (!s) return { status: 404, body: { error: 'session not found' } };
+  const body = ctx.body || {};
+  const clear = body.clear === true;
+  const text = typeof body.text === 'string' ? body.text.trim() : '';
+  if (!clear && !text && body.status === undefined) return { status: 400, body: { error: '需要 text（非空）、status 或 clear:true' } };
+  if (text.length > MAX_GOAL_TEXT) return { status: 400, body: { error: `目标文本过长（上限 ${MAX_GOAL_TEXT} 字符）` } };
+  if (body.status !== undefined && !GOAL_STATUSES.includes(body.status)) {
+    return { status: 400, body: { error: `status 必须是 ${GOAL_STATUSES.join(' | ')}` } };
+  }
+  // 只改状态时以「引擎当前目标 → 本地快照」为文本来源；两者都没有就明确拒绝（不静默造目标）
+  let nextText = text;
+  if (!clear && !nextText && body.status !== undefined) {
+    const cur = await engineNativeCall('goal', id);
+    const g = cur.supported && cur.value && typeof cur.value === 'object' && 'goal' in cur.value ? cur.value.goal : (cur.supported ? cur.value : null);
+    const n = normalizeGoalPayload(g, 'route');
+    nextText = (n && n.text) || (goalSnapshot(s) || {}).text || '';
+    if (!nextText) return { status: 400, body: { error: '仅改状态时需先有目标文本（或同时提供 text）' } };
+  }
+  const patch = clear ? { clear: true } : { text: nextText, ...(body.status !== undefined ? { status: body.status } : {}) };
+  let r;
+  if (clear) {
+    r = (engine && typeof engine.clearGoal === 'function')
+      ? await engineNativeCall('clearGoal', id)
+      : await engineNativeCall('setGoal', id, patch);
+  } else {
+    r = await engineNativeCall('setGoal', id, patch);
+  }
+  if (r.supported) {
+    const g = r.value && typeof r.value === 'object' && 'goal' in r.value ? r.value.goal : r.value;
+    const goal = clear ? null : (normalizeGoalPayload(g, 'route') || { text: nextText, status: body.status || 'active' });
+    persistSessionNative(id, (x) => ({ goal: x.goal || null }),
+      (x) => { x.goal = goal ? { ...goal, at: Date.now(), source: 'engine' } : null; });
+    // 主动广播：多窗口/多端一致；与引擎随后的 notification 由 emitNativeEvent 去重。
+    // 用户操作立即发出（flushGoalBroadcast），不等 500ms 合并窗口。
+    if (goal) { emitNativeEvent('goal', { sessionId: id, goal }, id); flushGoalBroadcast(id); }
+    else broadcast('message', { sessionId: id, kind: 'goal', goal: null });
+    return { status: 200, body: { ok: true, supported: true, goal } };
+  }
+  // 引擎不可用：写本地快照并**保留 supported:false**，界面据此标注「本地目标（引擎不可用）」
+  const goal = clear ? null : { text: nextText, ...(body.status !== undefined ? { status: body.status } : {}) };
+  persistSessionNative(id, (x) => ({ goal: x.goal || null }),
+    (x) => { x.goal = goal ? { ...goal, at: Date.now(), source: 'local' } : null; });
+  return { status: 200, body: { ok: true, supported: false, goal, reason: r.reason } };
+});
+
+// #9b POST /api/web/search { query, fetchTop? } —— 内置联网搜索（界面「/web」与设置页自检用）
+route('POST', /^\/api\/web\/search$/, async (ctx) => {
+  const body = ctx.body || {};
+  const q = typeof body.query === 'string' ? body.query.trim() : '';
+  if (!q) return { status: 400, body: { error: '缺少 query' } };
+  const webCfg = (currentSettings().global || {}).web || {};
+  const r = await websearch.searchWeb(q, { ...webCfg, limit: Number(body.limit) || 5 });
+  let page = null;
+  if (r.ok && body.fetchTop && r.results[0]) page = await websearch.fetchReadable(r.results[0].url, { maxChars: 4000 });
+  return { status: 200, body: { ...r, page } };
 });
 
 // #10 POST /api/approve { sessionId, requestId, decision }
 route('POST', /^\/api\/approve$/, async (ctx) => {
   const body = ctx.body;
-  const sessions = loadSessions();
+  const sessions = sessionsList();
   const s = sessions.find((x) => x.id === body.sessionId);
   if (!s) return { status: 404, body: { error: 'session not found' } };
   if (!body.requestId) return { status: 400, body: { error: '缺少 requestId' } };
   const role = loadRoles().find((r) => r.id === s.roleId);
   await engine.approve({ ...s, role }, body.requestId, !!body.decision);
+  // B7：技能依赖安装走的就是这条既有审批通道 —— 每次应答登记一条审计行（诊断导出可见），
+  // 服务层不执行安装（安装由 codex 原生 skill_mcp_dependency_install 完成）
+  if (body.skillId || body.kind === 'skill-deps' || Array.isArray(body.packages)) {
+    recordDepsAudit({ skillId: body.skillId || 'unknown', packages: body.packages, phase: body.decision ? 'approved' : 'denied' });
+  }
   broadcast('approval-resolved', body);
   return { status: 200, body: { ok: true } };
 });
@@ -1192,7 +1784,7 @@ route('POST', /^\/api\/approve$/, async (ctx) => {
 // #11 POST /api/ask { sessionId, requestId, answers } —— 应答模型的询问选择框
 route('POST', /^\/api\/ask$/, async (ctx) => {
   const body = ctx.body;
-  const sessions = loadSessions();
+  const sessions = sessionsList();
   const s = sessions.find((x) => x.id === body.sessionId);
   if (s) {
     const role = loadRoles().find((r) => r.id === s.roleId);
@@ -1213,7 +1805,7 @@ route('POST', /^\/api\/ask$/, async (ctx) => {
 
 // #12b POST /api/compact { sessionId } —— 手动压缩上下文（thread/compact/start）
 route('POST', /^\/api\/compact$/, async (ctx) => {
-  const sessions = loadSessions();
+  const sessions = sessionsList();
   const s = sessions.find((x) => x.id === ctx.body.sessionId);
   if (!s) return { status: 404, body: { error: 'session not found' } };
   if (activeTurns.has(s.id)) return { status: 409, body: { error: '有任务进行中，请先停止再压缩上下文' } };
@@ -1310,7 +1902,7 @@ route('POST', /^\/api\/steer$/, async (ctx) => {
 // #19 POST /api/interrupt { sessionId }
 route('POST', /^\/api\/interrupt$/, async (ctx) => {
   const body = ctx.body;
-  const sessions = loadSessions();
+  const sessions = sessionsList();
   const s = sessions.find((x) => x.id === body.sessionId);
   if (s) {
     const role = loadRoles().find((r) => r.id === s.roleId);
@@ -1326,6 +1918,8 @@ route('POST', /^\/api\/interrupt$/, async (ctx) => {
 function maskedSettings() {
   const cur = readJsonSafe(SETTINGS_PATH, settings);
   const out = { ...cur, providers: {} };
+  // 回包统一走 sanitizeGlobalForClient：剥 hooks 残留 + 掩码联网第三方 key（单一出口，避免两处漂移）
+  if (out.global) out.global = sanitizeGlobalForClient(out.global);
   for (const [id, p] of Object.entries(cur.providers || {})) {
     out.providers[id] = { ...p, keySet: !!p.apiKey };
     delete out.providers[id].apiKey;
@@ -1334,7 +1928,7 @@ function maskedSettings() {
 }
 
 // #20-21 全局文件读写（AGENTS-GLOBAL.md / MEMORY.md）
-route('GET', /^\/api\/settings$/, () => {
+route('GET', /^\/api\/settings$/, async () => {
   const cur = readJsonSafe(SETTINGS_PATH, settings);
   const prov = {};
   for (const [id, p] of Object.entries(cur.providers || {})) {
@@ -1364,7 +1958,12 @@ route('GET', /^\/api\/settings$/, () => {
       engineCapped: !!(effective && target < effective),
     };
   }
-  return { status: 200, body: { global: cur.global, server: cur.server, providers: prov, modelWindowsDetected: detectedAll, contextWindows } };
+  // 原生开关的"能存但不能生效"如实回报（rollout_budget 不被写入 config.toml；内置搜索工具是否就位）
+  const nativeSupport = {
+    rolloutTokenLimit: await nativeSupportFor('rollout'),
+    searchMcp: await nativeSupportFor('search'),   // task-12：内置搜索工具是否就位（UI 显示降级用）
+  };
+  return { status: 200, body: { global: sanitizeGlobalForClient(cur.global), server: cur.server, providers: prov, modelWindowsDetected: detectedAll, contextWindows, nativeSupport } };
 });
 
 // #23 PUT /api/settings —— 保存全局提示词、providers(含 apiKey)、模型默认
@@ -1383,11 +1982,48 @@ route('PUT', /^\/api\/settings$/, async (ctx) => {
     delete body.global.memory;
   }
   const nextGlobal = { ...(cur.global || {}), ...(body.global || {}) };
+  // hooks（引擎级钩子）功能已整体删除：老配置残留与客户端传入的 hooks 都不写回（也不回传）
+  delete nextGlobal.hooks;
+  // 联网搜索配置：provider 白名单 + URL 校验；keys 未提供（掩码回传）→ 保留旧值
+  if (body.global && body.global.web) {
+    const W = ['auto', 'bing', 'ddg', 'searxng', 'tavily', 'brave', 'exa'];
+    const oldW = (cur.global && cur.global.web) || {};
+    const inW = body.global.web || {};
+    // 联网 = 模型可调用的内置工具：**没有开关/档位** —— 只保留"搜索后端配置"（provider/searchUrl/keys），
+    // `enabled` / `mode` 及任何其它字段一律忽略（老配置带 enabled:false 也按"始终可用"处理，不写回迁移）。
+    const web = {
+      provider: W.includes(String(inW.provider)) ? String(inW.provider) : (oldW.provider || 'auto'),
+      searxngUrl: typeof inW.searxngUrl === 'string' && /^https?:\/\//i.test(inW.searxngUrl.trim()) ? inW.searxngUrl.trim() : (oldW.searxngUrl || ''),
+      keys: { ...(oldW.keys || {}) },
+    };
+    if (inW.keys && typeof inW.keys === 'object') {
+      for (const k of ['tavily', 'brave', 'exa']) {
+        if (typeof inW.keys[k] === 'string') { if (inW.keys[k]) web.keys[k] = inW.keys[k]; else delete web.keys[k]; }
+      }
+    }
+    nextGlobal.web = web;
+  }
   // L0 工具输出上限：正整数校验（非法/越界一律忽略，避免把垃圾值写进 config.toml）
   if (body.global && body.global.toolOutputTokenLimit !== undefined) {
     const n = Number(body.global.toolOutputTokenLimit);
     if (Number.isFinite(n) && n >= 500 && n <= 200000) nextGlobal.toolOutputTokenLimit = Math.round(n);
     else delete nextGlobal.toolOutputTokenLimit;
+  }
+  // 关窗行为（hide=默认 / quit；消费方 = main.js 的 close 分支与退出确认）：非法值忽略并保留旧值，
+  // 绝不把未知值写进磁盘 —— main.js 尚未实现该分支时，未知值不得影响启动（Lead 裁定 Q6）
+  if (body.global && body.global.closeBehavior !== undefined) {
+    const oldCB = (cur.global || {}).closeBehavior;
+    if (CLOSE_BEHAVIORS.includes(body.global.closeBehavior)) nextGlobal.closeBehavior = body.global.closeBehavior;
+    else if (CLOSE_BEHAVIORS.includes(oldCB)) nextGlobal.closeBehavior = oldCB;
+    else delete nextGlobal.closeBehavior;
+  }
+  // 单轮 rollout 硬上限（codex [features] rollout_budget.limit_tokens）：正整数校验，非法忽略（保留旧值）
+  if (body.global && body.global.rolloutTokenLimit !== undefined) {
+    const n = Number(body.global.rolloutTokenLimit);
+    const oldRT = (cur.global || {}).rolloutTokenLimit;
+    if (Number.isInteger(n) && n > 0 && n <= 100000000) nextGlobal.rolloutTokenLimit = n;
+    else if (typeof oldRT === 'number') nextGlobal.rolloutTokenLimit = oldRT;
+    else delete nextGlobal.rolloutTokenLimit;
   }
   const next = {
     global: nextGlobal,
@@ -1409,6 +2045,27 @@ route('PUT', /^\/api\/settings$/, async (ctx) => {
       if ((urlChanged || keyChanged) && next.providers[id].models) delete next.providers[id].models;
     }
   }
+  // rolloutTokenLimit 是与 config.toml 相关的项（将来引擎真支持时）：改动需先确认引擎接受，
+  // 被拒则不落盘 —— 否则整份配置回落默认（模型/厂商/persona 全丢，v0.24.2 旧坑）
+  const rolloutChanged = nextGlobal.rolloutTokenLimit !== (cur.global || {}).rolloutTokenLimit;
+  // ④ rolloutTokenLimit：字段保留与校验照旧，但**引擎不写进 config.toml**（写 rollout_budget
+  // 会连带 reminder_at_remaining_tokens 让整份配置被拒）→ 回包 supported:false，让 UI 如实说"不支持"，
+  // 且此变更不触发 invalidateProcs（配置没变，没必要重启 codex 进程）。
+  const rolloutSupport = rolloutChanged ? await nativeSupportFor('rollout') : null;
+  const nativeConfigChanged = rolloutChanged && !!(rolloutSupport && rolloutSupport.supported);
+  let nativeVerify = null;
+  if (nativeConfigChanged) {
+    nativeVerify = await verifyNativeConfig({ global: nextGlobal });
+    if (nativeVerify.verified && nativeVerify.ok === false) {
+      // 语义（engine-native 确认）：ok:false 只会在**引擎侧配置生成回归**时出现（顶层键跑到 [table]
+      // 之后/重复表/引号括号不配对/死键或 rollout_budget 混入），**不是用户输入问题** → 文案要指向反馈维护者
+      recordNativeAudit({ kind: 'config-rejected', ok: false, note: nativeVerify.reason });
+      return { status: 422, body: {
+        error: '引擎配置生成异常（请反馈维护者）：' + nativeVerify.reason,
+        engineRegression: true, warnings: nativeVerify.warnings || [],
+      } };
+    }
+  }
   saveSettings(next);
   // config.toml 的 [model_providers.*] 与 [windows] 段都只在进程启动时读取，
   // 所以这两类变更必须让现有 codex 进程失效，下一轮重新生成配置并 spawn。
@@ -1416,12 +2073,22 @@ route('PUT', /^\/api\/settings$/, async (ctx) => {
   const sandboxChanged = next.global && next.global.windowsSandbox !== (cur.global || {}).windowsSandbox;
   // 自动压缩阈值写在 config.toml，改动同样只在 spawn 时生效 → 一并让进程失效
   const compactChanged = (next.global && next.global.autoCompactPercent) !== (cur.global && cur.global.autoCompactPercent);
-  if (providersChanged || compactChanged || (platform.isWin(process.platform) && sandboxChanged)) {
+  if (providersChanged || compactChanged || nativeConfigChanged || (platform.isWin(process.platform) && sandboxChanged)) {
     try { engine.invalidateProcs(); } catch {}
     if (sandboxChanged) sandboxInfo.mode = next.global.windowsSandbox;
   }
   // 无需重启：Provider/提示词/记忆 都是下一轮即时生效（不再要求用户重启应用）
-  return { status: 200, body: { ok: true, restart: false, providersChanged } };
+  return { status: 200, body: {
+    ok: true, restart: false, providersChanged,
+    // rollout 变更：如实回报引擎是否支持（0.152.1 = false；字段仍保存，未来版本可用）
+    ...(rolloutSupport ? { rollout: rolloutSupport } : {}),
+    // 配置类变更时显式报告"引擎是否确认接受"（无 validateConfig 时为 false + 可读原因）
+    ...(nativeVerify ? {
+      configVerified: nativeVerify.verified,
+      ...((nativeVerify.warnings || []).length ? { configWarnings: nativeVerify.warnings } : {}),
+      ...(nativeVerify.verified ? {} : { configWarning: nativeVerify.reason }),
+    } : {}),
+  } };
 });
 
 // #24 POST /api/models/fetch { providerId } —— 拉取该 provider 可用模型列表
@@ -1533,6 +2200,51 @@ route('POST', /^\/api\/polish$/, async (ctx) => {
 route('GET', /^\/api\/skills$/, () => {
   return { status: 200, body: { skills: skills.loadRegistry() } };
 });
+// #26b GET /api/skills/search?q=&roleId=&limit= —— B7 技能检索（本地注册表，零网络、不改盘）
+route('GET', /^\/api\/skills\/search$/, (ctx) => {
+  const q = String(ctx.query.get('q') || '').trim().toLowerCase();
+  const roleId = String(ctx.query.get('roleId') || '').trim();
+  const limitRaw = Number(ctx.query.get('limit'));
+  const limit = Number.isFinite(limitRaw) && limitRaw > 0 ? Math.min(Math.round(limitRaw), 100) : 30;
+  const scored = [];
+  for (const s of skills.loadRegistry()) {
+    if (!s || typeof s !== 'object') continue;
+    // 可见性口径与引擎一致：全局技能 + 该角色的专属技能
+    if (roleId && !(s.scope === 'global' || (s.scope === 'role' && s.roleId === roleId))) continue;
+    const hay = `${s.id || ''} ${s.name || ''} ${s.description || ''}`.toLowerCase();
+    if (q && !hay.includes(q)) continue;
+    // 粗略相关度：id 命中 > name 命中 > 描述命中（同分按 id 排序，结果稳定可断言）
+    let score = 0;
+    if (q) {
+      if (String(s.id || '').toLowerCase().includes(q)) score += 4;
+      if (String(s.name || '').toLowerCase().includes(q)) score += 2;
+      if (String(s.description || '').toLowerCase().includes(q)) score += 1;
+    }
+    scored.push({ score, skill: s });
+  }
+  scored.sort((a, b) => (b.score - a.score) || String(a.skill.id).localeCompare(String(b.skill.id)));
+  const results = scored.slice(0, limit).map(({ score, skill }) => ({
+    id: skill.id, name: skill.name || skill.id, description: skill.description || '',
+    scope: skill.scope || 'global', roleId: skill.roleId || null, active: skill.active !== false,
+    ...(q ? { score } : {}),
+  }));
+  return { status: 200, body: { ok: true, query: q, roleId: roleId || null, count: results.length, total: scored.length, results } };
+});
+// #30b POST /api/skills/deps/audit —— B7 依赖安装审计（**只登记，不执行安装**）
+// 安装本身由 codex 原生 skill_mcp_dependency_install 走既有审批通道完成；服务层不建安装器，
+// 只把每次尝试写进审计（诊断导出可见），满足「走审批 + 可诊断」。
+route('POST', /^\/api\/skills\/deps\/audit$/, (ctx) => {
+  const body = ctx.body || {};
+  const skillId = typeof body.skillId === 'string' ? body.skillId.trim().slice(0, 128) : '';
+  if (!skillId) return { status: 400, body: { error: '缺少 skillId' } };
+  if (!DEP_AUDIT_PHASES.includes(body.phase)) {
+    return { status: 400, body: { error: `phase 必须是 ${DEP_AUDIT_PHASES.join(' | ')}` } };
+  }
+  const packages = (Array.isArray(body.packages) ? body.packages : [])
+    .filter((p) => typeof p === 'string' && p.trim()).map((p) => p.trim().slice(0, 200)).slice(0, 50);
+  recordDepsAudit({ skillId, packages, phase: body.phase, ok: body.ok !== false });
+  return { status: 200, body: { ok: true, audited: true, installed: false, skillId, phase: body.phase, packages: packages.length } };
+});
 route('POST', /^\/api\/skills\/import$/, async (ctx) => {
   const r = skills.importZip(ctx.body.zipBase64 || ctx.body.zip);
   if (r.error) return { status: 400, body: { error: r.error } };
@@ -1555,6 +2267,153 @@ route('DELETE', /^\/api\/skills\/[^/]+$/, async (ctx) => {
   if (r.error) return { status: 404, body: { error: r.error } };
   purgeSkillCopies(id);
   return { status: 200, body: r };
+});
+
+/* ---------------- 欢迎流程（task-4 欢迎窗口 / task-10 首启判定） ----------------
+ * 铁律：**test 与 detect-ollama 绝不写盘** —— 用户填一半的配置不允许落进 settings.json。
+ * 明确否决"先 PUT /api/settings 存 draft provider 再测连通性"的回退方案（会把半成品永久留在磁盘）。
+ */
+const WELCOME_PRESETS = [
+  { id: 'deepseek', name: 'DeepSeek · 深度求索', en: 'DeepSeek', baseUrl: 'https://api.deepseek.com', wireApi: 'responses' },
+  { id: 'qwen', name: '通义千问 Qwen · 阿里', en: 'Qwen · Alibaba', baseUrl: 'https://dashscope.aliyuncs.com/compatible-mode/v1', wireApi: 'responses' },
+  { id: 'glm', name: '智谱 GLM', en: 'Zhipu GLM', baseUrl: 'https://open.bigmodel.cn/api/v1', wireApi: 'responses' },
+  { id: 'kimi', name: 'Kimi · 月之暗面', en: 'Kimi · Moonshot', baseUrl: 'https://api.moonshot.cn/v1', wireApi: 'responses' },
+  { id: 'doubao', name: '豆包 · 火山方舟', en: 'Doubao · Volcano Ark', baseUrl: 'https://ark.cn-beijing.volces.com/api/v3', wireApi: 'responses' },
+  { id: 'minimax', name: 'MiniMax', en: 'MiniMax', baseUrl: 'https://api.minimaxi.com/v1', wireApi: 'responses' },
+  { id: 'openai', name: 'OpenAI', en: 'OpenAI', baseUrl: 'https://api.openai.com/v1', wireApi: 'responses' },
+  { id: 'claude', name: 'Claude · Anthropic', en: 'Claude · Anthropic', baseUrl: 'https://api.anthropic.com/v1', wireApi: 'responses', envKey: 'ANTHROPIC_API_KEY' },
+  { id: 'gemini', name: 'Gemini · Google', en: 'Gemini · Google', baseUrl: 'https://generativelanguage.googleapis.com/v1beta/openai', wireApi: 'responses', envKey: 'GEMINI_API_KEY' },
+  { id: 'openrouter', name: 'OpenRouter · 聚合', en: 'OpenRouter', baseUrl: 'https://openrouter.ai/api/v1', wireApi: 'responses' },
+  { id: 'groq', name: 'Groq', en: 'Groq', baseUrl: 'https://api.groq.com/openai/v1', wireApi: 'responses' },
+  { id: 'ollama', name: 'Ollama · 本地', en: 'Ollama · Local', baseUrl: 'http://localhost:11434/v1', wireApi: 'responses', keyless: true, local: true, envKey: 'OLLAMA_API_KEY' },
+].map((p) => ({ envKey: p.id.toUpperCase().replace(/[^A-Z0-9]/g, '_') + '_API_KEY', ...p }));
+
+// GET /api/welcome/presets —— 厂商预设（模板）+ 首启判定（不含任何密钥）
+route('GET', /^\/api\/welcome\/presets$/, () => {
+  const cur = readJsonSafe(SETTINGS_PATH, settings);
+  const enabledModelCount = ((cur.global || {}).enabledModels || []).length;
+  const providerCount = Object.keys(cur.providers || {}).length;
+  return { status: 200, body: {
+    ok: true,
+    presets: WELCOME_PRESETS.map((p) => ({ ...p })),
+    // 首启判定：未启用任何模型 → 进欢迎页（已有配置则跳过）
+    state: { providerCount, enabledModelCount, shouldWelcome: enabledModelCount === 0 },
+  } };
+});
+
+// POST /api/welcome/test { baseUrl, apiKey, providerId?, modelId? } —— 连通性测试，**不落盘**
+route('POST', /^\/api\/welcome\/test$/, async (ctx) => {
+  const body = ctx.body || {};
+  const cur = readJsonSafe(SETTINGS_PATH, settings);
+  const providerId = typeof body.providerId === 'string' ? body.providerId.trim() : '';
+  const saved = providerId ? ((cur.providers || {})[providerId] || null) : null;
+  let baseUrl = typeof body.baseUrl === 'string' ? body.baseUrl.trim() : '';
+  let apiKey = typeof body.apiKey === 'string' ? body.apiKey : '';
+  // providerId 仅用于"测已有供应商"：body 未给 baseUrl/key 时从设置里读（只读，不写）
+  if (!baseUrl && saved) baseUrl = saved.baseUrl || '';
+  if (!apiKey && saved) apiKey = saved.apiKey || '';
+  if (!/^https?:\/\//i.test(baseUrl)) return { status: 400, body: { ok: false, error: 'baseUrl 必须是 http(s) 地址' } };
+  const base = baseUrl.replace(/\/+$/, '');
+  const url = base.endsWith('/v1') ? base + '/models' : base + '/v1/models';
+  const shortened = (s) => String(s == null ? '' : s).slice(0, 200);
+  try {
+    const headers = apiKey ? { Authorization: 'Bearer ' + apiKey } : {};
+    const res = await fetch(url, { headers, signal: AbortSignal.timeout(8000) });
+    if (!res.ok) {
+      const txt = await res.text().catch(() => '');
+      return { status: 200, body: { ok: false, baseUrl: base, providerId: providerId || null, error: `HTTP ${res.status}${txt ? '：' + shortened(txt) : ''}` } };
+    }
+    const data = await res.json().catch(() => null);
+    const raw = Array.isArray(data && data.data) ? data.data : (Array.isArray(data && data.models) ? data.models : []);
+    const models = [];
+    for (const m of raw) {
+      const id = m && (m.id || m.model || m.name);
+      if (typeof id === 'string' && id) models.push(id);
+    }
+    if (!models.length) {
+      return { status: 200, body: { ok: false, baseUrl: base, providerId: providerId || null, error: '端点可访问但没有返回模型列表（可能不是 OpenAI 兼容端点）' } };
+    }
+    return { status: 200, body: {
+      ok: true, count: models.length, models: models.slice(0, 200), baseUrl: base, providerId: providerId || null,
+      ...(typeof body.modelId === 'string' && body.modelId ? { modelFound: models.includes(body.modelId) } : {}),
+    } };
+  } catch (e) {
+    return { status: 200, body: { ok: false, baseUrl: base, providerId: providerId || null, error: '连接失败：' + shortened((e && e.message) || e) } };
+  }
+});
+
+// POST /api/welcome/detect-ollama —— 本机 Ollama 探测（主进程侧发请求，绕开 renderer 的 CORS），**不落盘**
+route('POST', /^\/api\/welcome\/detect-ollama$/, async () => {
+  const out = { ok: true, found: false, baseUrl: 'http://127.0.0.1:11434/v1', models: [], source: null, error: null };
+  const pick = (j) => (Array.isArray(j && j.models) ? j.models : [])
+    .map((m) => (m && (m.name || m.model || m.id)) || null)
+    .filter((x) => typeof x === 'string' && x);
+  try {
+    const r = await fetch('http://127.0.0.1:11434/api/tags', { signal: AbortSignal.timeout(2500) });
+    if (r.ok) {
+      const list = pick(await r.json().catch(() => null));
+      if (list.length) return { status: 200, body: { ...out, found: true, source: 'tags', models: list.slice(0, 200) } };
+    }
+  } catch (e) { out.error = 'Ollama 未响应（' + ((e && e.message) || e) + '）'; }
+  // 回退 OpenAI 兼容口（部分本地网关只开 /v1）
+  try {
+    const r2 = await fetch('http://127.0.0.1:11434/v1/models', { signal: AbortSignal.timeout(2500) });
+    if (r2.ok) {
+      const list = pick(await r2.json().catch(() => null));
+      if (list.length) return { status: 200, body: { ...out, found: true, source: 'openai', models: list.slice(0, 200) } };
+    }
+  } catch (e2) { if (!out.error) out.error = 'Ollama 未响应（' + ((e2 && e2.message) || e2) + '）'; }
+  if (!out.error) out.error = '本机未发现 Ollama（127.0.0.1:11434 无可列出的模型）';
+  return { status: 200, body: out };
+});
+
+// POST /api/welcome/save { providerId, name?, baseUrl, apiKey?, envKey?, wireApi?, models?, enabledModels?[] }
+route('POST', /^\/api\/welcome\/save$/, async (ctx) => {
+  const body = ctx.body || {};
+  const pid = typeof body.providerId === 'string' ? body.providerId.trim() : '';
+  if (!/^[A-Za-z0-9_.-]{1,64}$/.test(pid)) return { status: 400, body: { error: 'providerId 非法（1~64 位字母数字 _ . -）' } };
+  const baseUrl = typeof body.baseUrl === 'string' ? body.baseUrl.trim().replace(/\/+$/, '') : '';
+  if (!/^https?:\/\//i.test(baseUrl)) return { status: 400, body: { error: 'baseUrl 必须是 http(s) 地址' } };
+  const cur = readJsonSafe(SETTINGS_PATH, settings);
+  const old = (cur.providers || {})[pid] || {};
+  const keyless = body.keyless === true || KEYLESS_PROVIDER_IDS.has(pid);
+  const apiKey = (typeof body.apiKey === 'string' && body.apiKey) ? body.apiKey : (keyless ? (old.apiKey || '') : '');
+  if (!keyless && !apiKey) return { status: 400, body: { error: '该供应商需要 API Key' } };
+  const prov = {
+    ...old,
+    name: (typeof body.name === 'string' && body.name.trim()) ? body.name.trim().slice(0, 60) : (old.name || pid),
+    baseUrl,
+    envKey: (typeof body.envKey === 'string' && body.envKey.trim())
+      ? body.envKey.trim().slice(0, 64)
+      : (old.envKey || pid.toUpperCase().replace(/[^A-Z0-9]/g, '_') + '_API_KEY'),
+    wireApi: body.wireApi === 'chat' ? 'chat' : (body.wireApi === 'responses' ? 'responses' : (old.wireApi || 'responses')),
+    apiKey,
+    ...(keyless ? { keyless: true } : {}),
+  };
+  // 启用模型：接受 ['id'] 或 [{ modelId, label }]，统一为 { providerId, modelId, label }；不动其它 provider
+  const list = ((cur.global || {}).enabledModels || []).map((e) => ({ ...e })).filter((e) => e && e.providerId !== pid);
+  for (const m of (Array.isArray(body.enabledModels) ? body.enabledModels : []).slice(0, 200)) {
+    const mid = typeof m === 'string' ? m : (m && typeof m.modelId === 'string' ? m.modelId : '');
+    if (!mid) continue;
+    const label = (m && typeof m === 'object' && typeof m.label === 'string' && m.label) || `${pid} · ${mid}`;
+    if (!list.some((e) => e.providerId === pid && e.modelId === mid)) list.push({ providerId: pid, modelId: mid, label });
+  }
+  const models = (Array.isArray(body.models) ? body.models : []).filter((x) => typeof x === 'string' && x).slice(0, 500);
+  if (models.length) prov.models = models.map((id) => ({ id, name: id }));
+  saveSettings({
+    global: { ...(cur.global || {}), enabledModels: list },
+    providers: { ...(cur.providers || {}), [pid]: prov },
+    server: { ...(cur.server || {}) },
+    modelWindowsDetected: { ...(cur.modelWindowsDetected || {}) },
+  });
+  try { engine.invalidateProcs(); } catch {}   // 新增 provider → config.toml 需重建（下一轮 spawn 生效）
+  recordNativeAudit({ kind: 'welcome-save', ok: true, note: `${pid} / 启用 ${list.filter((e) => e.providerId === pid).length} 个模型` });
+  const { apiKey: _omit, ...safeProv } = prov;   // 密钥永不回传（与 maskedSettings 同口径）
+  return { status: 200, body: {
+    ok: true,
+    provider: { ...safeProv, keySet: !!apiKey },
+    enabledModels: list.filter((e) => e.providerId === pid),
+  } };
 });
 
 // #31-33 角色管理
@@ -1614,7 +2473,7 @@ route('DELETE', /^\/api\/roles\/[^/]+$/, async (ctx) => {
   skillsAffected += ds ? mcp.deleteServersForRole(rid).length : mcp.deactivateServersForRole(rid);
   fs.rmSync(dir, { recursive: true, force: true });
   // 连带清理：该角色名下会话 + 消息 + 附件、work 工作区、codex 运行配置、引擎线程映射
-  const all = loadSessions() || [];
+  const all = sessionsList();
   const removed = all.filter((s) => s.roleId === rid);
   // 有任务在跑的会话不能被"抽走"：会话/消息删掉后，运行中的 turn 仍会继续写盘并广播，
   // 留下谁也管不到的孤儿会话。要求先停这些会话。
@@ -1637,7 +2496,7 @@ route('DELETE', /^\/api\/roles\/[^/]+$/, async (ctx) => {
 /* ---------------- 附件读取（原 attachment HTTP 端点，供 rose:// 协议调用） ---------------- */
 
 function getAttachment(sessionId, fname) {
-  const s = loadSessions().find((x) => x.id === sessionId);
+  const s = sessionsList().find((x) => x.id === sessionId);
   if (!s || !fname || fname.includes('/') || fname.includes('\\')) return null;
   // 会话级附件目录；历史会话（v0.24.2 之前）附件在 work/<role>/uploads，作兼容回退
   let fp = path.join(uploadsDir(sessionId), path.basename(fname));
@@ -1656,4 +2515,6 @@ async function shutdown() {
   try { if (engine) await engine.shutdown(); } catch {}
 }
 
-module.exports = { init, dispatch, getAttachment, onBroadcast, shutdown };
+// getCloseBehavior：关窗行为的唯一读取入口（消费方 = main.js 的 close 分支 / 退出确认，
+// 缺省 hide；未知值不影响启动）。nativeAudit 仅供诊断，不对外暴露可变引用。
+module.exports = { init, dispatch, getAttachment, onBroadcast, shutdown, getCloseBehavior };

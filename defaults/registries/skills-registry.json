@@ -401,6 +401,36 @@
       "origin": "ecc"
     },
     {
+      "id": "office-docx",
+      "name": "office-docx",
+      "description": "用 ROSE 随包工具链创建/读取/修改 Word 文档（.docx）：报告、备忘录、信函、模板、表格、批量替换。使用随包 Python（python-docx）与随包只读 OOXML 结构检查器，不需要用户自装 Python/LibreOffice；不含渲染器，不宣称外观正确。",
+      "scope": "global",
+      "roleId": null,
+      "active": true,
+      "dir": "skills/office-docx",
+      "origin": "builtin"
+    },
+    {
+      "id": "office-pptx",
+      "name": "office-pptx",
+      "description": "用 ROSE 随包工具链创建/读取/修改 PowerPoint 演示文稿（.pptx）：汇报、路演、课件、模板页、图表页。使用随包 Python（python-pptx）与随包只读 OOXML 结构检查器，不需要用户自装 Python/LibreOffice；不含渲染器，不宣称版式外观正确。",
+      "scope": "global",
+      "roleId": null,
+      "active": true,
+      "dir": "skills/office-pptx",
+      "origin": "builtin"
+    },
+    {
+      "id": "office-xlsx",
+      "name": "office-xlsx",
+      "description": "用 ROSE 随包工具链读取/创建/修改 Excel 工作簿（.xlsx）：数据、公式、格式与 pandas 分析。使用随包 Python（openpyxl/XlsxWriter/pandas）与随包只读 OOXML 结构检查器，不需要用户自装 Python/Excel；纯数据任务不做视觉检查。",
+      "scope": "global",
+      "roleId": null,
+      "active": true,
+      "dir": "skills/office-xlsx",
+      "origin": "builtin"
+    },
+    {
       "id": "plan-canvas",
       "name": "plan-canvas",
       "description": "Open plans and HTML artifacts in a local browser canvas where the human annotates elements, chats, and approves or requests changes without leaving the page. Use when presenting a plan for review, or when feedback like \"move this, change that\" is easier pointed at than typed.",

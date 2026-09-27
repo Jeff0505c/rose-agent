@@ -28,6 +28,9 @@ const fs = require('fs');
 const skills = require('./skills');
 const mcp = require('./mcp');
 const platform = require('./platform');
+// B 阶段原生能力：能力登记表（配置片段 + 降级原因）与事件映射/节流（纯函数，见 design/native-probes.md）
+const nativeCaps = require('./native/capabilities');
+const nativeEvents = require('./native/events');
 
 const ROOT = process.env.ROSE_ROOT || path.resolve(__dirname, '..', '..');
 // 优先用 core/vendor/ 内的官方预编译二进制（项目自包含），其次 npm 本地包。
@@ -59,6 +62,27 @@ function resolveToolsDir() {
   return cands.find((p) => { try { return fs.existsSync(p); } catch { return false; } }) || cands[cands.length - 1];
 }
 const TOOLS_DIR = resolveToolsDir();
+// ROSE 内置联网搜索 MCP（task-12）：**始终注册**（用户裁定"联网就是工具，没有开关"）。
+// 用 Electron 自带 Node 跑（ELECTRON_RUN_AS_NODE=1）→ 用户零安装、零外部运行时。
+// 路径策略：打包态优先 Resources/mcp/（asar 外的 extraResources）；开发态 = APP/mcp/。
+// 实测（Electron 37）：ELECTRON_RUN_AS_NODE 子进程**支持** asar 的 require/existsSync/readFileSync，
+// 所以即使 extraResources 缺失、脚本落在 app.asar 内也能跑（只是启动略慢）——不是硬依赖。
+function resolveSearchMcp() {
+  const exists = (p) => { try { return !!p && fs.existsSync(p); } catch { return false; } };
+  const scriptCands = [
+    process.resourcesPath ? path.join(process.resourcesPath, 'mcp', 'rose-search-mcp.js') : null,
+    path.join(__dirname, '..', 'mcp', 'rose-search-mcp.js'),
+  ].filter(Boolean);
+  const script = scriptCands.find(exists) || scriptCands[scriptCands.length - 1];
+  const wsCands = [
+    process.env.ROSE_WEBSEARCH_PATH,
+    process.resourcesPath ? path.join(process.resourcesPath, 'mcp', 'websearch.js') : null,
+    process.resourcesPath ? path.join(process.resourcesPath, 'app.asar.unpacked', 'core', 'websearch.js') : null,
+    path.join(__dirname, 'websearch.js'),
+  ].filter(Boolean);
+  const websearchPath = wsCands.find(exists) || null;
+  return { script, scriptExists: exists(script), websearchPath, websearchExists: !!websearchPath, engine: process.execPath, root: ROOT };
+}
 // MCP stdio 命令解析：非绝对路径视为随包工具名（如 "github-mcp-server"），解析到 TOOLS_DIR；
 // 找不到则原样返回（交由 codex 自行按 PATH 解析）。避免把机器绝对路径写进默认注册表。
 function resolveToolCommand(cmd) {
@@ -96,6 +120,15 @@ const DEFAULT_SANDBOX = 'workspace-write';
 const DEFAULT_APPROVAL = 'on-request';
 const SANDBOX_MAP = { 'read-only': 'read-only', 'workspace-write': 'workspace-write', 'danger-full-access': 'danger-full-access' };
 const APPROVAL_MAP = { 'on-request': 'on-request', 'never': 'never' };
+// 引擎会发起的审批类 server→client 请求（v2 item 风格 + v1 历史风格）。
+// 真机实测（0.152.1）：需要审批时走 `item/commandExecution/requestApproval`；
+// v1 的 execCommandApproval/applyPatchApproval 仍在协议里（应答枚举不同：approved/abort）。
+const APPROVAL_METHODS = new Set([
+  'item/commandExecution/requestApproval',
+  'item/fileChange/requestApproval',
+  'execCommandApproval',
+  'applyPatchApproval',
+]);
 // 归一化会话策略：非法/缺失回退默认；返回 { sandbox, approval }
 // Plan 模式下强制只读（计划阶段只研究不执行，与 codex plan 语义一致）
 function policyFor(session, settings) {
@@ -233,6 +266,24 @@ class CodexEngine {
     this.recentStderr = [];               // codex 子进程 stderr 环形缓冲（诊断导出用；不落盘）
     this._sandboxCache = null;            // { at, value } —— readiness 结果短缓存
     this.sandboxSetupState = { running: false, mode: null, startedAt: 0, lastResult: null };
+    // —— B 阶段原生能力状态 ——
+    // 子代理注册表：父线程 id → Map(子代理线程 id → { id, state, title, lastText, tool, status, updatedAt })
+    this.subagentRegistry = new Map();
+    this.subagentParent = new Map();      // 子代理线程 id → 父线程 id（thread/status/changed 反查）
+    this._goalCache = new Map();          // threadId → goal 载荷（RPC 失败时的降级快照）
+    this._goalThrottle = nativeEvents.createGoalThrottle({ intervalMs: 500 });
+    this._windowReset = nativeEvents.createWindowResetTracker({ dedupeMs: 2000 });
+    // 手动压缩标记：ROSE 自己发起的 /compact 不发 window-reset（避免与压缩环/蒙版重复提示）。
+    // 引擎在 contextCompaction item 里**不携带** trigger/auto（schema 仅 {id}），所以只能由
+    // 我们自己的 compact() 入口打标（唯一入口：doCompact → engine.compact）。
+    this._manualCompaction = new Map();   // threadId → ts
+    this.nativeRolloutBudget = null;      // rollout_budget 的降级决策（0.152.1 无法启用）
+    // —— D3：server→client 请求的登记与审计 ——
+    // 引擎发起的请求（审批/升权/询问/MCP 授权/取时间）**不答就会永久挂起该轮**（实测）。
+    // 这里登记"哪个进程、哪个请求、期望什么形状的应答"，既解决应答送错进程，也让诊断能看到全过程。
+    this.pendingServerRequests = new Map(); // key=String(id) → { st, rawId, method, kind, threadId, at }
+    this.requestAudit = [];                 // 最近 200 条：{at, method, id, threadId, kind, response|error}
+    this._watchdogs = new Map();            // threadId → { warn, fail, info }（审批回送后等待引擎执行）
     this._loadThreads();          // 从磁盘恢复会话线程映射（线程在角色线程库中，进程重启后经 thread/resume 恢复）
   }
 
@@ -311,8 +362,9 @@ class CodexEngine {
 
   // 把 config.toml 写入角色 home。基线（默认 model_provider/model/sandbox/approval）取 spawn 时的参数组合，
   // 但**注册全部厂商**——模型/厂商/沙箱/审批/模式都按轮在 turn/start 上注入，进程只需认识所有厂商即可。
-  _writeConfig(role, providerId, modelId, sandbox, approval, home) {
-    const settings = this._getSettings();
+  // opts.preview=true：只生成文本，不写盘、不改引擎的降级登记（供 validateConfig 自检用）
+  _configLines(settings, role, providerId, modelId, sandbox, approval, opts) {
+    const preview = !!(opts && opts.preview);
     const lines = [];
     lines.push('# ROSE 运行配置（动态生成，勿手改；模型/厂商/沙箱/审批均按轮注入）');
     lines.push('');
@@ -321,10 +373,12 @@ class CodexEngine {
     lines.push(`sandbox_mode = ${JSON.stringify(sandbox)}`);
     lines.push(`approval_policy = ${JSON.stringify(approval)}`);
     lines.push('');
-    // 子代理能力（激活条件见 roles/_global/AGENTS-GLOBAL.md「子代理激活条件」，经 AGENTS 每会话加载）
-    lines.push('multi_agent_v2 = true');
-    lines.push('max_depth = 1');
-    lines.push('max_concurrent_threads_per_session = 2');
+    // 子代理（B1）：**不要**再写 `multi_agent_v2` / `max_depth` / `max_concurrent_threads_per_session`
+    // ——0.152.1 实测这三者都是**未知配置字段**（`app-server --strict-config` 直接报错；非严格模式
+    // 静默忽略 → 留着只会误导后来人）。真实语义：引擎默认开启 **v1**（工具命名空间 `multi_agent_v1`，
+    // 由模型目录能力位 multi_agent_version 决定；非目录模型如 DeepSeek = v1）；
+    // 要强制 v2 只能写 `[features] multi_agent_v2 = true`（命名空间变 `collaboration`，默认关）。
+    // 详见 design/native-probes.md §2 与 APP/core/native/capabilities.js。
     lines.push('');
 
     // ⚠️ TOML 顺序铁律：**顶层键必须写在任何 [table] 之前**。曾把 [features.token_budget] 插在
@@ -334,6 +388,13 @@ class CodexEngine {
     const toolLimitRaw = Number(settings.global && settings.global.toolOutputTokenLimit);
     const toolLimit = Number.isFinite(toolLimitRaw) && toolLimitRaw >= 500 ? Math.round(toolLimitRaw) : 8000;
     lines.push(`tool_output_token_limit = ${toolLimit}`);
+    // 用户自加的 MCP 起不来时不要卡住整轮：给启动一个宽限窗口（超过就继续，工具缺失可自检提示）
+    lines.push('mcp_optional_startup_grace_ms = 1500');
+    // B8：rollout_budget 在 0.152.1 **无法启用**（启用需 reminder_at_remaining_tokens，而该键写入即令
+    // 整份配置解析失败 → 回落默认 = 厂商/模型/人格全失效）。因此这里**绝不写** rollout_budget；
+    // 用户设置只落成降级原因，由 nativeSupport() 上浮给 UI（不静默失效）。
+    const rolloutBudget = nativeCaps.rolloutBudgetDecision(settings);
+    if (!preview) this.nativeRolloutBudget = rolloutBudget;
     lines.push('');
 
     // ② 窗口与阈值：统一走 contextBudget（与设置页展示同一个函数，避免两处数字不一致）
@@ -364,6 +425,24 @@ class CodexEngine {
       lines.push(`wire_api = ${JSON.stringify(wa)}`);
       lines.push('');
     }
+    // ROSE 内置联网搜索 MCP（task-12）：**始终注册，无 any 条件/开关**（用户裁定"联网就是工具"）。
+    // command 用 process.execPath（Electron 自带 Node）+ ELECTRON_RUN_AS_NODE=1 → 零外部运行时。
+    // 失败路径：脚本缺失时仍写注册（不改语义），但会打可读 stderr 并由 nativeSupport().searchMcp 上浮，
+    // 不静默失效；工具本身失败时由 MCP server 回可读错误给模型。
+    const searchMcp = resolveSearchMcp();
+    if (!preview) this.nativeSearchMcp = searchMcp;
+    if (!searchMcp.scriptExists) {
+      process.stderr.write('[engine] 内置联网搜索 MCP 脚本缺失（' + searchMcp.script + '）：web_search 工具将不可用；'
+        + '请确认 APP/mcp/rose-search-mcp.js 存在（打包态需 extraResources 提供 Resources/mcp/）\n');
+    }
+    lines.push('[mcp_servers.rose_search]');
+    lines.push(`command = ${JSON.stringify(searchMcp.engine)}`);
+    lines.push(`args = [${JSON.stringify(searchMcp.script)}]`);
+    lines.push('[mcp_servers.rose_search.env]');
+    lines.push('ELECTRON_RUN_AS_NODE = "1"');
+    lines.push(`ROSE_ROOT = ${JSON.stringify(searchMcp.root)}`);
+    if (searchMcp.websearchPath) lines.push(`ROSE_WEBSEARCH_PATH = ${JSON.stringify(searchMcp.websearchPath)}`);
+    lines.push('');
     // 角色 MCP：来自 MCP 注册表（global active + 本角色 active），独立于角色 schema
     for (const srv of mcp.activeServersForRole(role.id)) {
       const pid = `mcp_${role.id}_${srv.name}`.replace(/[^a-z0-9_]/gi, '_').toLowerCase();
@@ -396,8 +475,28 @@ class CodexEngine {
     // 关掉引擎自带的「窗口预算提醒」（剩余 <6k token 时会打断模型让它写 notes 并换窗口，
     // 用户侧看到的就是"任务做一半停了"）；压缩统一由上面的 autocompact 阈值控制。
     // 注意：这是 [table]，必须放在所有顶层键之后。
+    // [features] 必须写在 [features.token_budget] 之前（先建父表再进子表，TOML 才稳）
+    lines.push('[features]');
+    // 原生「当前时间」工具（clock::curr_time，实测 `[features] current_time_reminder = true` 后
+    // 工具列表里出现 clock::curr_time）→ 替代原先的 time MCP，且不依赖任何外部运行时
+    // B8：apply_patch_streaming_events（默认开，低风险）；B1：multi_agent_v2 仅在设置为真时才写。
+    // 片段与降级说明集中在 core/native/capabilities.js（有探针证据，别在这里硬编码）。
+    for (const l of nativeCaps.featureLines(settings).lines) lines.push(l);
+    lines.push(''); 
+    // 关掉引擎自带的「窗口预算提醒」子表（原因见上）
     lines.push('[features.token_budget]');
     lines.push('enabled = false');
+    lines.push('');
+    // 原生记忆（替代 memory MCP）：MemoriesToml 实测 12 个字段，这两个开关让引擎自动生成并复用记忆。
+    // ⚠️ 与 ROSE 自己的 MEMORY.md 注入是两套：ROSE 的 memoryScope/全局记忆仍按原样注入，
+    // 引擎侧记忆只进它自己的 codex-home，互不写对方文件。
+    lines.push('[memories]');
+    lines.push('generate_memories = true');
+    lines.push('use_memories = true');
+    lines.push('');
+    // 原生结构化询问工具（ROSE 的 Plan 模式一直依赖模型调用 request_user_input 提选择题）
+    lines.push('[tools]');
+    lines.push('experimental_request_user_input = {}');
     lines.push('');
     // 信任工作目录，允许沙箱读写 work/<role>
     lines.push(`[projects.${platform.tomlPath(ROOT)}]`);
@@ -407,9 +506,77 @@ class CodexEngine {
     const winLines = platform.sandboxConfigLines(process.platform, winMode);
     if (winLines.length) { lines.push(''); lines.push(...winLines); }
     // ⚠️ config.toml 里可能含 MCP 的 Authorization / env 密钥 → 必须 0600（默认 umask 会写成 0644）
+    return { lines, rolloutBudget };
+  }
+
+  // 写盘（0600）。密钥可能在 config.toml 里（MCP Authorization / env）
+  _writeConfig(role, providerId, modelId, sandbox, approval, home) {
+    const { lines } = this._configLines(this._getSettings(), role, providerId, modelId, sandbox, approval);
     const cfg = path.join(home, 'config.toml');
     fs.writeFileSync(cfg, lines.join('\n'), { mode: 0o600 });
     try { fs.chmodSync(cfg, 0o600); } catch { /* 平台不支持时忽略 */ }
+  }
+
+  /**
+   * 配置自检（服务层落盘前调用；**只生成文本 + 结构检查，不 spawn 引擎**）。
+   *
+   * 为什么需要它：rollout_budget 一旦
+   * 写成 enabled 会让**整份配置解析失败 → 回落默认**（厂商/模型/人格全失效）。这两类都必须
+   * 在落盘前拦住，否则用户会先吃到一次故障。
+   *
+   * @param {object} [patch] 形如 { global: {...} }：覆盖到当前设置之上再校验（不落盘、不改引擎状态）
+   * @returns {{ok:boolean, warnings:string[], reason:string|null, configText?:string}}
+   */
+  validateConfig(patch) {
+    const base = this._getSettings() || {};
+    const merged = Object.assign({}, base);
+    if (patch && typeof patch === 'object') {
+      if (patch.global && typeof patch.global === 'object') merged.global = Object.assign({}, base.global || {}, patch.global);
+      for (const k of Object.keys(patch)) if (k !== 'global') merged[k] = patch[k];
+    }
+    const warnings = [];
+    const rb = nativeCaps.rolloutBudgetDecision(merged);
+    if (rb.requested) warnings.push(rb.reason);
+
+    const em = (merged.global && merged.global.enabledModels) || [];
+    const providerId = (em[0] && em[0].providerId) || Object.keys(merged.providers || {})[0] || 'openai';
+    const modelId = String((em[0] && em[0].modelId) || 'validate-model');
+    let out;
+    try {
+      out = this._configLines(merged, { id: 'validate' }, providerId, modelId, 'read-only', 'never', { preview: true });
+    } catch (e) {
+      return { ok: false, warnings, reason: '配置生成失败：' + ((e && e.message) || e) };
+    }
+    const text = out.lines.join('\n');
+    const problems = [];
+    const lns = text.split('\n');
+    const firstTable = lns.findIndex((l) => /^\s*\[/.test(l));
+    // ① TOML 铁律：顶层键必须全部在第一个 [table] 之前（v0.24.2 曾因此整份配置回落默认）
+    const TOP_KEYS = ['model', 'model_provider', 'sandbox_mode', 'approval_policy', 'developer_instructions',
+      'tool_output_token_limit', 'mcp_optional_startup_grace_ms', 'model_context_window', 'model_auto_compact_token_limit'];
+    const strays = firstTable >= 0 ? lns.slice(firstTable).filter((l) => TOP_KEYS.some((k) => new RegExp('^' + k + '\\s*=').test(l))) : [];
+    if (strays.length) problems.push('顶层键出现在 [table] 之后：' + strays.join(' | '));
+    // ② 0.152.1 的死键（未知字段；严格模式直接报错）
+    for (const dead of ['multi_agent_v2', 'max_depth', 'max_concurrent_threads_per_session']) {
+      if (new RegExp('^' + dead + '\\s*=', 'm').test(text)) problems.push(`顶层出现 0.152.1 未知字段 ${dead}`);
+    }
+    // ③ rollout_budget 一律不得出现（写入即整份配置解析失败）
+    if (/rollout_budget/.test(text)) problems.push('配置里出现 rollout_budget（0.152.1 写入会导致整份配置解析失败）');
+    // ④ 表头重复（TOML 禁止重复定义同一张表）
+    const tables = lns.filter((l) => /^\s*\[[^[]/.test(l)).map((l) => l.trim());
+    const dup = tables.filter((t, i) => tables.indexOf(t) !== i);
+    if (dup.length) problems.push('重复的表定义：' + [...new Set(dup)].join(' | '));
+    // ⑤ 括号/引号不配对（廉价但能挡住生成器写坏字符串）
+    for (const l of lns) {
+      if (!l || l.startsWith('#')) continue;
+      const q = (l.match(/"/g) || []).length;
+      if (q % 2 !== 0) problems.push('引号不配对：' + l.slice(0, 80));
+      if ((l.match(/\[/g) || []).length !== (l.match(/\]/g) || []).length && !/^\s*\[\[?/.test(l)) {
+        problems.push('方括号不配对：' + l.slice(0, 80));
+      }
+    }
+    const reason = problems.length ? problems.join('；') : null;
+    return { ok: !problems.length, warnings, reason, configText: text };
   }
 
   // 每轮刷新运行资产（全局 AGENTS.md + 激活技能），保证提示词/技能改动即时生效，
@@ -667,6 +834,214 @@ class CodexEngine {
     await st.readyPromise;
   }
 
+  /* ================= D3：server→client 请求统一处理 / 审计 / 等待看门狗 =================
+   * 真机实测（假 provider + 真 app-server 0.152.1，见 design/native-probes.md §13）：
+   *  - 需要审批时引擎发 `item/commandExecution/requestApproval`（v2），应答形状 `{decision:'accept'|'decline'}`；
+   *  - **不应答 → 该轮永久挂起**：commandExecution 停在 inProgress、命令不执行、turn 不结束（= 用户现场）；
+   *  - 回错形状（如 v1 的 `{decision:'approved'}`）→ 命令 failed（不是挂起，但也不执行）；
+   *  - 回送还必须送到**发起请求的那个进程**：approve 用会话定位进程时，若进程已重启 → 写不到 → 同样挂起。
+   * 因此：所有带 id 的请求都登记（方法/id/进程/期望形状），未识别类型 → 可见报错 + 释放该轮。
+   * ================================================================================== */
+
+  _auditRequest(rec) {
+    this.requestAudit.push(Object.assign({ at: Date.now() }, rec));
+    if (this.requestAudit.length > 200) this.requestAudit.splice(0, this.requestAudit.length - 200);
+  }
+
+  _trackRequest(st, rawId, method, params, kind) {
+    this.pendingServerRequests.set(String(rawId), {
+      st, rawId, method, kind, threadId: params.threadId || null, at: Date.now(),
+    });
+  }
+
+  // v1（execCommandApproval/applyPatchApproval）与 v2（item/*/requestApproval）的应答枚举**不同**：
+  //   v1 ReviewDecision = approved | approved_for_session | approved_mcp_policy_amendment | timed_out | abort
+  //   v2 = accept | acceptForSession | decline | cancel
+  _approvalPayload(method, ok) {
+    if (method === 'execCommandApproval' || method === 'applyPatchApproval') {
+      return { decision: ok ? 'approved' : 'abort' };
+    }
+    return { decision: ok ? 'accept' : 'decline' };
+  }
+
+  _turnForThread(threadId) {
+    return this.turnByThread.get(threadId || '')
+      || (this.turnByThread.size === 1 ? [...this.turnByThread.values()][0] : null);
+  }
+
+  _handleServerRequest(st, method, id, params) {
+    const write = (payload) => {
+      try { st.proc.stdin.write(JSON.stringify(Object.assign({ jsonrpc: '2.0', id }, payload)) + '\n'); return true; }
+      catch (e) {
+        process.stderr.write(`[engine] 应答 ${method} 失败：${(e && e.message) || e}\n`);
+        return false;
+      }
+    };
+    const threadId = params.threadId || null;
+
+    // ① 能力/沙箱升权（item/permissions/requestApproval）：确定性空授予（v0.20.5 决策），不弹误导性窗
+    if (method === 'item/permissions/requestApproval') {
+      write({ result: { permissions: {} } });
+      this._auditRequest({ method, id, threadId, kind: 'permissions', response: { permissions: {} } });
+      process.stderr.write(`[codex] item/permissions/requestApproval（能力升级）→ 空授予拒绝（threadId=${threadId || '?'}）\n`);
+      return true;
+    }
+
+    // ② 引擎向客户端取当前时间（current_time_reminder 开启后会发）——不答同样会挂起该轮
+    if (method === 'currentTime/read') {
+      const currentTimeAt = Math.floor(Date.now() / 1000);
+      write({ result: { currentTimeAt } });
+      this._auditRequest({ method, id, threadId, kind: 'current-time', response: { currentTimeAt } });
+      return true;
+    }
+
+    // ③ 远程 MCP 工具的授权门（v0.20.4 真机定位）
+    if (method === 'mcpServer/elicitation/request') {
+      const meta = params._meta || {};
+      const isApproval = !!meta.codex_approval_kind;
+      const toolName = (typeof params.message === 'string' && params.message.match(/"([^"]+)"/))?.[1]
+        || (params.serverName || '');
+      const turn = this._turnForThread(threadId);
+      this._trackRequest(st, id, method, params, 'mcp-tool');
+      this.pendingElicitations.add(id);
+      this._auditRequest({ method, id, threadId, kind: 'mcp-tool', toolName, response: null, ui: !!turn });
+      if (turn) {
+        turn.emit({
+          type: 'approval-request', requestId: id, kind: 'mcp-tool',
+          level: isApproval ? 'escalate' : 'confirm', toolName,
+          message: params.message || '', reason: isApproval ? (meta.tool_description || '') : '',
+        });
+      } else {
+        this.pendingServerRequests.delete(String(id));
+        this.pendingElicitations.delete(id);
+        process.stderr.write(`[codex] MCP 授权请求无法路由（threadId=${threadId}），已 cancel\n`);
+        write({ result: { action: 'cancel' } });
+        this._auditRequest({ method, id, threadId, kind: 'mcp-tool', response: { action: 'cancel' }, note: 'no-turn→cancel' });
+      }
+      return true;
+    }
+
+    // ④ 命令/补丁审批（v2 与 v1 同名不同形状）
+    if (APPROVAL_METHODS.has(method)) {
+      const kind = /patch/i.test(method) ? 'patch' : 'exec';
+      const turn = this._turnForThread(threadId);
+      this._trackRequest(st, id, method, params, kind);
+      const raw = Array.isArray(params.command) ? params.command.join(' ') : (params.command || '');
+      const detail = raw || params.reason || (params.changes ? `${(params.changes || []).length} 个文件` : '');
+      this._auditRequest({ method, id, threadId, kind, command: String(detail).slice(0, 500), response: null, ui: !!turn });
+      if (turn) {
+        turn.emit({
+          type: 'approval-request', requestId: id, kind,
+          command: String(detail).slice(0, 2000),
+          reason: params.reason || '',
+        });
+      } else {
+        this.pendingServerRequests.delete(String(id));
+        process.stderr.write(`[codex] 审批请求无法路由（threadId=${threadId}），已拒绝\n`);
+        const payload = this._approvalPayload(method, false);
+        write({ result: payload });
+        this._auditRequest({ method, id, threadId, kind, response: payload, note: 'no-turn→decline' });
+      }
+      return true;
+    }
+
+    // ⑤ 模型主动向用户提问（选择框）
+    if (method === 'item/tool/requestUserInput') {
+      const turn = this._turnForThread(threadId);
+      this._trackRequest(st, id, method, params, 'ask');
+      this._auditRequest({ method, id, threadId, kind: 'ask', response: null, ui: !!turn });
+      if (turn) {
+        turn.emit({ type: 'ask', requestId: id, questions: params.questions || [] });
+      } else {
+        this.pendingServerRequests.delete(String(id));
+        process.stderr.write(`[codex] 询问请求无法路由（threadId=${threadId}），已空应答\n`);
+        write({ result: { answers: {} } });
+      }
+      return true;
+    }
+
+    // ⑥ 未识别：**绝不静默挂起** —— 回 JSON-RPC 错误让引擎立刻结束等待，上浮可见报错并释放该轮
+    const reason = `引擎发起了 ROSE 未实现的请求「${method}」；已回错误并释放本轮（不会永久挂起）。请把该方法名反馈给 ROSE。`;
+    write({ error: { code: -32601, message: `ROSE does not implement ${method}` } });
+    this._auditRequest({ method, id, threadId, kind: 'unsupported', response: 'error:-32601' });
+    process.stderr.write(`[codex] 未识别的 server→client 请求 ${method}（id=${id}，threadId=${threadId || '?'}）→ 回 -32601 并释放该轮\n`);
+    const sid = this.sessionIdForThread(threadId) || (this.threads.size === 1 ? [...this.threads.keys()][0] : null);
+    this._emitGlobal({ type: 'engine-request-unsupported', sessionId: sid, threadId, method, requestId: id, message: reason });
+    const turn = this._turnForThread(threadId);
+    if (turn) {
+      const key = threadId || [...this.turnByThread.keys()][0];
+      this.turnByThread.delete(key);
+      this.turnProc.delete(key);
+      this.turnIds.delete(key);
+      this._clearWatchdog(key);
+      try { turn.emit({ type: 'error', message: reason }); } catch { /* 前端已断开也不能影响别的 turn */ }
+    }
+    return true;
+  }
+
+  /* ---------- 审批回送后的「等待引擎执行」看门狗（D3 要求③） ---------- */
+  _waitPolicy() {
+    const g = (this._getSettings() && this._getSettings().global) || {};
+    const warn = Number(g.engineWaitWarnMs);
+    const fail = Number(g.engineWaitFailMs);
+    return {
+      warnMs: Number.isFinite(warn) && warn > 0 ? warn : 15000,
+      failMs: Number.isFinite(fail) && fail > 0 ? fail : 120000,
+    };
+  }
+
+  _clearWatchdog(threadId) {
+    const w = this._watchdogs.get(threadId);
+    if (!w) return;
+    clearTimeout(w.warn); clearTimeout(w.fail);
+    this._watchdogs.delete(threadId);
+  }
+
+  _noteProgress(threadId) {
+    if (threadId && this._watchdogs.has(threadId)) this._clearWatchdog(threadId);
+  }
+
+  _armWatchdog(threadId, turn, info) {
+    this._clearWatchdog(threadId);
+    const { warnMs, failMs } = this._waitPolicy();
+    const sessionId = this.sessionIdForThread(threadId);
+    const warn = setTimeout(() => {
+      this._emitGlobal({
+        type: 'engine-waiting', sessionId, threadId, requestId: info.requestId, method: info.method,
+        waitedMs: warnMs,
+        message: `审批已回送引擎，但 ${Math.round(warnMs / 1000)} 秒内没有任何进展——正在等待引擎执行…`,
+      });
+    }, warnMs);
+    const fail = setTimeout(() => {
+      if (!this.turnByThread.has(threadId)) return;
+      const waitS = Math.round(failMs / 1000);
+      const message = `审批已回送引擎，但 ${waitS} 秒内没有任何进展，本轮已释放（避免永久挂起）。`
+        + '可重试该操作；若反复出现，请用「诊断导出」反馈请求类型。';
+      process.stderr.write(`[codex] 等待引擎执行超时（threadId=${threadId}，method=${info.method || '?'}）→ 释放本轮\n`);
+      this.turnByThread.delete(threadId);
+      this.turnProc.delete(threadId);
+      this.turnIds.delete(threadId);
+      this._clearWatchdog(threadId);
+      this._emitGlobal({ type: 'engine-waiting-timeout', sessionId, threadId, requestId: info.requestId, method: info.method, waitedMs: failMs, message });
+      try { turn.emit({ type: 'error', message }); } catch { /* 前端已断开 */ }
+    }, failMs);
+    if (warn.unref) warn.unref();
+    if (fail.unref) fail.unref();
+    this._watchdogs.set(threadId, { warn, fail, info, at: Date.now() });
+  }
+
+  /** 诊断：待决请求 + 最近请求审计 + 看门狗（服务层「诊断导出」可直接取用） */
+  diagnostics() {
+    return {
+      pendingRequests: [...this.pendingServerRequests.entries()].map(([k, v]) => ({
+        key: k, method: v.method, kind: v.kind, threadId: v.threadId, at: v.at,
+      })),
+      recentRequests: this.requestAudit.slice(-50),
+      watchdogs: [...this._watchdogs.entries()].map(([tid, w]) => ({ threadId: tid, at: w.at, info: w.info })),
+      procs: [...this.procs.keys()],
+    };
+  }
+
   _onStdout(st, chunk) {
     st.buffer += chunk;
     let idx;
@@ -694,83 +1069,19 @@ class CodexEngine {
     const m = msg.method || '';
     const params = msg.params || {};
 
-    // 2a) codex 'item/permissions/requestApproval'：能力/沙箱越权升级申请。
-    // v0.20.2/3 曾误判其为"远程 MCP 出网的网络提权"并接入前端弹窗——经真机复现（v0.20.4），
-    // 真正的远程 MCP 工具授权门是下方 'mcpServer/elicitation/request'，本请求并非该路径。
-    // 为不留隐患：不对未知的能力升级做自动放行，也不抛误导性弹窗；统一以合法空授予
-    // PermissionsRequestApprovalResponse { permissions:{} } 确定性应答（不越权、不挂起）。
-    if (msg.id !== undefined && m === 'item/permissions/requestApproval') {
-      process.stderr.write(
-        `[codex] item/permissions/requestApproval（能力升级）→ 空授予拒绝，不自动放行（threadId=${params.threadId || '?'}）\n`);
-      st.proc.stdin.write(JSON.stringify({ jsonrpc: '2.0', id: msg.id, result: { permissions: {} } }) + '\n');
-      return;
-    }
-
-    // 2a-2) codex 0.152+ 远程 MCP 工具的授权门 'mcpServer/elicitation/request'：
-    // 模型调用远程 MCP 工具（如麦麦 http MCP available-coupons）时，codex 以本请求征求是否
-    // 允许该工具执行，线程置 waitingOnApproval。应答为 McpServerElicitationRequestResponse
-    // { action:'accept'|'decline'|'cancel' }（非 {decision}、非权限授予对象）。
-    // 零信任(approval=never)不触发此门；on-request 触发。若引擎不答 → 该工具调用永久挂起
-    // （正是用户报的「远程 MCP 工具卡住」）。这里上浮前端授权弹窗，由用户允许/拒绝。
-    if (msg.id !== undefined && m === 'mcpServer/elicitation/request') {
-      const meta = params._meta || {};
-      const isApproval = !!meta.codex_approval_kind; // 如 mcp_tool_call
-      const toolName = (typeof params.message === 'string' && params.message.match(/"([^"]+)"/))?.[1]
-        || (params.serverName || '');
-      const turn = this.turnByThread.get(params.threadId || '') ||
-        (this.turnByThread.size === 1 ? [...this.turnByThread.values()][0] : null);
-      this.pendingElicitations.add(msg.id);
-      if (turn) {
-        turn.emit({
-          type: 'approval-request', requestId: msg.id,
-          kind: 'mcp-tool',
-          level: isApproval ? 'escalate' : 'confirm',
-          toolName,
-          message: params.message || '',
-          reason: isApproval ? (meta.tool_description || '') : '',
-        });
-      } else {
-        // 无法定位归属 turn：cancel（不挂起、不越权）
-        this.pendingElicitations.delete(msg.id);
-        process.stderr.write(`[codex] MCP 授权请求无法路由（threadId=${params.threadId}），已 cancel\n`);
-        st.proc.stdin.write(JSON.stringify({ jsonrpc: '2.0', id: msg.id, result: { action: 'cancel' } }) + '\n');
-      }
-      return;
-    }
-
-    // 2) server→client 请求：审批（v0.152: execCommandApproval / applyPatchApproval）
-    if (msg.id !== undefined && /approval/i.test(m)) {
-      const turn = this.turnByThread.get(params.threadId || '') ||
-        (this.turnByThread.size === 1 ? [...this.turnByThread.values()][0] : null);
-      if (turn) {
-        const requestId = msg.id; // 直接用请求 id 应答
-        turn.emit({
-          type: 'approval-request', requestId,
-          kind: m.includes('Patch') ? 'patch' : 'exec',
-          command: params.command || params.reason || '',
-        });
-      } else {
-        // 无法定位归属 turn 且存在并发歧义：丢弃并应答拒绝，避免审批串台
-        process.stderr.write(`[codex] 审批请求无法路由（threadId=${params.threadId}），已拒绝\n`);
-        st.proc.stdin.write(JSON.stringify({ jsonrpc: '2.0', id: msg.id, result: { decision: 'denied' } }) + '\n');
-      }
-      return;
-    }
-
-    // 2b) server→client 请求：模型主动向用户提问（带选项的选择框）
-    if (msg.id !== undefined && m === 'item/tool/requestUserInput') {
-      const turn = this.turnByThread.get(params.threadId || '') ||
-        (this.turnByThread.size === 1 ? [...this.turnByThread.values()][0] : null);
-      if (turn) {
-        turn.emit({ type: 'ask', requestId: msg.id, questions: params.questions || [] });
-      } else {
-        process.stderr.write(`[codex] 询问请求无法路由（threadId=${params.threadId}），已空应答\n`);
-        st.proc.stdin.write(JSON.stringify({ jsonrpc: '2.0', id: msg.id, result: { answers: {} } }) + '\n');
-      }
+    // ── 2) 所有 server→client 请求统一走 _handleServerRequest（D3）────────────────
+    // 铁律：**每个带 id 的请求都必须被应答**——不答 = 该轮永久挂起（真机实测：
+    // 不应答 item/commandExecution/requestApproval → commandExecution 永远 inProgress、无进程、
+    // 无 tool-end；用户点"同意"也无处可送）。已知类型按协议正确形状答；未识别类型 → 可见报错 + 释放该轮。
+    if (msg.id !== undefined && typeof m === 'string' && m) {
+      this._handleServerRequest(st, m, msg.id, params);
       return;
     }
 
     // 3) 通知（v0.152 协议：method 风格 + 扁平 params）
+    //    任何通知都算"引擎有进展" → 清掉等待看门狗（审批回送后迟迟无进展时会报警/超时释放）
+    this._noteProgress(params.threadId);
+
     if (m === 'item/agentMessage/delta') {
       // 助手文本的真正流式通道（逐段推送）；item/completed 的累计文本只作为兜底
       const turn = this.turnByThread.get(params.threadId);
@@ -839,19 +1150,46 @@ class CodexEngine {
     if (m === 'item/started' || m === 'item/updated' || m === 'item/completed') {
       const threadId = params.threadId;
       const item = params.item || {};
-      const turn = this.turnByThread.get(threadId);
-      if (!turn) {
-        // 没有活跃回合时的**会话级** item：典型是空闲会话的手动压缩
-        // （thread/compact/start → ContextCompaction 的 started/completed）。
-        // 原先这里直接 return → 事件被丢 → 前端蒙版等不到 compact-end，只能等超时。
-        if (item.type === 'contextCompaction' || item.type === 'ContextCompaction') {
-          this._emitGlobal({ type: 'session-item', threadId, phase: m, item });
-        }
+      // B1：子代理项**只走全局通道**（一个事件只有一个通道，不进 turn 事件流）。
+      // 实测 app-server **没有** collab_* 通知方法；真实载体是这两种 ThreadItem（见 native-probes §2.3）。
+      if (item.type === 'collabAgentToolCall' || item.type === 'subAgentActivity') {
+        this._onSubAgentItem(threadId, m, item);
         return;
       }
+      // B3：压缩项既要在有回合时驱动"压缩蒙版"（既有行为），也要统一产出 window-reset（两路同源）
+      if (item.type === 'contextCompaction' || item.type === 'ContextCompaction') {
+        const turnC = this.turnByThread.get(threadId);
+        if (turnC) this._handleItem(turnC, m, item);
+        else this._emitGlobal({ type: 'session-item', threadId, phase: m, item });
+        this._onCompaction(threadId, m);
+        return;
+      }
+      const turn = this.turnByThread.get(threadId);
+      if (!turn) return;   // 无活跃回合的其它 item：保持既有行为（忽略）
       this._handleItem(turn, m, item);
       return;
     }
+    // B8：apply_patch_streaming_events 打开后，文件补丁有独立流式通道
+    if (m === 'item/fileChange/outputDelta') {
+      const turn = this.turnByThread.get(params.threadId);
+      if (turn) turn.emit({ type: 'tool-output-delta', toolId: params.itemId, delta: params.delta || '' });
+      return;
+    }
+    // B1：子代理线程出现/状态变化（子代理是独立 thread，父线程由 parentThreadId 指回）
+    if (m === 'thread/started') {
+      const th = params.thread || {};
+      if (th.parentThreadId) this._onSubAgentThread(th);
+      return;
+    }
+    if (m === 'thread/status/changed') {
+      if (this.subagentParent.has(params.threadId)) this._onSubAgentThreadStatus(params.threadId, params.status);
+      return;
+    }
+    // B2：目标（goal）。注意 status=active 时引擎会自动续跑回合 → 事件必须节流（见 nativeEvents）
+    if (m === 'thread/goal/updated') { this._onGoalUpdated(params); return; }
+    if (m === 'thread/goal/cleared') { this._onGoalCleared(params); return; }
+    // B3：thread/compacted（P1 已标注 Deprecated，用 ContextCompaction item 代替）→ 作为兜底信号
+    if (m === 'thread/compacted') { this._onCompaction(params.threadId, 'thread/compacted'); return; }
     if (m === 'error') {
       const e = params.error || {};
       // 优先按 threadId 定位；进程级 error（无 threadId）仅在恰有一个活跃 turn 时才转发，避免串台
@@ -946,8 +1284,16 @@ class CodexEngine {
     }
     if (type === 'mcpToolCall') {
       const id = String(item.id || 'mcp');
-      if (phase === 'item/started') turn.emit({ type: 'tool-start', toolId: id, name: 'mcp:' + (item.tool || 'call'), args: JSON.stringify(item.arguments || {}) });
-      else if (phase === 'item/completed') turn.emit({ type: 'tool-end', toolId: id, ok: true, output: String(item.output || '').slice(0, 4000) });
+      const server = item.server || null;
+      const toolName = 'mcp:' + (item.tool || 'call');   // 保持既有命名（UI/服务层已依赖）
+      if (phase === 'item/started') {
+        turn.emit({ type: 'tool-start', toolId: id, name: toolName, args: JSON.stringify(item.arguments || {}), server });
+      } else if (phase === 'item/completed') {
+        // 失败要如实上报（task-12：内置 web_search 失败必须可见，不能让界面显示成成功）
+        const failed = item.status === 'failed' || !!item.error;
+        const out = (item.error && item.error.message) ? item.error.message : (item.output || '');
+        turn.emit({ type: 'tool-end', toolId: id, ok: !failed, output: String(out).slice(0, 4000), server });
+      }
       return;
     }
     if (type === 'fileChange') {
@@ -1142,33 +1488,379 @@ class CodexEngine {
     return turn;
   }
 
+  /**
+   * 应答审批/授权请求（D3 修复）。
+   * 关键三点（都有真机证据）：
+   *  ① **送到发起请求的那个进程**：以前按"会话当前进程"定位，进程一旦重启就写到别的进程 → 引擎永远等；
+   *  ② **requestId 归一化**：UI/JSON 往返可能变成字符串 "0"，直接回写会 id 不匹配 → 引擎永远等；
+   *  ③ 形状按方法区分：v2 → accept/decline，v1 → approved/abort（答错会令命令 failed）。
+   * 送不到时**不再静默返回**：上浮 `approval-undeliverable` + 释放该轮，避免界面永远"处理中"。
+   */
   async approve(session, requestId, ok) {
-    const st = this._procFor(session); // 按会话当前参数定位进程（参数注入，与线程无关）
-    if (!st) return false;
-    // 审批是对 server→client 请求的直接应答（同 id）。
-    // 远程 MCP 工具授权门（mcpServer/elicitation/request）：应答 McpServerElicitationRequestResponse
-    // { action:'accept'|'decline'|'cancel' }。允许→accept、拒绝→decline。
-    if (this.pendingElicitations.has(requestId)) {
-      this.pendingElicitations.delete(requestId);
-      st.proc.stdin.write(JSON.stringify({ jsonrpc: '2.0', id: requestId, result: { action: ok ? 'accept' : 'decline' } }) + '\n');
-      return true;
+    const key = String(requestId);
+    const pending = this.pendingServerRequests.get(key) || null;
+    const st = (pending && pending.st) || this._procFor(session);
+    const threadId = (pending && pending.threadId) || null;
+    const method = (pending && pending.method) || null;
+
+    if (!st) {
+      const reason = '审批无法送达引擎：找不到发起该请求的进程（引擎可能已重启）。本轮已释放，请重新发送。';
+      process.stderr.write(`[engine] ${reason}（requestId=${requestId}）\n`);
+      this._auditRequest({ method, id: requestId, threadId, kind: 'approve-undeliverable', error: reason });
+      this._emitGlobal({
+        type: 'approval-undeliverable',
+        sessionId: (session && session.id) || this.sessionIdForThread(threadId),
+        threadId, requestId, method, reason,
+      });
+      this._releaseTurn(threadId, reason);
+      return false;
     }
-    // 常规执行/写入审批：codex 0.152 决策枚举 accept/acceptForSession/…/decline/cancel，
-    // 不是旧协议的 accepted/denied —— 答错会整包拒绝（approval request failed）。
-    st.proc.stdin.write(JSON.stringify({ jsonrpc: '2.0', id: requestId, result: { decision: ok ? 'accept' : 'decline' } }) + '\n');
+
+    const kind = pending && pending.kind;
+    let payload;
+    if (kind === 'mcp-tool') payload = { action: ok ? 'accept' : 'decline' };
+    else if (kind === 'ask') payload = { answers: {} };
+    else payload = this._approvalPayload(method, ok);
+    const rawId = pending ? pending.rawId : (Number.isFinite(Number(requestId)) ? Number(requestId) : requestId);
+
+    try {
+      st.proc.stdin.write(JSON.stringify({ jsonrpc: '2.0', id: rawId, result: payload }) + '\n');
+    } catch (e) {
+      const reason = `审批回送失败：${(e && e.message) || e}；本轮已释放，请重新发送。`;
+      process.stderr.write(`[engine] ${reason}\n`);
+      this._auditRequest({ method, id: rawId, threadId, kind: 'approve-failed', error: reason });
+      this._emitGlobal({ type: 'approval-undeliverable', sessionId: this.sessionIdForThread(threadId), threadId, requestId, method, reason });
+      this._releaseTurn(threadId, reason);
+      return false;
+    }
+
+    if (pending) this.pendingServerRequests.delete(key);
+    if (kind === 'mcp-tool') this.pendingElicitations.delete(pending ? pending.rawId : requestId);
+    this._auditRequest({ method, id: rawId, threadId, kind: kind || 'approval', response: payload, deliveredTo: st.key || null });
+
+    // 回送成功 → 起看门狗：N 秒无进展就报「等待引擎执行…」，M 秒无进展则显式释放该轮（D3 要求③）
+    if (threadId) {
+      const t = this.turnByThread.get(threadId);
+      if (t) this._armWatchdog(threadId, t, { requestId: rawId, method });
+    }
+    return true;
+  }
+
+  // 释放某轮（显式失败 + 清理映射），避免界面永远停在「处理中」
+  _releaseTurn(threadId, message) {
+    if (!threadId) return false;
+    const t = this.turnByThread.get(threadId);
+    this.turnByThread.delete(threadId);
+    this.turnProc.delete(threadId);
+    this.turnIds.delete(threadId);
+    this._clearWatchdog(threadId);
+    if (!t) return false;
+    try { t.emit({ type: 'error', message }); } catch { /* 前端已断开 */ }
     return true;
   }
 
   // 应答模型的询问选择框（item/tool/requestUserInput）
   // answers: { [questionId]: [选中的 option label 或自由输入] }
   respondAsk(session, requestId, answers) {
-    const st = this._procFor(session);
-    if (!st) return false;
-    st.proc.stdin.write(JSON.stringify({ jsonrpc: '2.0', id: requestId, result: { answers } }) + '\n');
+    const key = String(requestId);
+    const pending = this.pendingServerRequests.get(key) || null;
+    const st = (pending && pending.st) || this._procFor(session);
+    if (!st) {
+      this._emitGlobal({
+        type: 'approval-undeliverable',
+        sessionId: (session && session.id) || this.sessionIdForThread(pending && pending.threadId),
+        threadId: (pending && pending.threadId) || null, requestId,
+        reason: '询问应答无法送达引擎（进程不存在）；本轮已释放，请重新发送。',
+      });
+      this._releaseTurn(pending && pending.threadId, '询问应答无法送达引擎（进程不存在）。');
+      return false;
+    }
+    const rawId = pending ? pending.rawId : requestId;
+    st.proc.stdin.write(JSON.stringify({ jsonrpc: '2.0', id: rawId, result: { answers } }) + '\n');
+    if (pending) this.pendingServerRequests.delete(key);
+    this._auditRequest({ method: pending ? pending.method : 'item/tool/requestUserInput', id: rawId, threadId: pending && pending.threadId, kind: 'ask-response', response: { answers } });
     return true;
   }
 
-  // 插话（turn/steer）：把一条消息直接送进正在跑的回合，不打断当前任务。
+  /* ------------------------------------------------------------------
+   * B 阶段：原生能力（子代理 / goals / 降级登记）
+   * 依据 design/native-probes.md（codex-cli 0.152.1 真机实测）：
+   *  - 子代理没有 collab_* 通知方法；载体是 ThreadItem:collabAgentToolCall / subAgentActivity；
+   *  - 没有子代理控制 RPC（client 方法 154 个里没有）→ ROSE 只做只读，停止用 turn/interrupt；
+   *  - goal 的 active 状态会让引擎自动续跑回合 → 事件必须节流 + 每秒硬上限。
+   * 全局通道（_emitGlobal）是这四类事件的**唯一**通道：它们都可能在无活跃 turn 时发生。
+   * ------------------------------------------------------------------ */
+
+  _subagentMap(parentThreadId) {
+    if (!this.subagentRegistry.has(parentThreadId)) this.subagentRegistry.set(parentThreadId, new Map());
+    return this.subagentRegistry.get(parentThreadId);
+  }
+
+  // 归一化 → 最多一条 subagent 事件；同状态重复不发（服务层另有 eventId 去重）
+  _emitSubagent(parentThreadId, ev) {
+    const map = this._subagentMap(parentThreadId);
+    const prev = map.get(ev.id);
+    const lastText = ev.lastText !== undefined ? ev.lastText : (prev && prev.lastText) || null;
+    const title = ev.title !== undefined && ev.title !== null ? ev.title : (prev && prev.title) || null;
+    if (prev && prev.state === ev.state && (prev.lastText || null) === (lastText || null)) return;
+    const rec = {
+      id: ev.id, state: ev.state, title, lastText,
+      tool: ev.tool || (prev && prev.tool) || null,
+      status: ev.status || (prev && prev.status) || null,
+      updatedAt: Date.now(),
+    };
+    map.set(ev.id, rec);
+    this.subagentParent.set(ev.id, parentThreadId);
+    const sessionId = this.sessionIdForThread(parentThreadId);
+    if (!sessionId) {
+      // 宁可不发也不串台；但必须留痕（诊断）/否则就是静默失效
+      process.stderr.write(`[engine] subagent 事件无法定位会话（threadId=${parentThreadId}，agent=${ev.id}）→ 未广播\n`);
+      return;
+    }
+    this._emitGlobal({
+      type: 'subagent', sessionId, threadId: parentThreadId, eventId: ev.eventId,
+      id: rec.id, state: rec.state,
+      title: rec.title || undefined, lastText: rec.lastText || undefined,
+      tool: rec.tool || undefined, status: rec.status || undefined,
+    });
+  }
+
+  _onSubAgentItem(threadId, phase, item) {
+    if (!threadId) return;
+    if (item.type === 'collabAgentToolCall') {
+      for (const ev of nativeEvents.mapCollabAgentToolCall(item)) {
+        this._emitSubagent(threadId, {
+          ...ev, eventId: nativeEvents.eventId(['collab', item.id, ev.id, phase, ev.state]),
+        });
+      }
+      return;
+    }
+    const one = nativeEvents.mapSubAgentActivity(item);
+    if (one) {
+      this._emitSubagent(threadId, {
+        ...one, eventId: nativeEvents.eventId(['activity', item.id, one.id, item.kind || phase]),
+      });
+    }
+  }
+
+  _onSubAgentThread(th) {
+    const parent = th.parentThreadId;
+    if (!parent) return;
+    this._emitSubagent(parent, {
+      id: th.id, state: 'spawned',
+      title: th.agentNickname || th.agentRole || null,
+      eventId: nativeEvents.eventId(['thread', th.id, 'spawned']),
+    });
+  }
+
+  _onSubAgentThreadStatus(threadId, status) {
+    const parent = this.subagentParent.get(threadId);
+    if (!parent) return;
+    const type = (status && status.type) || '';
+    const state = type === 'active' ? 'running'
+      : type === 'idle' ? 'done'
+        : type === 'systemError' ? 'closed' : null;
+    if (!state) return;
+    this._emitSubagent(parent, { id: threadId, state, eventId: nativeEvents.eventId(['thread', threadId, type]) });
+  }
+
+  _onGoalUpdated(params) {
+    const threadId = params && params.threadId;
+    const goal = nativeEvents.goalPayload(params && params.goal);
+    if (!threadId || !goal) return;
+    this._goalCache.set(threadId, goal);
+    if (!this._goalThrottle.shouldEmit(threadId, goal)) return;   // 合并 + 每秒硬上限（丢弃计数见 droppedCount）
+    const sessionId = this.sessionIdForThread(threadId);
+    if (!sessionId) {
+      process.stderr.write(`[engine] goal 事件无法定位会话（threadId=${threadId}）→ 已缓存未广播\n`);
+      return;
+    }
+    const dropped = this._goalThrottle.droppedCount(threadId);
+    this._emitGlobal({
+      type: 'goal', sessionId, threadId,
+      eventId: nativeEvents.eventId(['goal', threadId, goal.status, goal.updatedAt || '']),
+      goal, dropped: dropped || undefined,
+    });
+  }
+
+  _onGoalCleared(params) {
+    const threadId = params && params.threadId;
+    if (!threadId) return;
+    this._goalCache.delete(threadId);
+    this._goalThrottle.reset(threadId);
+    const sessionId = this.sessionIdForThread(threadId);
+    if (!sessionId) {
+      process.stderr.write(`[engine] goal/cleared 无法定位会话（threadId=${threadId}）→ 未广播\n`);
+      return;
+    }
+    this._emitGlobal({
+      type: 'goal', sessionId, threadId, cleared: true, goal: null,
+      eventId: nativeEvents.eventId(['goal', threadId, 'cleared', Date.now()]),
+    });
+  }
+
+  // 窗口续接/检查点：ContextCompaction item 与 thread/compacted 是同一件事的两路信号 → 2s 去重。
+  // ⚠️ 只发**引擎自发**的压缩：用户手动 /compact（经 compact() 打标）不发 —— 那种情况 ROSE 已有
+  //    压缩环/蒙版/完成行，再发一条"已换窗口"是噪音。手动标记保留 90s：两条信号（item + 通知）
+  //    可能先后到达，必须都压住；下一次引擎自发压缩通常在数分钟之后。
+  _onCompaction(threadId, phase) {
+    if (!threadId) return;
+    if (phase !== 'item/completed' && phase !== 'thread/compacted') return;
+    const manualAt = this._manualCompaction.get(threadId);
+    if (manualAt && Date.now() - manualAt < 90000) return;   // 手动压缩 → 不发 window-reset
+    const r = this._windowReset.next(threadId);
+    if (!r.emit) return;
+    const sessionId = this.sessionIdForThread(threadId);
+    if (!sessionId) {
+      process.stderr.write(`[engine] window-reset 无法定位会话（threadId=${threadId}）→ 未广播\n`);
+      return;
+    }
+    this._emitGlobal({
+      type: 'window-reset', sessionId, threadId,
+      eventId: nativeEvents.eventId(['reset', threadId, r.count]),
+      count: r.count,                     // ROSE 自计：引擎自发窗口切换/检查点次数
+      reason: 'engine-compaction',         // 语义：引擎自发压缩（不含用户手动 /compact）
+    });
+  }
+
+  /* ---------- 供服务层调用的原生能力查询/操作（都不抛错，不支持时显式降级） ---------- */
+
+  subagents(sessionId) {
+    const t = this.threads.get(sessionId);
+    if (!t) return { supported: false, subagents: [], reason: '该会话还没有引擎线程（先发一条消息）' };
+    const map = this.subagentRegistry.get(t.threadId);
+    const list = map ? [...map.values()].map((r) => ({ ...r })) : [];
+    return { supported: true, subagents: list, reason: null };
+  }
+
+  // 目标读取（RPC thread/goal/get）；失败时回退到事件缓存（降级但仍可用），原因如实回传
+  async goal(sessionId) {
+    const t = this.threads.get(sessionId);
+    if (!t) return { supported: false, goal: null, reason: '该会话还没有引擎线程（先发一条消息）' };
+    const r = await this._rpcThread(sessionId, 'thread/goal/get', {}, 20000);
+    if (r.error) return { supported: false, goal: this._goalCache.get(t.threadId) || null, reason: r.error };
+    return { supported: true, goal: nativeEvents.goalPayload(r.ok && r.ok.goal), reason: null };
+  }
+
+  /**
+   * 手动设置/清除目标（RPC thread/goal/set|clear）。
+   * ⚠️ status 缺省 = **paused**：实测 active 目标会让引擎自动续跑回合（60 秒 758 条 goal 更新），
+   *    只有用户显式要"自动续跑"时才允许传 active。
+   */
+  async setGoal(sessionId, opts = {}) {
+    const t = this.threads.get(sessionId);
+    if (!t) return { supported: false, goal: null, reason: '该会话还没有引擎线程（先发一条消息）' };
+    if (opts.clear === true) {
+      const rc = await this._rpcThread(sessionId, 'thread/goal/clear', {}, 20000);
+      if (rc.error) return { supported: false, goal: null, reason: rc.error };
+      this._goalCache.delete(t.threadId);
+      return { supported: true, goal: null, cleared: true, reason: null };
+    }
+    const text = typeof opts.text === 'string' ? opts.text.trim()
+      : (typeof opts.objective === 'string' ? opts.objective.trim() : '');
+    if (!text) return { supported: true, goal: this._goalCache.get(t.threadId) || null, reason: '目标文本为空，未改动' };
+    const params = { objective: text, status: opts.status || 'paused' };
+    const tb = Number(opts.tokenBudget);
+    if (Number.isFinite(tb) && tb > 0) params.tokenBudget = Math.round(tb);
+    const r = await this._rpcThread(sessionId, 'thread/goal/set', params, 20000);
+    if (r.error) return { supported: false, goal: this._goalCache.get(t.threadId) || null, reason: r.error };
+    const payload = nativeEvents.goalPayload(r.ok && r.ok.goal);
+    if (payload) this._goalCache.set(t.threadId, payload);
+    return { supported: true, goal: payload, reason: null };
+  }
+
+  // 子代理控制：app-server 无对应 RPC（实测 client 方法 154 个里没有）→ 显式降级，不抛错
+  closeSubagent() {
+    return {
+      supported: false, reason: 'app-server 无子代理控制 RPC（0.152.1 实测）；'
+        + '要停止子代理请停止父回合（turn/interrupt）',
+    };
+  }
+
+  resumeSubagent() { return this.closeSubagent(); }
+  sendToSubagent() { return this.closeSubagent(); }
+
+  /** B1–B8 能力登记（含运行期降级：rollout_budget 决策、内置搜索 MCP、运行时就绪） */
+  nativeSupport() {
+    const s = nativeCaps.nativeSupport();
+    s.engineVersion = (this.constructor && this.constructor.ENGINE_VERSION) || process.env.CODEX_VERSION || s.engineVersion;
+    // rollout_budget：即使本轮还没写过 config.toml（没有 spawn），也按**当前设置**如实报告。
+    // 服务层依赖 requested 决定 UI 文案，不能因为"还没写配置"就显示成"未请求"。
+    const rbNow = (this.nativeRolloutBudget && this.nativeRolloutBudget.requested)
+      ? this.nativeRolloutBudget
+      : nativeCaps.rolloutBudgetDecision(this._getSettings());
+    s.rolloutBudget = Object.assign({}, s.rolloutBudget, {
+      supported: false,
+      requested: rbNow && rbNow.requested !== undefined ? rbNow.requested : null,
+      reason: (rbNow && rbNow.reason) || s.rolloutBudget.reason,
+    });
+    // 内置联网搜索 MCP（task-12）：始终注册；这里报告脚本/实现是否找得到（找不到 → UI 显示降级原因）
+    const sm = this.nativeSearchMcp || resolveSearchMcp();
+    s.searchMcp = {
+      supported: !!sm.scriptExists,
+      script: sm.script,
+      websearchPath: sm.websearchPath,
+      engine: sm.engine,
+      reason: sm.scriptExists ? null
+        : '未找到 mcp/rose-search-mcp.js（打包态需 extraResources 提供 Resources/mcp/）→ web_search 工具不可用',
+      evidence: 'task-12',
+    };
+    s.search_mcp = s.searchMcp;
+    // D4：随包运行时（office runtime）是否已就绪 —— platform-lifecycle 在 main.js 启动时预装/校验并写
+    // ROOT/work/data/runtime.json；这里只**读取状态**供 UI/诊断复用（引擎不负责安装，也不依赖它）。
+    try {
+      // eslint-disable-next-line global-require
+      const maintenance = require('./maintenance');
+      const rr = typeof maintenance.runtimeReadiness === 'function' ? maintenance.runtimeReadiness(ROOT) : null;
+      s.runtime = (rr && rr.officeRuntime) || { state: 'unknown', ready: false, error: '运行时状态不可用' };
+    } catch (e) {
+      s.runtime = { state: 'unknown', ready: false, error: '读取运行时状态失败：' + ((e && e.message) || e) };
+    }
+    s.officeRuntime = s.runtime;
+    // 兼容服务层的键名约定（snake_case 别名，避免正则猜键名）
+    s.rollout_budget = s.rolloutBudget;
+    s.subagent = s.subagents;
+    s.window_reset = s.windowReset;
+    return s;
+  }
+
+  // 会话线程上的 RPC（线程未在本进程加载时先 resume 一次再重试）
+  async _rpcThread(sessionId, method, params, timeoutMs) {
+    const t = this.threads.get(sessionId);
+    if (!t) return { error: '该会话还没有引擎线程（先发一条消息）' };
+    let st = this.procs.get(t.roleId);
+    if (!st) {
+      try {
+        const combo = this._defaultCombo();
+        st = await this._spawnServer({ id: t.roleId },
+          t.providerId || combo.providerId, t.modelId || combo.modelId, 'workspace-write', 'on-request');
+      } catch (e) {
+        return { error: '引擎进程启动失败：' + ((e && e.message) || e) };
+      }
+    }
+    this._touch(st);
+    try {
+      await this._ensureReady(st);
+    } catch (e) {
+      return { error: '引擎未就绪：' + ((e && e.message) || e) };
+    }
+    const callOnce = () => this._rpc(st, method, { threadId: t.threadId, ...params }, timeoutMs || 20000);
+    try {
+      return { ok: await callOnce() };
+    } catch (e) {
+      const msg = (e && e.message) || String(e);
+      // 线程可能未加载（进程刚重启 / LRU 回收）→ resume 一次再重试；其它错误原样回传
+      if (!/thread|not found|not loaded|unknown/i.test(msg)) return { error: msg };
+      try {
+        await this._rpc(st, 'thread/resume', { threadId: t.threadId }, 20000);
+        return { ok: await callOnce() };
+      } catch (e2) {
+        return { error: (e2 && e2.message) || msg };
+      }
+    }
+  }
+
+
   // 线上参数（0.152.1 实测）：{ threadId, expectedTurnId, input:[{type:'text',text}] }；
   // 没有活跃回合时引擎会明确报 "no active turn to steer"。
   async steer(session, text) {
@@ -1198,6 +1890,8 @@ class CodexEngine {
     const t = this.threads.get(session.id);
     if (!t) return { error: '该会话还没有引擎线程（先发一条消息再压缩）' };
     if (this.turnByThread.has(t.threadId)) return { error: '有任务进行中，请先停止再压缩上下文' };
+    // 手动压缩打标：window-reset（"引擎自发换窗口"）不得对用户主动 /compact 重复提示（见 _onCompaction）
+    this._manualCompaction.set(t.threadId, Date.now());
     try {
       // 进程可能被 LRU 回收或在应用重启后尚未拉起：按会话当前参数重新 spawn（与发消息同一条路径）
       let st = this._procFor(session);
@@ -1338,7 +2032,9 @@ class CodexEngine {
     this.turnByThread.clear();
     this.turnProc.clear();
     this.turnIds.clear();
-    this.turnIds.clear();
+    // 进程重启后子代理线程已不存在 → 清空注册表（避免 UI 永远显示"运行中"的幽灵子代理）
+    this.subagentRegistry.clear();
+    this.subagentParent.clear();
   }
 
   // 优雅退出：关闭全部 codex app-server 子进程，避免网关退出后遗留孤儿进程

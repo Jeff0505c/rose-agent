@@ -187,13 +187,18 @@ button:disabled{transition:none}
 .tool-card .th:hover{background:var(--hover)}
 .tool-card .tico{width:17px;height:17px;color:var(--muted);flex-shrink:0}
 .tool-card .tn{font-family:var(--mono);font-size:12.5px;font-weight:600}
+.tool-card .tn-badge{border:1px solid var(--border);border-radius:999px;padding:0 7px;font-size:10.5px;color:var(--muted);background:var(--hover);flex-shrink:0}
 .tool-card .ta{font-family:var(--mono);font-size:11.5px;color:var(--faint);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;min-width:0}
 .tool-card .st{font-size:11px;color:var(--muted);flex-shrink:0;display:flex;align-items:center;gap:5px}
 .tool-card .st svg{width:12px;height:12px}
 .tool-card .st.ok{color:var(--ok)}
+.tool-card .st.err{color:var(--danger)}
 .tool-card .st .spin{width:10px;height:10px;border:2px solid #dbeafe;border-top-color:var(--accent);border-radius:50%;animation:sp .7s linear infinite}
 .tool-card .caret{flex-shrink:0;color:var(--faint);font-size:10px;line-height:1;transition:transform .15s}
 .tool-card.open .caret{transform:rotate(180deg)}
+.tool-card .wc-slot{display:none;padding:0 13px 12px}
+.tool-card.open .wc-slot{display:block}
+.tool-card .wc-slot .web-card{margin:0}
 @keyframes sp{to{transform:rotate(360deg)}}
 .tool-card .tb{display:none;border-top:1px solid var(--border);background:#fafafb;padding:12px 14px;font-family:var(--mono);font-size:12px;line-height:1.65;color:#3f3f46;white-space:pre-wrap;max-height:200px;overflow-y:auto}
 .tool-card.open .tb{display:block}
@@ -296,6 +301,13 @@ button:disabled{transition:none}
 /* 压缩蒙版：盖住对话列的**可视区域**。⚠️ 必须挂在 .main（position:relative、不滚动）上：
    挂在滚动容器 #chatroom 上时，绝对定位的 inset:0 会锚在"内容原点"——用户滚到长对话底部时
    蒙版直接滚出视口（看不见），但发送键已禁用 → 用户只看到"发不出去又没有提示"。 */
+.web-btn{display:inline-flex;align-items:center;gap:4px;height:30px;padding:0 8px;border:1px solid var(--border);border-radius:9px;background:var(--panel);color:var(--text);cursor:pointer;font-size:13px}
+.web-btn.off{opacity:.45}
+.web-card{margin:6px 0 10px;padding:9px 11px;border:1px solid var(--border);border-radius:10px;background:var(--hover);font-size:12.5px;line-height:1.65}
+.web-card .wc-head{color:var(--muted);margin-bottom:4px}
+.web-card a{color:var(--accent);text-decoration:none}
+.web-card .wc-item{margin:3px 0}
+.web-card .wc-sn{color:var(--faint)}
 .body-note{color:var(--faint);font-size:12.5px;font-style:italic}
 .compact-mask{position:absolute;inset:0;z-index:20;display:flex;align-items:center;justify-content:center;background:var(--scrim);backdrop-filter:blur(6px)}
 .compact-mask[hidden]{display:none}
@@ -793,7 +805,61 @@ html[data-theme="dark"] textarea{background:var(--panel);color:var(--text)}
 .sb-banner .sb-x:hover{color:var(--text)}
 html[data-theme="dark"] .sb-banner{background:rgba(217,119,6,.16);border-color:rgba(251,191,36,.35)}
 
+/* 会话目标栏（引擎 goals 为唯一事实源；无目标且非编辑态时隐藏） */
+.goal-bar{display:flex;align-items:center;gap:9px;margin:0 0 10px;padding:8px 12px;border:1px solid var(--border);border-radius:11px;background:var(--hover);font-size:12.5px}
+.goal-bar[hidden]{display:none}
+.goal-bar .goal-ic{color:var(--accent);font-size:13px;line-height:1}
+.goal-bar .goal-text{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text);font-weight:600}
+.goal-bar .goal-meta{display:inline-flex;align-items:center;gap:6px;color:var(--faint);font-size:11.5px;white-space:nowrap}
+.goal-bar .goal-pill{border:1px solid var(--border);border-radius:999px;padding:1px 8px;font-size:11px;color:var(--muted);background:var(--panel)}
+.goal-bar .goal-pill.active{color:var(--accent);border-color:#dbeafe;background:var(--accent-soft)}
+.goal-bar .goal-pill.done{color:var(--ok);border-color:var(--ok-border);background:var(--ok-soft)}
+.goal-bar .goal-act,.goal-bar .goal-x{border:1px solid var(--border);background:var(--panel);color:var(--muted);border-radius:8px;padding:4px 10px;font-size:11.5px;cursor:pointer;font-family:inherit}
+.goal-bar .goal-x{padding:4px 8px}
+.goal-bar .goal-act:hover,.goal-bar .goal-x:hover{color:var(--text);border-color:var(--border-strong)}
+.goal-bar .goal-act.goal-btn-pri{border-color:var(--accent);background:var(--accent);color:#fff}
+.goal-bar input.goal-input{flex:1;min-width:0;padding:5px 9px;border:1px solid var(--border-strong);border-radius:8px;background:var(--panel);color:var(--text);font-family:inherit;font-size:12.5px}
+.goal-bar select.goal-select{padding:5px 8px;border:1px solid var(--border-strong);border-radius:8px;background:var(--panel);color:var(--text);font-family:inherit;font-size:12px}
+.goal-bar .goal-msg{color:var(--faint);font-size:11.5px}
+html[data-theme="dark"] .goal-bar .goal-msg{color:var(--faint)}
+
+/* 窗口续接提示（引擎换上下文窗口后的检查点）：与压缩（圆环/蒙版）**语义与视觉都不同** */
+.sys-row.win-reset{display:flex;gap:8px;align-items:flex-start;border-left-color:var(--accent);background:var(--accent-soft);border-radius:0 9px 9px 0;padding:8px 11px;color:var(--text);font-family:inherit;font-size:12.5px}
+.sys-row.win-reset .wr-ic{color:var(--accent);line-height:1.4}
+.sys-row.win-reset .wr-note{display:block;color:var(--muted);font-size:11.5px;margin-top:2px;white-space:normal}
+html[data-theme="dark"] .sys-row.win-reset{background:rgba(91,140,255,.14)}
+
+/* 子代理面板（只读状态 + 停止本回合）；无子代理时整体 hidden */
+.sub-panel{margin:0 0 10px;border:1px solid var(--border);border-radius:11px;background:var(--hover);font-size:12.5px;overflow:hidden}
+.sub-panel[hidden]{display:none}
+.sub-panel .sub-head{display:flex;align-items:center;gap:8px;padding:7px 12px;cursor:pointer}
+.sub-panel .sub-caret{color:var(--faint);font-size:10px;transition:transform .15s ease}
+.sub-panel.open .sub-caret{transform:rotate(90deg)}
+.sub-panel .sub-ic{color:var(--accent)}
+.sub-panel .sub-sum{flex:1;min-width:0;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sub-panel .sub-acts{display:flex;gap:8px}
+.sub-panel .sub-btn{border:1px solid var(--border);background:var(--panel);color:var(--muted);border-radius:8px;padding:4px 10px;font-size:11.5px;cursor:pointer;font-family:inherit;white-space:nowrap}
+.sub-panel .sub-btn:hover{color:var(--text);border-color:var(--border-strong)}
+.sub-panel .sub-btn.warn{border-color:rgba(220,38,38,.35);color:var(--danger)}
+.sub-panel .sub-list{display:none;padding:0 12px 10px}
+.sub-panel.open .sub-list{display:block}
+.sub-row{display:flex;align-items:flex-start;gap:8px;padding:7px 0;border-top:1px solid var(--border)}
+.sub-row .sr-name{flex:0 0 132px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text);font-weight:600}
+.sub-row .sr-state{flex:0 0 auto;border-radius:999px;padding:1px 8px;font-size:11px;border:1px solid var(--border);background:var(--panel);color:var(--muted)}
+.sub-row .sr-state.running{color:var(--accent);border-color:#dbeafe;background:var(--accent-soft)}
+.sub-row .sr-state.waiting{color:var(--warn);border-color:var(--warn-border);background:var(--warn-soft)}
+.sub-row .sr-state.done{color:var(--ok);border-color:var(--ok-border);background:var(--ok-soft)}
+.sub-row .sr-state.closed{color:var(--faint)}
+.sub-row .sr-last{flex:1;min-width:0;color:var(--muted);font-size:11.5px;white-space:pre-wrap;word-break:break-word;max-height:56px;overflow:hidden}
+.sub-row.closed .sr-name,.sub-row.closed .sr-last,.sub-row.done .sr-name,.sub-row.done .sr-last{opacity:.72}
+
+/* 引擎能力：hooks 只读分组行 */
+
 /* 环境自检结果行 */
+/* 引擎配置告警（服务端 configWarnings：某项能力不生效的可读原因） */
+.cfg-warn{padding:8px 11px;border:1px solid var(--warn-border);border-radius:9px;background:var(--warn-soft);color:var(--text);font-size:12px;line-height:1.6}
+html[data-theme="dark"] .cfg-warn{background:rgba(217,119,6,.16);border-color:rgba(251,191,36,.35)}
+
 .env-row{display:flex;gap:9px;align-items:flex-start;padding:8px 11px;border:1px solid var(--border);border-radius:9px;margin-bottom:6px;background:var(--panel);font-size:12.5px}
 .env-row .env-mark{flex:0 0 14px;text-align:center;font-weight:700}
 .env-row.ok .env-mark{color:#16a34a}
@@ -850,6 +916,9 @@ html[data-theme="dark"] .sb-banner{background:rgba(217,119,6,.16);border-color:r
       </div>
     </div>
 
+    <!-- 会话目标：引擎 goals 为唯一事实源；无目标/未启用时由 app.js 隐藏（#goalBar 内容整体由 JS 渲染） -->
+    <div class="goal-bar" id="goalBar" hidden></div>
+
     <!-- Windows 沙箱横幅：readiness 非 ready 时由 app.js 显示（绝不静默失去隔离） -->
     <div class="sb-banner" id="sandboxBanner" hidden>
       <span class="sb-ic">⚠</span>
@@ -861,6 +930,20 @@ html[data-theme="dark"] .sb-banner{background:rgba(217,119,6,.16);border-color:r
     <div class="chatroom" id="chatroom">
       <div class="wrap" id="feed"></div>
       <!-- 压缩蒙版由 app.js 动态创建（ensureCompactMask）：不依赖静态 HTML，少一处定义 -->
+    </div>
+
+    <!-- 子代理面板：只在有子代理时出现（状态只读；唯一动作是"停止本回合"，含其子代理） -->
+    <div class="sub-panel" id="subPanel" hidden>
+      <div class="sub-head" id="subHead">
+        <span class="sub-caret" id="subCaret">▸</span>
+        <span class="ic sub-ic">⑂</span>
+        <span class="sub-sum" id="subSummary"></span>
+        <span class="sub-acts">
+          <button class="sub-btn warn" id="subStop" type="button" data-i18n="sub.stopTurn" data-i18n-title="sub.stopTurnHint">停止本回合（含子代理）</button>
+          <button class="sub-btn" id="subClear" type="button" data-i18n="sub.clearDone">清空已完成</button>
+        </span>
+      </div>
+      <div class="sub-list" id="subList"></div>
     </div>
 
     <div class="composer">
@@ -889,6 +972,7 @@ html[data-theme="dark"] .sb-banner{background:rgba(217,119,6,.16);border-color:r
               </div>
             </div>
             <select class="model-select" id="modelSelect" title="选择本次对话使用的模型" data-i18n-title="model.select"></select>
+            <button type="button" class="web-btn goal-btn" id="goalBtn" title="会话目标（查看 / 编辑）" data-i18n-title="goal.title"><span class="ic">◎</span></button>
             <button type="button" class="ctx-hint" id="ctxHint" style="display:none" title="上下文占用 · 点击压缩" data-i18n-title="ctx.title"></button>
             <button class="send-btn stop-btn" id="stopBtn" style="display:none" title="停止当前任务" data-i18n-title="stop.title"><span data-i18n="stopBtn">■ 停止</span></button>
             <button class="send-btn" id="sendBtn" title="发送（⏎）"><span class="sb-send"><span data-i18n="sendBtn">发送</span><span class="ic"><svg viewBox="0 0 24 24"><path d="M22 2 11 13M22 2l-7 20-4-9-9-4Z"/></svg></span></span></button>
@@ -942,6 +1026,10 @@ html[data-theme="dark"] .sb-banner{background:rgba(217,119,6,.16);border-color:r
         <div class="sm-nav-item" data-nav="general">
           <span class="ic"><svg viewBox="0 0 24 24"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9Z"/><path d="M19 15l.9 2.1L22 18l-2.1.9L19 21l-.9-2.1L16 18l2.1-.9Z"/></svg></span>
           <div data-i18n="nav.general">通用</div>
+        </div>
+        <div class="sm-nav-item" data-nav="native">
+          <span class="ic"><svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/><circle cx="9" cy="6" r="2"/><circle cx="15" cy="12" r="2"/><circle cx="7" cy="18" r="2"/></svg></span>
+          <div data-i18n="nav.native">引擎配置</div>
         </div>
         <div class="sm-nav-item" data-nav="env">
           <span class="ic"><svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"/><path d="m9 12 2 2 4-4"/></svg></span>

@@ -259,6 +259,28 @@ function defaultWindowSize(workArea, opts = {}) {
   return { width, height };
 }
 
+/**
+ * 把"上次记住的窗口位置/尺寸"夹到当前屏幕可用区内（纯函数，便于测试）。
+ * 用途：换显示器/插拔外接屏/改缩放后，旧坐标可能落在屏幕外或比可用区还大 —— 直接套用会出现
+ * "窗口跑到看不见的地方"或"比屏幕还大"。这里做三件事：
+ *   ① 尺寸不超过可用区、不小于最小尺寸；② 位置保证窗口完整落在可用区内；③ 缺位置则返回 undefined（交给居中）。
+ */
+function clampWindowToWorkArea(rect, workArea, opts = {}) {
+  const minW = opts.minW || 1000, minH = opts.minH || 640;
+  if (!rect || !Number.isFinite(rect.width) || !Number.isFinite(rect.height)) return null;
+  const out = { width: Math.round(rect.width), height: Math.round(rect.height) };
+  if (!workArea || !workArea.width || !workArea.height) return out;
+  const wx = Math.round(workArea.x || 0), wy = Math.round(workArea.y || 0);
+  const ww = Math.round(workArea.width), wh = Math.round(workArea.height);
+  out.width = Math.min(Math.max(out.width, Math.min(minW, ww)), ww);
+  out.height = Math.min(Math.max(out.height, Math.min(minH, wh)), wh);
+  if (Number.isFinite(rect.x) && Number.isFinite(rect.y)) {
+    out.x = Math.min(Math.max(Math.round(rect.x), wx), wx + ww - out.width);
+    out.y = Math.min(Math.max(Math.round(rect.y), wy), wy + wh - out.height);
+  }
+  return out;
+}
+
 module.exports = {
   SUPPORTED,
   isWin, isMac, isSupported, assertSupported,
@@ -266,6 +288,6 @@ module.exports = {
   resolveCommand, tomlPath, sandboxConfigLines,
   killStrategy, killCommand, killTree, spawnOptions,
   unzipStrategy, unzipArgs, psQuote,
-  pathIssues, sanitizeFilename, assertPathUsable, defaultWindowSize,
+  pathIssues, sanitizeFilename, assertPathUsable, defaultWindowSize, clampWindowToWorkArea,
   WIN_RESERVED, MAX_PATH_SAFE,
 };

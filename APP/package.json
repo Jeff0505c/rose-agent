@@ -1,7 +1,7 @@
 {
   "name": "rose-desktop",
   "private": true,
-  "version": "0.24.0",
+  "version": "0.25.0",
   "main": "main.js",
   "scripts": {
     "install-deps": "node ../scripts/install.mjs --app .",
@@ -37,20 +37,30 @@
         "to": "defaults"
       },
       {
-        "from": "core/vendor",
-        "to": "vendor"
+        "from": "../runtime",
+        "to": "runtime"
       },
       {
-        "from": "../tools",
-        "to": "tools"
+        "from": "mcp",
+        "to": "mcp"
       }
     ],
     "mac": {
       "target": [
-        "dmg"
+        "dmg",
+        "zip"
       ],
       "category": "public.app-category.productivity",
-      "icon": "build/icon.icns"
+      "icon": "build/icon.icns",
+      "extraResources": [
+        {
+          "from": "core/vendor",
+          "to": "vendor",
+          "filter": [
+            "codex-aarch64-apple-darwin"
+          ]
+        }
+      ]
     },
     "win": {
       "target": [
@@ -59,15 +69,32 @@
           "arch": [
             "x64"
           ]
+        },
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
         }
       ],
       "artifactName": "${productName}-${version}-win-x64.${ext}",
-      "icon": "build/icon.ico"
+      "icon": "build/icon.ico",
+      "extraResources": [
+        {
+          "from": "core/vendor",
+          "to": "vendor",
+          "filter": [
+            "codex.exe",
+            "codex-command-runner.exe",
+            "codex-windows-sandbox-setup.exe"
+          ]
+        }
+      ]
     },
     "nsis": {
       "oneClick": false,
-      "perMachine": true,
-      "allowElevation": true,
+      "perMachine": false,
+      "allowElevation": false,
       "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
@@ -80,6 +107,9 @@
         "en_US"
       ],
       "language": "2052"
+    },
+    "portable": {
+      "artifactName": "${productName}-${version}-win-x64-portable.${ext}"
     },
     "dmg": {
       "title": "ROSE"

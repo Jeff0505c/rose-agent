@@ -1,0 +1,242 @@
+{
+  "schemaVersion": 1,
+  "kind": "mcp-retirement-list",
+  "owner": "runtime-office",
+  "sinceVersion": "0.25.0（ROSE 自该版本起出厂零 MCP：`defaults/registries/mcp-registry.json` = `{ \"servers\": [] }`）",
+  "description": "旧版 ROSE 出厂自带的 MCP 服务器**退役清单**。用途：老用户 store 里的 `work/data/mcp-registry.json` 仍留着历史上随包出厂的条目，会被继续注入 config.toml（表现为『新装的 ROSE 还有 MCP 工具』）。本清单让 APP 侧**数据驱动**地识别并退役它们（先备份、再移除），不把任何 id 写死在代码里。",
+  "matchPolicy": {
+    "primary": "name：去首尾空白、大小写不敏感后精确匹配",
+    "requireFingerprint": "name 命中的同时**必须命中指纹**才允许退役 —— 禁止只按名字删除，避免误删用户自加的同名条目",
+    "fingerprintVariants": {
+      "stdio": "`match.command` 精确相等 **且** `match.args` 与条目 `args` **逐项精确相等**（`argsMatch` 默认 `\"exact\"`）。⚠ 不做前缀匹配：`mcp-server-time` 是 `mcp-server-time-custom` 的前缀，前缀匹配会把用户自加的同名条目误删（我的负例实测抓到过）",
+      "http": "`match.type === \"http\"` **且** 注册表条目的 `url` 以 `match.urlPrefix` 开头（旧版远程 MCP，**没有 command/args**；这条分支必须实现，否则永远匹配不上）"
+    },
+    "hintsAreNotConditions": "`hints.*`（legacyScope/legacyRoleId/legacyIdsSeen）只作审计与提示，**不得**作为匹配条件（用户可能改过 scope）",
+    "idNote": "注册表 id 形如 `mcp-<8位hex>`（随机生成、逐机不同）→ 不可跨机复用，故**不参与匹配**；`hints.legacyIdsSeen` 仅供审计",
+    "idShapeRegex": "^mcp-[0-9a-f]{8}$",
+    "sectionNameNote": "config.toml 里的 MCP section 名形如 `mcp_<global|角色id>_<name>`（由 role+name 生成，例如 `mcp_a001_fetch`）——它是**引擎按注册表重新生成的派生名**，不是注册表 id；退役只需处理注册表，config.toml 会在下次写配置时自然消失",
+    "never": "用户自加条目绝不在此清单；即使与退役项同名，只要命令/URL 指纹不同就不会被匹配",
+    "argsPolicy": "条目参数一律取**出厂真身的完整数组**（含 `${ROSE_ROOT}/work` 这类占位符原样保留；展开发生在写 config.toml 时，不在注册表里）。若用户改过参数 → 不命中（**宁可漏退，不可误删**）",
+    "commandMatching": "stdio 变体的 command 匹配：`command === match.command` 精确相等，**或** `basename(command)`（`\\\\`→`/` 归一、大小写不敏感）属于 `match.commandBasenames`（可选字段）。两种分支都**必须**同时满足 `args` 逐项精确相等。basename 分支专为 v0.22.0 之前出厂的绝对路径条目（如 `…/tools/github-mcp-server.exe`）保留；注意：**绝对路径且 basename 不在清单内一律不命中**（宁可漏退，不可误删）"
+  },
+  "consumer": {
+    "app": "APP/core/maintenance.js（platform-lifecycle）",
+    "expectedAction": "启动维护时读取本文件 → 在 `work/data/mcp-registry.json` 中找出命中项（name + 指纹，按 match.type 选变体）→ **先备份整份注册表**（如 `mcp-registry.json.retire-<UTC>.bak`）→ 移除命中条目 → 原子写回（tmp+rename）；不改出厂默认文件、不联网、不动用户的其它条目",
+    "notUserData": "本文件是**规则**不是用户数据：不要把它当注册表播种/覆盖到 `work/data/`（它没有 `servers` 字段）"
+  },
+  "retired": [
+    {
+      "name": "fetch",
+      "reason": "ROSE 已内置联网搜索与内置搜索 MCP 工具，出厂不再随包 fetch MCP",
+      "replacement": "内置联网搜索 / 内置搜索 MCP 工具",
+      "match": {
+        "command": "uvx",
+        "argsMatch": "exact",
+        "args": [
+          "mcp-server-fetch"
+        ]
+      },
+      "hints": {
+        "legacyScope": "global",
+        "legacyRoleId": null,
+        "legacyIdsSeen": [
+          "mcp-a1c78eb6"
+        ],
+        "legacyArgsNote": "参数取自出厂真身（用户 store 备份 + git 3d491a4）；用户改过参数即不命中"
+      }
+    },
+    {
+      "name": "memory",
+      "reason": "记忆能力改由 codex 原生 `[memories]`（generate_memories / use_memories）承担",
+      "replacement": "codex 原生 [memories]",
+      "match": {
+        "command": "npx",
+        "argsMatch": "exact",
+        "args": [
+          "-y",
+          "@modelcontextprotocol/server-memory"
+        ]
+      },
+      "hints": {
+        "legacyScope": "global",
+        "legacyRoleId": null,
+        "legacyIdsSeen": [
+          "mcp-ac692f79"
+        ],
+        "legacyArgsNote": "参数取自出厂真身（用户 store 备份 + git 3d491a4）；用户改过参数即不命中"
+      }
+    },
+    {
+      "name": "filesystem",
+      "reason": "文件读写由 codex 原生工具承担（exec_command / apply_patch / view_image）",
+      "replacement": "原生 exec_command / apply_patch / view_image",
+      "match": {
+        "command": "npx",
+        "argsMatch": "exact",
+        "args": [
+          "-y",
+          "@modelcontextprotocol/server-filesystem",
+          "${ROSE_ROOT}/work"
+        ]
+      },
+      "hints": {
+        "legacyScope": "global",
+        "legacyRoleId": null,
+        "legacyIdsSeen": [
+          "mcp-e1224b32"
+        ],
+        "legacyArgsNote": "参数取自出厂真身（用户 store 备份 + git 3d491a4）；用户改过参数即不命中"
+      }
+    },
+    {
+      "name": "time",
+      "reason": "时间能力由 codex 原生 `clock::curr_time`（`[features] current_time_reminder`）承担",
+      "replacement": "codex 原生 clock::curr_time",
+      "match": {
+        "command": "uvx",
+        "argsMatch": "exact",
+        "args": [
+          "mcp-server-time"
+        ]
+      },
+      "hints": {
+        "legacyScope": "global",
+        "legacyRoleId": null,
+        "legacyIdsSeen": [
+          "mcp-509145b0"
+        ],
+        "legacyArgsNote": "参数取自出厂真身（用户 store 备份 + git 3d491a4）；用户改过参数即不命中"
+      }
+    },
+    {
+      "name": "sequential-thinking",
+      "reason": "结构化推理不需要外部 MCP：模型自身推理 + 原生 `update_plan`/目标工具已覆盖",
+      "replacement": "模型自身推理（无 MCP 替代）",
+      "match": {
+        "command": "npx",
+        "argsMatch": "exact",
+        "args": [
+          "-y",
+          "@modelcontextprotocol/server-sequential-thinking"
+        ]
+      },
+      "hints": {
+        "legacyScope": "global",
+        "legacyRoleId": null,
+        "legacyIdsSeen": [
+          "mcp-a5886d3c"
+        ],
+        "legacyArgsNote": "参数取自出厂真身（用户 store 备份 + git 3d491a4）；用户改过参数即不命中"
+      }
+    },
+    {
+      "name": "playwright",
+      "reason": "出厂不再随包浏览器 MCP（用户如需要可自行添加）",
+      "replacement": "无（用户按需自行添加）",
+      "match": {
+        "command": "npx",
+        "argsMatch": "exact",
+        "args": [
+          "@playwright/mcp"
+        ]
+      },
+      "hints": {
+        "legacyScope": "global",
+        "legacyRoleId": null,
+        "legacyIdsSeen": [
+          "mcp-e6c68d61"
+        ],
+        "legacyArgsNote": "参数取自出厂真身（用户 store 备份 + git 3d491a4）；用户改过参数即不命中"
+      }
+    },
+    {
+      "name": "github",
+      "reason": "github MCP 曾随包给代码专家（a003），v0.25.0 起出厂零 MCP；需要时由用户自行添加并填 token",
+      "replacement": "无（用户按需自行添加）",
+      "match": {
+        "command": "github-mcp-server",
+        "commandBasenames": [
+          "github-mcp-server",
+          "github-mcp-server.exe"
+        ],
+        "argsMatch": "exact",
+        "args": [
+          "stdio"
+        ]
+      },
+      "hints": {
+        "legacyScope": "role",
+        "legacyRoleId": "a003",
+        "legacyIdsSeen": [
+          "mcp-20849af6"
+        ],
+        "legacyArgsNote": "参数取自出厂真身（用户 store 备份 + git 3d491a4）；用户改过参数即不命中",
+        "legacyCommandNote": "v0.21.1 记载出厂 github 曾为机器绝对路径（tools/github-mcp-server[.exe]），v0.22.0 才改成裸名 → commandBasenames 覆盖两种形态（Windows 带 .exe）"
+      }
+    },
+    {
+      "name": "gaode-map",
+      "reason": "旧版出厂的第三方 HTTP MCP（非本产品能力），已由内置 `web_search` 取代",
+      "replacement": "内置 web_search",
+      "match": {
+        "type": "http",
+        "urlPrefix": "https://mcpmarket.cn/mcp/07d1a7a34bc4c5aced689e9a"
+      },
+      "hints": {
+        "legacyScope": "role",
+        "legacyRoleId": "a001",
+        "legacyIdsSeen": [
+          "mcp-f5765fb2"
+        ],
+        "legacyArgsNote": "参数取自出厂真身（用户 store 备份 + git 3d491a4）；用户改过参数即不命中"
+      }
+    },
+    {
+      "name": "麦麦",
+      "reason": "旧版出厂的第三方 HTTP MCP（非本产品能力），已由内置 `web_search` 取代",
+      "replacement": "内置 web_search",
+      "match": {
+        "type": "http",
+        "urlPrefix": "https://mcpmarket.cn/mcp/d39e487b05e4cb04c617c799"
+      },
+      "hints": {
+        "legacyScope": "role",
+        "legacyRoleId": "a001",
+        "legacyIdsSeen": [
+          "mcp-be589884"
+        ],
+        "legacyArgsNote": "参数取自出厂真身（用户 store 备份 + git 3d491a4）；用户改过参数即不命中"
+      }
+    }
+  ],
+  "decisionLog": [
+    {
+      "at": "2026-09-27",
+      "by": "Lead",
+      "what": "gaode-map / 麦麦 由 pendingDecision 搬入 retired（原因：旧版出厂的第三方 HTTP MCP，已由内置 web_search 取代）",
+      "evidence": [
+        "HANDOFF.md v0.21.1：出厂 MCP 含 a001 2 个（gaode-map / 麦麦）",
+        "用户 store 备份 `mcp-registry.json.bak-<UTC>`：二者 type=http、scope=role、roleId=a001、URL 指向 mcpmarket.cn",
+        "用户明确要求『砍掉所有 MCP』"
+      ],
+      "ruleAdded": "HTTP 类条目没有 command/args → 新增 match.urlPrefix 指纹变体（仍要求 name 命中，双条件防误删）"
+    },
+    {
+      "at": "2026-09-27",
+      "by": "Lead",
+      "what": "boss-agent-cli 不登记（两处历史均无出厂痕迹）"
+    },
+    {
+      "at": "2026-09-27",
+      "by": "runtime-office",
+      "what": "指纹语义由「args 前缀匹配」改为「args 逐项精确相等」",
+      "why": "负例实测：`mcp-server-time` 是 `mcp-server-time-custom` 的前缀 → 前缀匹配会误删用户自加的同名条目；改为精确匹配后宁可漏退、不可误删"
+    },
+    {
+      "at": "2026-09-27",
+      "by": "runtime-office",
+      "what": "github 条目增加 `commandBasenames`（绝对路径形态）",
+      "why": "HANDOFF v0.21.1 记载出厂 github 的 command 曾是机器绝对路径（`tools/github-mcp-server`），v0.22.0 才改为裸名 → 老 store 里的绝对路径形态若只做 command 精确匹配会漏退；basename 分支 + args 精确匹配，既覆盖老形态又不误删用户同名条目"
+    }
+  ]
+}

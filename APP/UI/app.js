@@ -30,7 +30,8 @@ const I18N = {
     'roles.h4':'角色管理','roles.intro':'为不同专业或身份创建本地角色，并定义各自的人格与提示词；会话用到的沙箱、审批、模型在对话界面单独选择。','roles.add':'新增角色','roles.edit':'编辑','roles.delete':'删除','roles.delTitle':'删除角色','roles.delQ':'删除角色','roles.delWarn':'将同时删除该角色名下所有会话与其工作区，不可恢复。','roles.skillTitle':'专用技能','roles.skillKeep':'保留技能','roles.skillDel':'一并删除', 'roles.skillMsg':'该角色下有 {n} 个专用技能。是否一并删除？\n确定=一并删除技能；取消=保留技能（转为未激活）。',
 'common.delete':'删除','common.cancel':'取消',
 
-    'nav.model':'模型配置','nav.prompt':'全局提示词','nav.memory':'记忆','nav.roles':'角色管理','nav.skills':'技能','nav.mcp':'MCP 工具','nav.usage':'用量','nav.general':'通用','nav.env':'环境与诊断',
+    'nav.model':'模型配置','nav.prompt':'全局提示词','nav.memory':'记忆','nav.roles':'角色管理','nav.skills':'技能','nav.mcp':'MCP 工具','nav.usage':'用量','nav.general':'通用','nav.native':'引擎配置','nav.env':'环境与诊断',
+    'native.cfgWarnTitle':'引擎配置告警','native.cfgWarnHint':'保存设置后，引擎若拒绝某项能力（例如某个开关在当前版本不生效），可读原因会显示在这里。','native.cfgWarnNone':'无告警（最近一次保存未报告配置问题）','native.cfgWarnFrom':'（来自 {s}）','native.engineRegression':'引擎配置生成异常（请反馈维护者，不是你的配置问题）：','native.budgetRequested':'（已保存 {n}，当前引擎不支持）','native.unavailable':'该能力当前不可用（服务或引擎未就绪）','native.budget':'单轮 token 预算','native.budgetDesc':'单轮硬上限（rollout_budget.limit_tokens）：一轮对话累计超过即停止。与"自动压缩阈值"不是同一件事。','native.budgetPh':'例如 200000','native.budgetUnsupported':'当前引擎版本（0.152.1）不支持该项：写 limit_tokens 不生效，写启用所需的 reminder_at_remaining_tokens 会让整份配置被拒。ROSE 不会写入它。','native.save':'保存','native.saved':'✓ 已保存（下次引擎进程启动生效）','native.budgetBad':'请输入正整数（tokens）',
     'env.check':'环境自检','env.checkDesc':'检查运行时、数据目录、codex 二进制与已启用 MCP 的命令是否可用。只读检测，不修改任何文件。',
     'env.run':'重新检测','env.running':'检测中…','env.allOk':'全部通过','env.failCount':'{n} 项需要处理','env.warnCount':'{n} 项提示',
     'env.sandbox':'Windows 沙箱','env.sandboxDesc':'codex 在 Windows 上自带原生沙箱。elevated 创建独立低权限用户并配置防火墙（需一次管理员授权），unelevated 用受限令牌，网络隔离较弱。',
@@ -49,16 +50,20 @@ const I18N = {
     'sb.needsInit':'Windows 沙箱未初始化，命令执行可能失败（codex#37818）。点右侧按钮初始化。','sb.updateNeeded':'Windows 沙箱需要更新，请重新初始化。','sb.unknown':'无法确认 Windows 沙箱状态：{e}','sb.worldWritable':'检测到目录对所有人可写，建议收窄权限。',
     'gen.appearance':'外观 · 主题','gen.light':'浅色主题','gen.lightDesc':'明亮清爽，默认','gen.dark':'深色主题','gen.darkDesc':'暗色背景，夜间更护眼','gen.system':'跟随系统','gen.systemDesc':'随操作系统外观自动切换',
     'gen.lang':'界面语言 · Language',
+    'gen.closeTitle':'关窗行为','gen.closeHide':'隐藏（默认）','gen.closeHideDesc':'关窗后应用与任务继续运行；点 Dock 图标或再次启动即可找回窗口','gen.closeQuit':'完全关闭','gen.closeQuitDesc':'关窗即退出应用；退出前会先确认运行中的任务','gen.closeNote':'两种行为都会在退出前确认运行中的任务，不会静默中断正在执行的工作。',
+    'goal.title':'会话目标','goal.localTag':'本地目标（引擎不可用）','goal.edit':'编辑','goal.save':'保存','goal.cancel':'取消','goal.clear':'清除目标','goal.clearConfirm':'清除本会话的目标？','goal.statusPending':'待开始','goal.statusActive':'进行中','goal.statusDone':'已完成','goal.tokens':'已用 {u} / 预算 {l} tokens','goal.tokensNoBudget':'已用 {u} tokens','goal.capNote':'单轮上限 {l}','goal.editPh':'用一句话描述这个会话要达成的目标…','goal.saved':'✓ 目标已保存','goal.saveFail':'目标保存失败：','goal.unavailable':'目标服务当前不可用（引擎未就绪）；这不影响正常对话。','goal.needSession':'请先打开或新建一个会话，再设置目标',
+    'win.reset':'已换窗口 · 检查点','win.resetCount':'已换窗口 · 检查点（第 {n} 次）','win.note':'引擎到达上下文上限后自动续接（不是手动压缩）；压缩环与压缩蒙版不受影响。',
+    'sub.title':'子代理','sub.summary':'子代理 {a} 个 · 运行中 {r} · 等待 {w} · 已完成 {d}','sub.unsupported':'引擎未接线（{r}）','sub.stopTurn':'停止本回合（含子代理）','sub.stopTurnHint':'会中断整个回合（含其全部子代理）；app-server 不支持单独结束某一个子代理','sub.clearDone':'清空已完成','sub.stateSpawned':'已派出','sub.stateRunning':'运行中','sub.stateWaiting':'等待中','sub.stateDone':'已完成','sub.stateClosed':'已结束','sub.lastNone':'（暂无输出）',
     'feed.empty':'选择左侧会话，或新建一个','feed.you':'你','session.newChat':'新建会话','session.rename':'重命名','session.delete':'删除','session.noMatch':'无匹配会话','ask.allDone':'全部已答','ask.done':'已答 {a}/{n} 题',
     'role.title':'选择会话角色','role.noRoles':'暂无角色，需先创建','role.newRole':'新建角色',
     'think.title':'思考内容不保存，仅记录耗时','think.seconds':'思考了 {n} 秒','think.inProgress':'思考中','err.generic':'出错了',
-    'tool.run':'运行中','tool.done':'完成','tool.processing':'正在处理…','plan.title':'执行计划',
+    'tool.run':'运行中','tool.done':'完成','tool.fail':'失败','tool.processing':'正在处理…','plan.title':'执行计划',
     'ask.confirmed':'已确认','ask.pendingTitle':'待回答的问题','ask.pending':'待回答','ask.skipped':'（跳过）','ask.otherPh':'其他…','ask.answerPh':'输入你的回答…',
     'appr.needPrefix':'需要审批 · ','appr.operation':'操作','appr.mcpEscalateTitle':'提权授权 · 远程 MCP 工具','appr.mcpConfirmTitle':'确认 · MCP 请求','appr.mcpRun':'允许远程 MCP 执行工具：{t}','appr.patch':'写入审批 · apply_patch','appr.exec':'执行审批 · exec_command','appr.outPolicy':'该操作超出当前角色的沙箱/审批策略',
     'mode.needSess':'先打开或新建一个会话，再选择模式','mode.select':'选择会话模式','mode.plan':'✦ 计划','mode.default':'默认','mode.free':'零监管','mode.planT':'✦ 计划模式','mode.planD':'只读研究 · 产出计划 · 确认后实施（复杂任务建议）','mode.defaultT':'默认模式','mode.defaultD':'可写工作区 · 命令需审批 · 大改动前先说明方案','mode.freeT':'零监管模式','mode.freeD':'完全访问 · 自动执行 · 不审批（仅信任模型时使用）','search.clear':'清除','model.select':'选择本次对话使用的模型',
     'model.enableFirst':'（请先在 设置→模型配置 启用模型）','model.noModelTitle':'尚未配置模型','model.noModelMsg':'还没有启用任何模型。请先在「设置 → 模型配置」新增 Provider、填入 API Key 并启用模型。','model.goSettings':'去配置','att.remove':'移除','att.file':'附件','att.tooBig':'文件过大（>20MB）：','att.upload':'上传图片 / 文件','skill.choose':'选用技能','model.addProvTitle':'新增模型配置 · 选择厂商预设',
     'skill.noSess':'请先打开或新建一个会话，再选用技能','skill.noAvail':'当前会话暂无可用技能','skill.noAvailSub':'未导入/未激活；角色专用技能仅对绑定角色可见','skill.pickTitle':'选用技能（本次对话）',
-    'dial.hint':'提示','dial.gotit':'知道了','sm.sub':'配置','stop.title':'停止当前任务（Esc×2）','send.title':'发送（⏎）','queue.title':'排队中（本轮结束后依次发送）','queue.edit':'编辑','queue.del':'删除','queue.steer':'插话发送（直接送进正在执行的任务）','queue.steerFail':'插话失败：','modal.from':'来自：{r} · {s}','modal.queuedMore':'还有 {n} 条来自其它会话的请求在排队','gen.ctxTitle':'上下文与自动压缩','gen.ctxPct':'自动压缩阈值（%）','gen.l0Unit':'tokens','gen.ctxPctShort':'压缩阈值','gen.l0Short':'工具输出上限','gen.l0Label':'单条工具输出上限（tokens）','gen.ctxSave':'保存','gen.ctxSaved':'已保存（下次引擎进程启动生效）','cfg.badTitle':'引擎配置有误','ctx.none':'上下文 —','ctx.usedTok':'已用 {n} tokens','ctx.noWindow':'窗口大小未实测（跑一轮后补全，届时显示百分比）','ctx.noneTip':'该会话还没跑过对话；跑过一轮后这里会显示上下文占用比例，点击可压缩','cfg.badMsg':'ROSE 生成的 config.toml 未被引擎接受，codex 已回落默认配置（模型/厂商/人格/MCP 都不生效，对话基本跑不通）。信息：','ws.pickTitle':'选择这个会话的工作目录','ws.fail':'创建会话失败：','ws.locked':'工作目录创建后不可更改（要换目录请新建会话）','ctx.title':'上下文占用 · 点击压缩上下文','ctx.used':'上下文 {p}%','ctx.compact':'压缩上下文','ctx.compacting':'正在压缩…','ctx.done':'上下文已压缩','ctx.maskTitle':'正在压缩上下文…','ctx.maskSub':'压缩完成后本会话自动恢复；期间可以切换到其他会话继续工作。','ctx.maskElapsed':'已用 {n} 秒','ctx.fail':'压缩失败：','ctx.busy':'有任务进行中，请先停止再压缩上下文','ctx.timeout':'压缩等待超时，已解除本会话的等待状态（如仍需要压缩，可再次点击圆环重试）。','settings':'设置','nav.settings':'设置','side.collapse':'收起侧栏','side.expand':'展开侧栏','common.on':'开','common.off':'关','cmd.head':'指令','cmd.panelOpened':'已打开对应面板','cmd.fail':'执行失败：','cmd.needArg':'缺少参数：{n}','cmd.needSession':'请先打开一个会话再使用该指令','feed.noText':'（本轮无文本输出）',
+    'dial.hint':'提示','dial.gotit':'知道了','sm.sub':'配置','stop.title':'停止当前任务（Esc×2）','send.title':'发送（⏎）','queue.title':'排队中（本轮结束后依次发送）','queue.edit':'编辑','queue.del':'删除','queue.steer':'插话发送（直接送进正在执行的任务）','queue.steerFail':'插话失败：','modal.from':'来自：{r} · {s}','modal.queuedMore':'还有 {n} 条来自其它会话的请求在排队','gen.ctxTitle':'上下文与自动压缩','gen.ctxPct':'自动压缩阈值（%）','gen.l0Unit':'tokens','gen.ctxPctShort':'压缩阈值','gen.l0Short':'工具输出上限','gen.l0Label':'单条工具输出上限（tokens）','gen.ctxSave':'保存','gen.ctxSaved':'已保存（下次引擎进程启动生效）','cfg.badTitle':'引擎配置有误','ctx.none':'上下文 —','ctx.usedTok':'已用 {n} tokens','ctx.noWindow':'窗口大小未实测（跑一轮后补全，届时显示百分比）','ctx.noneTip':'该会话还没跑过对话；跑过一轮后这里会显示上下文占用比例，点击可压缩','cfg.badMsg':'ROSE 生成的 config.toml 未被引擎接受，codex 已回落默认配置（模型/厂商/人格/MCP 都不生效，对话基本跑不通）。信息：','ws.pickTitle':'选择这个会话的工作目录','ws.fail':'创建会话失败：','ws.locked':'工作目录创建后不可更改（要换目录请新建会话）','ctx.title':'上下文占用 · 点击压缩上下文','ctx.used':'上下文 {p}%','ctx.compact':'压缩上下文','ctx.compacting':'正在压缩…','ctx.done':'上下文已压缩','ctx.maskTitle':'正在压缩上下文…','ctx.maskSub':'压缩完成后本会话自动恢复；期间可以切换到其他会话继续工作。','ctx.maskElapsed':'已用 {n} 秒','ctx.fail':'压缩失败：','ctx.busy':'有任务进行中，请先停止再压缩上下文','ctx.timeout':'压缩等待超时，已解除本会话的等待状态（如仍需要压缩，可再次点击圆环重试）。','settings':'设置','nav.settings':'设置','side.collapse':'收起侧栏','side.expand':'展开侧栏','common.on':'开','common.off':'关','cmd.head':'指令','cmd.panelOpened':'已打开对应面板','cmd.fail':'执行失败：','cmd.needArg':'缺少参数：{n}','cmd.needSession':'请先打开一个会话再使用该指令','feed.noText':'（本轮无文本输出）','web.backendTitle':'搜索后端','web.mcpOk':'内置搜索工具已就位（模型可自行调用 web_search）','web.mcpDown':'内置搜索工具当前不可用：{r}','web.toolBadge':'内置搜索','web.backendHint':'联网由模型自行调用内置 `web_search` 工具，无需开关；这里只配置搜索后端（留空则用免 Key 的默认源）。','web.sources':'联网搜索 · {p} · {n} 条来源','web.none':'联网搜索没有返回结果','web.provider':'搜索源','web.keyPh':'SearXNG 地址或 API Key（可留空）','web.auto':'自动（推荐）','cmd.web.desc':'联网搜索并给出源链接','cmd.web.needArg':'用法：/web 关键词',
     'cmd.compact.desc':'压缩上下文（codex 官方 thread/compact/start）','cmd.compact.done':'已发起压缩，完成后占用会刷新',
     'cmd.model.desc':'查看/切换本会话模型','cmd.model.none':'没有已启用的模型（去 设置→模型配置 启用）','cmd.model.list':'已启用模型：','cmd.model.current':'当前','cmd.model.unknown':'没有匹配的模型：{n}','cmd.model.set':'本会话模型已切到 {n}（下一轮生效）',
     'cmd.approvals.desc':'查看/切换审批策略','cmd.approvals.cur':'当前审批策略：{n}','cmd.approvals.onRequest':'按需审批（推荐）','cmd.approvals.never':'从不审批（高危）','cmd.approvals.bad':'取值只能是 on-request 或 never','cmd.approvals.set':'审批策略已切到 {n}（下一轮生效）',
@@ -92,7 +97,8 @@ const I18N = {
     'roles.h4':'Roles','roles.intro':'Create local roles for different professions or identities and define each persona & prompt; the sandbox, approval and model used per chat are chosen in the conversation view.','roles.add':'Add Role','roles.edit':'Edit','roles.delete':'Delete','roles.delTitle':'Delete Role','roles.delQ':'Delete role','roles.delWarn':'This also deletes all sessions of this role and its workspace. This cannot be undone.','roles.skillTitle':'Role-specific Skills','roles.skillKeep':'Keep skills','roles.skillDel':'Delete too', 'roles.skillMsg':'This role has {n} role-specific skill(s). Delete them too?\nDelete = also remove skills · Keep = keep skills (inactive).',
 'common.delete':'Delete','common.cancel':'Cancel',
 
-    'nav.model':'Model','nav.prompt':'Prompt','nav.memory':'Memory','nav.roles':'Roles','nav.skills':'Skills','nav.mcp':'MCP Tools','nav.usage':'Usage','nav.general':'General','nav.env':'Environment',
+    'nav.model':'Model','nav.prompt':'Prompt','nav.memory':'Memory','nav.roles':'Roles','nav.skills':'Skills','nav.mcp':'MCP Tools','nav.usage':'Usage','nav.general':'General','nav.native':'Engine config','nav.env':'Environment',
+    'native.cfgWarnTitle':'Engine config warnings','native.cfgWarnHint':'After saving settings, any capability the engine rejects (for example a switch that has no effect on this version) is reported here with a readable reason.','native.cfgWarnNone':'No warnings (the last save reported no config problems)','native.cfgWarnFrom':'(from {s})','native.engineRegression':'The engine failed to generate its config (please report this to the maintainer — it is not your settings): ','native.budgetRequested':'(saved {n}; unsupported by the current engine)','native.unavailable':'This capability is unavailable right now (service or engine not ready)','native.budget':'Per-turn token budget','native.budgetDesc':'Hard per-turn cap (rollout_budget.limit_tokens): a turn stops once its total exceeds this. This is not the auto-compact threshold.','native.budgetPh':'e.g. 200000','native.budgetUnsupported':'Unsupported by the current engine (0.152.1): limit_tokens has no effect, and the enabling key reminder_at_remaining_tokens makes the engine reject the whole config. ROSE will not write it.','native.save':'Save','native.saved':'✓ Saved (applies when the engine process restarts)','native.budgetBad':'Please enter a positive integer (tokens)',
     'env.check':'Environment check','env.checkDesc':'Verifies runtime, data directory, codex binary and the commands used by enabled MCP servers. Read-only, changes nothing.',
     'env.run':'Re-check','env.running':'Checking…','env.allOk':'All good','env.failCount':'{n} issue(s) to fix','env.warnCount':'{n} warning(s)',
     'env.sandbox':'Windows sandbox','env.sandboxDesc':'codex ships a native Windows sandbox. "elevated" creates dedicated low-privilege users plus firewall rules (needs one admin approval); "unelevated" uses a restricted token with weaker network isolation.',
@@ -111,16 +117,20 @@ const I18N = {
     'sb.needsInit':'Windows sandbox is not initialized; command execution may fail (codex#37818). Use the button to initialize.','sb.updateNeeded':'Windows sandbox needs an update — please re-initialize.','sb.unknown':'Cannot determine Windows sandbox state: {e}','sb.worldWritable':'A directory is world-writable; consider tightening permissions.',
     'gen.appearance':'Appearance & Theme','gen.light':'Light','gen.lightDesc':'Bright & clean (default)','gen.dark':'Dark','gen.darkDesc':'Dark background, easier on the eyes at night','gen.system':'System','gen.systemDesc':'Follow the OS appearance automatically',
     'gen.lang':'Interface Language',
+    'gen.closeTitle':'Closing the window','gen.closeHide':'Hide (default)','gen.closeHideDesc':'The app and running tasks keep going; click the Dock icon or launch again to bring the window back','gen.closeQuit':'Quit completely','gen.closeQuitDesc':'Closing the window quits the app; running tasks are confirmed before quitting','gen.closeNote':'Both behaviours confirm running tasks before exiting — work is never interrupted silently.',
+    'goal.title':'Session goal','goal.localTag':'Local goal (engine unavailable)','goal.edit':'Edit','goal.save':'Save','goal.cancel':'Cancel','goal.clear':'Clear goal','goal.clearConfirm':'Clear the goal for this session?','goal.statusPending':'Pending','goal.statusActive':'In progress','goal.statusDone':'Done','goal.tokens':'{u} used / {l} budget tokens','goal.tokensNoBudget':'{u} tokens used','goal.capNote':'per-turn cap {l}','goal.editPh':'Describe what this session should achieve, in one sentence…','goal.saved':'✓ Goal saved','goal.saveFail':'Could not save the goal: ','goal.unavailable':'The goal service is unavailable right now (engine not ready); chatting is unaffected.','goal.needSession':'Open or start a session first, then set a goal',
+    'win.reset':'Window switched · checkpoint','win.resetCount':'Window switched · checkpoint ({n})','win.note':'The engine carried the context over automatically after hitting its context limit — this is not a manual compaction, and the context ring and mask are unaffected.',
+    'sub.title':'Sub-agents','sub.summary':'{a} sub-agent(s) · running {r} · waiting {w} · done {d}','sub.unsupported':'Engine not wired ({r})','sub.stopTurn':'Stop this turn (and its sub-agents)','sub.stopTurnHint':'Interrupts the whole turn, including every sub-agent; app-server has no per-sub-agent control RPC','sub.clearDone':'Clear finished','sub.stateSpawned':'Spawned','sub.stateRunning':'Running','sub.stateWaiting':'Waiting','sub.stateDone':'Done','sub.stateClosed':'Ended','sub.lastNone':'(no output yet)',
     'feed.empty':'Select a session on the left, or start a new one','feed.you':'You','session.newChat':'New chat','session.rename':'Rename','session.delete':'Delete','session.noMatch':'No matching sessions','ask.allDone':'All answered','ask.done':'{a}/{n} answered',
     'role.title':'Choose a role for this session','role.noRoles':'No roles yet — create one first','role.newRole':'New Role',
     'think.title':'Reasoning is not saved; only its duration is recorded','think.seconds':'Reasoned for {n} seconds','think.inProgress':'Thinking','err.generic':'Something went wrong',
-    'tool.run':'Running','tool.done':'Done','tool.processing':'Working…','plan.title':'Execution plan',
+    'tool.run':'Running','tool.done':'Done','tool.fail':'Failed','tool.processing':'Working…','plan.title':'Execution plan',
     'ask.confirmed':'Confirmed','ask.pendingTitle':'Awaiting your answer','ask.pending':'Awaiting answer','ask.skipped':'(skipped)','ask.otherPh':'Other…','ask.answerPh':'Type your answer…',
     'appr.needPrefix':'Approval needed · ','appr.operation':'action','appr.mcpEscalateTitle':'Escalation · remote MCP tool','appr.mcpConfirmTitle':'Confirm · MCP request','appr.mcpRun':'Allow the remote MCP tool to run: {t}','appr.patch':'Write approval · apply_patch','appr.exec':'Execution approval · exec_command','appr.outPolicy':"This action is outside the role's sandbox / approval policy",
     'mode.needSess':'Open or start a session first, then pick a mode','mode.select':'Choose session mode','mode.plan':'✦ Plan','mode.default':'Default','mode.free':'Auto-run','mode.planT':'✦ Plan mode','mode.planD':'Read-only research · produce a plan · confirm before executing (recommended for complex tasks)','mode.defaultT':'Default mode','mode.defaultD':'Writable workspace · commands need approval · explain big changes first','mode.freeT':'Auto-run mode','mode.freeD':'Full access · auto-execute · no approvals (only when you trust the model)','search.clear':'Clear','model.select':'Choose the model used for this conversation',
     'model.enableFirst':'(Enable a model first in Settings → Models)','model.noModelTitle':'No model configured','model.noModelMsg':'No model is enabled yet. Add a provider, enter its API key, and enable a model in Settings → Models.','model.goSettings':'Open settings','att.remove':'Remove','att.file':'Attachment','att.tooBig':'File too large (>20MB): ','att.upload':'Upload image / file','skill.choose':'Choose skills','model.addProvTitle':'Add provider · choose a preset',
     'skill.noSess':'Open or start a session first, then pick skills','skill.noAvail':'No usable skills for the current session','skill.noAvailSub':'Not imported/activated; role-specific skills are visible only to their bound role','skill.pickTitle':'Choose skills (this chat)',
-    'dial.hint':'Notice','dial.gotit':'Got it','sm.sub':'config','stop.title':'Stop current task (Esc×2)','send.title':'Send (⏎)','queue.title':'Queued (sent in order when this task ends)','queue.edit':'Edit','queue.del':'Delete','queue.steer':'Interject now (inject into the running task)','queue.steerFail':'Interject failed: ','modal.from':'From: {r} · {s}','modal.queuedMore':'{n} more request(s) from other sessions queued','gen.ctxTitle':'Context & auto-compact','gen.ctxPct':'Auto-compact threshold (%)','gen.l0Unit':'tokens','gen.ctxPctShort':'Compact at','gen.l0Short':'Tool output cap','gen.l0Label':'Tool output cap (tokens)','gen.ctxSave':'Save','gen.ctxSaved':'Saved (applies when the engine process restarts)','cfg.badTitle':'Engine config rejected','ctx.none':'Context —','ctx.usedTok':'{n} tokens used','ctx.noWindow':'Window size not measured yet (shows a percentage after one turn)','ctx.noneTip':'No turn has run in this session yet; after one turn this shows context usage (click to compact)','cfg.badMsg':'codex rejected the config.toml ROSE generated and fell back to defaults (model/provider/persona/MCP are inactive, which usually breaks conversations). Detail:','ws.pickTitle':'Choose the working directory for this session','ws.fail':'Failed to create session: ','ws.locked':'The working directory is fixed once created (start a new session to change it)','ctx.title':'Context usage · click to compact','ctx.used':'Context {p}%','ctx.compact':'Compact context','ctx.compacting':'Compacting…','ctx.done':'Context compacted','ctx.maskTitle':'Compacting context…','ctx.maskSub':'This session resumes automatically once compaction finishes; you can switch to another session meanwhile.','ctx.maskElapsed':'{n}s elapsed','ctx.fail':'Compaction failed: ','ctx.busy':'A task is running — stop it before compacting','ctx.timeout':'Timed out waiting for compaction; this session is released (click the ring to retry if needed).','settings':'Settings','nav.settings':'Settings','side.collapse':'Collapse sidebar','side.expand':'Expand sidebar','common.on':'on','common.off':'off','cmd.head':'Commands','cmd.panelOpened':'Panel opened','cmd.fail':'Failed: ','cmd.needArg':'Missing argument: {n}','cmd.needSession':'Open a session first to use this command','feed.noText':'(no text output this turn)',
+    'dial.hint':'Notice','dial.gotit':'Got it','sm.sub':'config','stop.title':'Stop current task (Esc×2)','send.title':'Send (⏎)','queue.title':'Queued (sent in order when this task ends)','queue.edit':'Edit','queue.del':'Delete','queue.steer':'Interject now (inject into the running task)','queue.steerFail':'Interject failed: ','modal.from':'From: {r} · {s}','modal.queuedMore':'{n} more request(s) from other sessions queued','gen.ctxTitle':'Context & auto-compact','gen.ctxPct':'Auto-compact threshold (%)','gen.l0Unit':'tokens','gen.ctxPctShort':'Compact at','gen.l0Short':'Tool output cap','gen.l0Label':'Tool output cap (tokens)','gen.ctxSave':'Save','gen.ctxSaved':'Saved (applies when the engine process restarts)','cfg.badTitle':'Engine config rejected','ctx.none':'Context —','ctx.usedTok':'{n} tokens used','ctx.noWindow':'Window size not measured yet (shows a percentage after one turn)','ctx.noneTip':'No turn has run in this session yet; after one turn this shows context usage (click to compact)','cfg.badMsg':'codex rejected the config.toml ROSE generated and fell back to defaults (model/provider/persona/MCP are inactive, which usually breaks conversations). Detail:','ws.pickTitle':'Choose the working directory for this session','ws.fail':'Failed to create session: ','ws.locked':'The working directory is fixed once created (start a new session to change it)','ctx.title':'Context usage · click to compact','ctx.used':'Context {p}%','ctx.compact':'Compact context','ctx.compacting':'Compacting…','ctx.done':'Context compacted','ctx.maskTitle':'Compacting context…','ctx.maskSub':'This session resumes automatically once compaction finishes; you can switch to another session meanwhile.','ctx.maskElapsed':'{n}s elapsed','ctx.fail':'Compaction failed: ','ctx.busy':'A task is running — stop it before compacting','ctx.timeout':'Timed out waiting for compaction; this session is released (click the ring to retry if needed).','settings':'Settings','nav.settings':'Settings','side.collapse':'Collapse sidebar','side.expand':'Expand sidebar','common.on':'on','common.off':'off','cmd.head':'Commands','cmd.panelOpened':'Panel opened','cmd.fail':'Failed: ','cmd.needArg':'Missing argument: {n}','cmd.needSession':'Open a session first to use this command','feed.noText':'(no text output this turn)','web.backendTitle':'Search backend','web.mcpOk':'Built-in search tool is ready (the model may call web_search)','web.mcpDown':'Built-in search tool is unavailable: {r}','web.toolBadge':'built-in search','web.backendHint':'The model calls the built-in `web_search` tool on its own — no switch needed. Configure the search backend here (leave empty for the keyless default).','web.sources':'Web search · {p} · {n} sources','web.none':'Web search returned no results','web.provider':'Search provider','web.keyPh':'SearXNG URL or API key (optional)','web.auto':'Auto (recommended)','cmd.web.desc':'Web search and cite sources','cmd.web.needArg':'Usage: /web <query>',
     'cmd.compact.desc':'Compact context (codex thread/compact/start)','cmd.compact.done':'Compaction started; usage refreshes when it finishes',
     'cmd.model.desc':'Show or switch this session\'s model','cmd.model.none':'No model enabled (Settings → Models)','cmd.model.list':'Enabled models:','cmd.model.current':'current','cmd.model.unknown':'No matching model: {n}','cmd.model.set':'Session model switched to {n} (applies next turn)',
     'cmd.approvals.desc':'Show or switch the approval policy','cmd.approvals.cur':'Approval policy: {n}','cmd.approvals.onRequest':'ask on request (recommended)','cmd.approvals.never':'never ask (risky)','cmd.approvals.bad':'Value must be on-request or never','cmd.approvals.set':'Approval policy switched to {n} (applies next turn)',
@@ -174,6 +184,16 @@ const state = {
   sandbox: null,  // Windows 沙箱状态（GET /api/sandbox）
   sandboxDismissed: null, // 已忽略的横幅状态（同一状态不再重复弹出）
   envcheck: null, // 最近一次环境自检结果
+  goals: {},           // sessionId -> 目标对象 | null（服务端/引擎权威，界面只缓存）
+  goalSupported: {},   // sessionId -> 该会话是否支持 goals（路由/引擎未就绪时为 false）
+  goalEditing: false,  // 目标栏是否处于就地编辑态
+  configWarnings: null, // 最近一次设置保存回包的 configWarnings（引擎拒绝某项能力的可读原因）
+  winResetPending: {}, // 非当前会话收到的窗口续接提示：sessionId -> [{t:'win-reset',...}]
+  subagents: {},   // sessionId -> { agentId: {id,title,state,lastText,ts} }（只读；SSE + GET 同步）
+  subSupported: {}, // sessionId -> 引擎是否接线了子代理（GET 的 supported）
+  subReason: {},    // sessionId -> supported:false 时的原因（照实显示）
+  subOpen: true,   // 子代理面板展开态（出现活动子代理时自动展开）
+  goalReason: {},  // sessionId -> 目标 supported:false 时的原因（本地快照标记的 title）
 };
 
 function markBusy(sid) { if (sid) { state.busySessions[sid] = true; if (isCurrent(sid)) syncGenRow(); } }
@@ -569,6 +589,10 @@ function feedAppendMsg(m, idx) {
     feed.appendChild(el);
   } else if (m.t === 'ask-answer') {
     // 应答不单独渲染（合并进 ask 摘要行）
+  } else if (m.t === 'web') {
+    // 历史记录兼容：预搜时代落盘的来源卡（现在联网走 web_search 工具，不再产生新记录）
+    feed.appendChild(webCardEl(m.v));
+    feedState.curAgent = null;
   } else if (m.t === 'think') {
     // 持久化的思考耗时摘要（思考正文不落盘）
     if (feedState.reasoning) { feedState.reasoning.el.fold(); feedState.reasoning = null; }
@@ -577,11 +601,22 @@ function feedAppendMsg(m, idx) {
     d.title = tr('think.title');
     d.innerHTML = `<div class="tk-head" style="cursor:default"><span class="tk-dot">✦</span><span class="tk-label">${tr('think.seconds').replace('{n}', esc(String(m.v.seconds)))}</span></div>`;
     feed.appendChild(d);
+  } else if (m.t === 'win-reset') {
+    // 引擎自发压缩后"换上下文窗口（检查点）"的提示行：**与压缩蒙版/圆环完全无关**
+    // （只在引擎自动续接时发；手动压缩不发）。契约没有窗口 id，只有次数与原因。
+    feedState.curAgent = null;
+    const n = Math.max(1, Math.round(Number(m.v && m.v.count) || 1));
+    const d = document.createElement('div');
+    d.className = 'sys-row win-reset';
+    d.innerHTML = `<span class="wr-ic">◎</span><span><b>${esc(n > 1 ? tr('win.resetCount').replace('{n}', String(n)) : tr('win.reset'))}</b><span class="wr-note">${tr('win.note')}</span></span>`;
+    feed.appendChild(d);
   } else if (m.t === 'tool') {
     feedState.curAgent = null;
     if (feedState.reasoning) feedState.reasoning.el.fold();
-    feedState.openCard = toolCard({ name: m.v.name, args: m.v.args, status: 'run', output: '' });
+    feedState.openCard = toolCard({ name: m.v.name, args: m.v.args, status: 'run', output: '', server: m.v.server || '' });
     feedState.openCard.dataset.toolId = m.v.toolId || '';
+    feedState.openCard.dataset.toolName = m.v.name || '';
+    if (m.v.server) feedState.openCard.dataset.server = m.v.server;
     feed.appendChild(feedState.openCard);
   } else if (m.t === 'error') {
     feedState.curAgent = null;
@@ -592,8 +627,17 @@ function feedAppendMsg(m, idx) {
   } else if (m.t === 'tool-end') {
     if (feedState.reasoning) feedState.reasoning.el.fold();
     const output = typeof m.v.output === 'string' ? m.v.output : JSON.stringify(m.v.output || '');
+    // ok:false = 引擎明确回报失败（如联网不可达）：如实显示失败 + 那段可读错误，不吞成空结果
+    const toolOk = m.v.ok !== false;
     if (feedState.openCard) {
-      feedState.openCard.fill({ status: 'ok', output });
+      feedState.openCard.fill({ status: toolOk ? 'ok' : 'error', output });
+      // 联网工具（web_search）成功时：卡片内追加来源链接（普通工具调用展示 + 来源可点）
+      const toolName = m.v.name || feedState.openCard.dataset.toolName || '';
+      const toolServer = m.v.server || feedState.openCard.dataset.server || '';
+      if (toolOk && isSearchTool(toolServer, toolName)) {
+        const web = parseWebToolOutput(toolName, output);
+        if (web) feedState.openCard.fillWeb(web);
+      }
       feedState.openCard = null;
     } else {
       feed.appendChild(toolCard({ name: 'tool', args: '', status: 'ok', output }));
@@ -693,22 +737,30 @@ function agentMsg(ts) {
 function toolCard(o) {
   const d = document.createElement('div');
   d.className = 'tool-card';
+  // 内置联网工具（MCP server=rose_search）：卡头加"内置搜索"角标，一眼可辨
+  const isSearch = isSearchTool(o.server, o.name);
   d.innerHTML = `
     <div class="th">
       <span class="ic tico">${toolIcon(o.name)}</span>
       <span class="tn">${esc(o.name)}</span>
+      ${isSearch ? `<span class="tn-badge">${esc(tr('web.toolBadge'))}</span>` : ''}
       <span class="ta">${esc(o.args || '')}</span>
       <span class="st ${o.status === 'ok' ? 'ok' : ''}">${o.status === 'run' ? '<span class="spin"></span>' + tr('tool.run') : ICONS.check + ' ' + tr('tool.done')}</span>
       <span class="caret">▾</span>
     </div>
-    <div class="tb"></div>`;
+    <div class="tb"></div>
+    <div class="wc-slot"></div>`;
+  d.dataset.server = o.server || '';
   d.querySelector('.th').addEventListener('click', () => d.classList.toggle('open'));
   // 建卡时若已带输出（历史重建 / tool-end 兜底路径）就先填好正文，展开即有内容
   if (o.output) d.querySelector('.tb').textContent = o.output;
   d.fill = (o) => {
     if (o.status) {
-      d.querySelector('.st').className = 'st ' + (o.status === 'ok' ? 'ok' : '');
-      d.querySelector('.st').innerHTML = o.status === 'run' ? '<span class="spin"></span>' + tr('tool.run') : ICONS.check + ' ' + tr('tool.done');
+      const st = d.querySelector('.st');
+      // 三种状态如实区分：运行中 / 成功 / 失败（引擎回 ok:false 时绝不能显示成"完成"）
+      if (o.status === 'run') { st.className = 'st'; st.innerHTML = '<span class="spin"></span>' + tr('tool.run'); }
+      else if (o.status === 'error') { st.className = 'st err'; st.innerHTML = '✗ ' + tr('tool.fail'); }
+      else { st.className = 'st ok'; st.innerHTML = ICONS.check + ' ' + tr('tool.done'); }
     }
     if (o.output !== undefined) d.querySelector('.tb').textContent = o.output || '';
   };
@@ -718,7 +770,76 @@ function toolCard(o) {
     d._out = (d._out || '') + delta;
     d.querySelector('.tb').textContent = d._out.length > 8000 ? '…' + d._out.slice(-8000) : d._out;
   };
+  // 联网类工具（web_search）：把来源链接渲染进卡内（沿用 .web-card 风格），展开卡即可见
+  d.fillWeb = (v) => {
+    const slot = d.querySelector('.wc-slot');
+    if (!slot || !v) return;
+    slot.innerHTML = '';
+    slot.appendChild(webCardEl(v));
+  };
   return d;
+}
+
+/** 联网来源卡片：显示查询词与来源链接（/web 手动搜索与 web_search 工具结果共用） */
+function webCardEl(v) {
+  const d = document.createElement('div');
+  d.className = 'web-card';
+  const rows = (v && v.results) || [];
+  const items = rows.map((r) => `<div class="wc-item">· <a href="${esc(r.url)}" target="_blank" rel="noreferrer">${esc(r.title || r.url)}</a>`
+    + (r.snippet ? `<div class="wc-sn">${esc(String(r.snippet).slice(0, 160))}</div>` : '') + '</div>').join('');
+  d.innerHTML = `<div class="wc-head">🌐 ${esc(tr('web.sources').replace('{p}', String((v && v.provider) || 'web')).replace('{n}', String(rows.length)))}`
+    + `${v && v.query ? ' · ' + esc(String(v.query).slice(0, 80)) : ''}</div>${items}`;
+  return d;
+}
+
+/** 是不是内置联网搜索工具：优先看 MCP server 字段（rose_search），其次看工具名（mcp:web_search） */
+function isSearchTool(server, name) {
+  return /rose[_-]?search/i.test(String(server || '')) || /web[_-]?search|search[_-]?web/i.test(String(name || ''));
+}
+
+/** 联网类工具调用：模型自己调 web_search 时，把结果里的来源链接按普通工具卡展示。
+    返回 {query, provider, results:[{title,url,snippet}]}；不是联网工具/解不出来则 null（照常只显示原始输出）。 */
+function parseWebToolOutput(name, output) {
+  if (!isSearchTool('', name)) return null;
+  const text = typeof output === 'string' ? output : JSON.stringify(output || '');
+  let data = null;
+  try { data = JSON.parse(text); } catch { /* 不是 JSON：退回正则抽 URL */ }
+  // MCP 常见包装：{ content: [{ type:'text', text:'<json 或纯文本>' }] }
+  if (data && Array.isArray(data.content)) {
+    const t = data.content.map((c) => (c && typeof c.text === 'string') ? c.text : '').join('\n');
+    try { data = JSON.parse(t); } catch { data = t; }
+  }
+  const results = [];
+  const push = (r) => {
+    if (!r || typeof r !== 'object') return;
+    const url = String(r.url || r.link || r.href || '').trim();
+    if (!/^https?:\/\//i.test(url)) return;
+    results.push({ url, title: String(r.title || r.name || url), snippet: String(r.snippet || r.description || r.content || r.text || '') });
+  };
+  if (data && typeof data === 'object') {
+    const arr = Array.isArray(data) ? data
+      : (Array.isArray(data.results) ? data.results
+        : (Array.isArray(data.items) ? data.items : (Array.isArray(data.data) ? data.data : [])));
+    arr.forEach(push);
+  }
+  if (!results.length) {
+    // 兜底：从原始文本里抽 http(s) 链接（去重、限量），保证"结果含来源链接"
+    const seen = new Set();
+    for (const m of text.matchAll(/https?:\/\/[^\s"'<>)\]]+/g)) {
+      const url = m[0].replace(/[.,;]+$/, '');
+      if (seen.has(url)) continue;
+      seen.add(url);
+      results.push({ url, title: url, snippet: '' });
+      if (results.length >= 8) break;
+    }
+  }
+  if (!results.length) return null;
+  const obj = (data && typeof data === 'object' && !Array.isArray(data)) ? data : {};
+  return {
+    query: typeof obj.query === 'string' ? obj.query : '',
+    provider: typeof obj.provider === 'string' ? obj.provider : '',
+    results: results.slice(0, 10),
+  };
 }
 
 function genRow(role) {
@@ -1062,6 +1183,7 @@ function setAgentStatus(mode, text) {
   if (mode === 'running' || mode === 'error') pill.classList.add(mode);
 }
 
+/** 联网开关的视觉状态（默认开；关闭后本轮不搜） */
 function renderTopbar() {
   const role = currentRole();
   if (role) {
@@ -1088,6 +1210,7 @@ function renderTopbar() {
   renderCtxHint();
   renderQueueHint();
   renderCompactMask();
+  renderGoalBar();   // 目标栏跟随会话/目标变化（编辑期间由 renderGoalBar 自己守卫，不吞输入）
 }
 
 // ---- 会话模式：由会话策略三元组推断，UI 以三种模式呈现 ----
@@ -1231,6 +1354,18 @@ function noticeLine(text) {
 
 const cmd = {
   // —— 引擎侧 ——
+  web: {
+    args: '<query>', desc: 'cmd.web.desc', needsSession: true,
+    async run(arg) {
+      const q = String(arg || '').trim();
+      if (!q) throw new Error(tr('cmd.web.needArg'));
+      const r = await api('POST', '/api/web/search', { query: q, limit: 5 });
+      if (!r || !r.results || !r.results.length) return tr('web.none');
+      const feed = $('#feed');
+      if (feed) { feed.appendChild(webCardEl({ query: q, provider: r.provider, results: r.results })); stickToBottom(); }
+      return tr('web.sources').replace('{p}', String(r.provider || 'web')).replace('{n}', String(r.results.length));
+    },
+  },
   compact: {
     args: '', desc: 'cmd.compact.desc',
     async run() {
@@ -1469,6 +1604,10 @@ async function openSession(id) {
   if (seq !== openSeq) return;   // 期间用户又点了别的会话：本次结果作废（含下面的 render）
   state.currentSession = { ...s, messages };
   state.selSkills = []; // 切换会话时清空已选技能
+  state.goalEditing = false;   // 目标栏编辑态不跨会话
+  // 切到该会话时补上"它不在前台时"收到的窗口续接提示（这些提示只存在于本次运行）
+  const pendWr = state.winResetPending[id];
+  if (pendWr && pendWr.length) { messages.push(...pendWr); delete state.winResetPending[id]; }
   // ⚠️ 待发附件也必须清空：否则在 A 里选的文件会被发给 B（发送允许"仅附件"，静默串台）
   state.attachments = [];
   renderAttPicks();
@@ -1476,6 +1615,8 @@ async function openSession(id) {
   await syncRunning(); // 打开即与服务端对账任务状态（含其它标签页/断线期间开始的任务）
   if (seq !== openSeq) return;
   renderSidebar(); renderFeed(); renderTopbar();
+  loadGoal(id);        // 目标以服务端为准（异步，不阻塞首屏）
+  loadSubagents(id);   // 子代理列表与服务端对账（路由未就绪时静默回落 SSE）
 }
 async function refreshSessions() { state.sessions = await api('GET', '/api/sessions'); }
 
@@ -1510,7 +1651,8 @@ async function stopCurrent() {
   try { await api('POST', '/api/interrupt', { sessionId: sid }); } catch {}
   // 乐观复位（即使中断广播因断线未收到也不卡死）；服务端随后会广播 turn/interrupted
   clearBusy(sid);
-  renderFeed(); renderTopbar();
+  settleSubagents(sid);   // 中断=回合结束：子代理不会再有事件，收口为已完成
+  renderFeed(); renderTopbar(); renderSubPanel();
 }
 
 // 会话重命名（侧栏内联编辑）：Enter 保存 / Esc 取消 / 失焦保存
@@ -1987,6 +2129,275 @@ function closeSkillPicker() {
   if (picker) picker.classList.remove('show');
 }
 
+/* ---------- 会话目标（引擎 goals RPC 为唯一事实源；界面只做展示与手动增改） ---------- */
+
+/** token 数展示：18342 → 18,342（零依赖，纯界面用） */
+function fmtTokens(n) {
+  const v = Math.round(Number(n));
+  if (!Number.isFinite(v)) return '—';
+  return String(v).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+}
+// 引擎状态：pending | active | done；缺失/未知按 active（有目标就该看到进度）
+function goalStatusOf(g) {
+  const s = g && g.status;
+  return (s === 'pending' || s === 'done') ? s : 'active';
+}
+function goalStatusLabel(g) {
+  const s = goalStatusOf(g);
+  return s === 'pending' ? tr('goal.statusPending') : (s === 'done' ? tr('goal.statusDone') : tr('goal.statusActive'));
+}
+/** token 用量文案：预算优先取 goal.tokenBudget（目标自己的预算）。
+    缺失时只报"已用"，另附 global.rolloutTokenLimit —— 那是**单轮硬上限**、语义不同，
+    仅作文案兜底，绝不能顶替目标预算。 */
+function goalMetaText(g) {
+  if (!g) return '';
+  const used = Number.isFinite(Number(g.tokensUsed)) ? Number(g.tokensUsed) : null;
+  const budget = Number.isFinite(Number(g.tokenBudget)) ? Number(g.tokenBudget) : 0;
+  const cap = Number(((state.settings && state.settings.global) || {}).rolloutTokenLimit);
+  if (budget > 0) return tr('goal.tokens').replace('{u}', used === null ? '—' : fmtTokens(used)).replace('{l}', fmtTokens(budget));
+  if (used === null) return '';
+  const base = tr('goal.tokensNoBudget').replace('{u}', fmtTokens(used));
+  return (Number.isFinite(cap) && cap > 0) ? base + ' · ' + tr('goal.capNote').replace('{l}', fmtTokens(cap)) : base;
+}
+
+/** 目标栏渲染（唯一入口）：无目标且非编辑态时整体隐藏。
+    编辑态是**就地**输入（不引入新弹窗基建），编辑期间 renderTopbar 不会重建它（见 renderGoalBar 守卫）。 */
+function renderGoalBar() {
+  const bar = $('#goalBar');
+  if (!bar) return;
+  // 编辑期间禁止重建：renderTopbar() 在回合结束等场景会被调用，重建会吞掉用户正在输入的正文
+  if (state.goalEditing && bar.dataset.mode === 'edit') return;
+  const s = state.currentSession;
+  if (!s) { bar.hidden = true; bar.innerHTML = ''; bar.dataset.mode = 'hidden'; state.goalEditing = false; return; }
+  const g = state.goals[s.id] || null;
+  if (state.goalEditing) {
+    bar.hidden = false;
+    bar.dataset.mode = 'edit';
+    bar.innerHTML = `
+      <span class="goal-ic">◎</span>
+      <input class="goal-input" id="goalInput" maxlength="2000" placeholder="${esc(tr('goal.editPh'))}" value="${esc((g && g.text) || '')}" spellcheck="false" autocomplete="off">
+      <select class="goal-select" id="goalStatus" title="${esc(tr('goal.title'))}">
+        ${[['pending', tr('goal.statusPending')], ['active', tr('goal.statusActive')], ['done', tr('goal.statusDone')]]
+          .map(([v, l]) => `<option value="${v}"${goalStatusOf(g) === v ? ' selected' : ''}>${esc(l)}</option>`).join('')}
+      </select>
+      <button class="goal-act goal-btn-pri" id="goalSave" type="button">${tr('goal.save')}</button>
+      <button class="goal-act" id="goalCancel" type="button">${tr('goal.cancel')}</button>
+      <span class="goal-msg" id="goalMsg"></span>`;
+    const inp = bar.querySelector('#goalInput');
+    if (inp) { inp.focus(); inp.select(); }
+    bar.querySelector('#goalCancel').addEventListener('click', () => { state.goalEditing = false; renderGoalBar(); });
+    bar.querySelector('#goalSave').addEventListener('click', async () => {
+      const text = String(bar.querySelector('#goalInput').value || '').trim();
+      const status = bar.querySelector('#goalStatus').value;
+      if (!text) { const m = bar.querySelector('#goalMsg'); if (m) m.textContent = tr('goal.editPh'); return; }
+      const btn = bar.querySelector('#goalSave');
+      btn.disabled = true;
+      const okSaved = await saveGoal({ text, status });
+      if (!okSaved && btn.isConnected) btn.disabled = false;
+    });
+    if (inp) inp.addEventListener('keydown', (e) => {
+      // Enter 保存 / Esc 取消（与项目其它内联编辑一致；中文输入法组字中的 Enter 不触发）
+      if (e.key === 'Enter' && !e.isComposing && e.keyCode !== 229) { e.preventDefault(); bar.querySelector('#goalSave').click(); }
+      else if (e.key === 'Escape') { e.preventDefault(); state.goalEditing = false; renderGoalBar(); }
+    });
+    return;
+  }
+  if (!g || !g.text) { bar.hidden = true; bar.innerHTML = ''; bar.dataset.mode = 'hidden'; return; }
+  const meta = goalMetaText(g);
+  const isLocal = state.goalSupported[s.id] === false;
+  bar.hidden = false;
+  bar.dataset.mode = 'view';
+  bar.innerHTML = `
+    <span class="goal-ic">◎</span>
+    <span class="goal-text" id="goalText" title="${esc(g.text)}">${esc(g.text)}</span>
+    <span class="goal-meta" id="goalMeta">${isLocal ? `<span class="goal-pill local" title="${esc(state.goalReason[s.id] || tr('goal.unavailable'))}">${esc(tr('goal.localTag'))}</span>` : ''}<span class="goal-pill ${goalStatusOf(g)}">${esc(goalStatusLabel(g))}</span>${meta ? esc(meta) : ''}</span>
+    <button class="goal-act" id="goalEdit" type="button">${tr('goal.edit')}</button>
+    <button class="goal-x" id="goalClear" type="button" title="${esc(tr('goal.clear'))}">✕</button>
+    <span class="goal-msg" id="goalMsg"></span>`;
+  bar.querySelector('#goalEdit').addEventListener('click', openGoalEditor);
+  bar.querySelector('#goalClear').addEventListener('click', async () => {
+    const v = await uiDialog({
+      title: tr('goal.title'), message: tr('goal.clearConfirm'),
+      buttons: [{ label: tr('common.cancel'), value: null }, { label: tr('goal.clear'), value: 'clear', danger: true, primary: true }],
+    });
+    if (v === 'clear') await saveGoal({ clear: true });
+  });
+}
+
+/** 打开目标编辑器（输入框旁的 ◎ 按钮与栏内「编辑」共用） */
+function openGoalEditor() {
+  if (!state.currentSession) {
+    uiDialog({ title: tr('goal.title'), message: tr('goal.needSession'), buttons: [{ label: tr('common.ok'), value: 1, primary: true }] });
+    return;
+  }
+  if (state.goalSupported[state.currentSession.id] === false) {
+    uiDialog({ title: tr('goal.title'), message: tr('goal.unavailable'), buttons: [{ label: tr('common.ok'), value: 1, primary: true }] });
+    return;
+  }
+  state.goalEditing = true;
+  renderGoalBar();
+}
+
+/** 进会话时拉一次目标（服务端权威）。路由未就绪 → 标记 supported=false，界面显式提示而不是静默空栏 */
+async function loadGoal(sid) {
+  if (!sid) return;
+  let r = null;
+  try { r = await api('GET', '/api/sessions/' + sid + '/goal'); } catch { r = null; }
+  const routeOk = !!(r && !r.error);
+  state.goalSupported[sid] = routeOk && r.supported !== false;
+  state.goalReason[sid] = String((r && r.reason) || '');
+  if (routeOk) state.goals[sid] = r.goal || null;
+  if (isCurrent(sid)) renderGoalBar();
+}
+
+/** 手动增改/清除：PUT 一次，用响应体回读收敛（契约不要求二次 GET）。
+    payload = { text, status } 或 { clear: true } */
+async function saveGoal(payload) {
+  const s = state.currentSession;
+  if (!s) return false;
+  const sid = s.id;
+  let r = null;
+  try { r = await api('PUT', '/api/sessions/' + sid + '/goal', payload); }
+  catch (e) { r = { error: (e && e.message) || String(e) }; }
+  if (!r || r.error) {
+    uiDialog({
+      title: tr('goal.title'),
+      message: tr('goal.saveFail') + ((r && r.error) || tr('goal.unavailable')),
+      buttons: [{ label: tr('common.ok'), value: 1, primary: true }],
+    });
+    return false;
+  }
+  // 服务端权威：优先用响应里的 goal；响应只有裸 goal 对象时也认；再退到刚才的乐观值
+  let g;
+  if (r.goal !== undefined) g = r.goal;
+  else if (typeof r.text === 'string') g = r;
+  else if (payload && payload.clear) g = null;
+  else g = { ...(state.goals[sid] || {}), ...(payload || {}) };
+  state.goals[sid] = g || null;
+  // 引擎不可用时服务端回 {ok, supported:false, goal, reason}：目标仍被保存为**本地快照**，
+  // 界面照实标"本地目标（引擎不可用）"，不假装引擎已接受。
+  state.goalSupported[sid] = r.supported !== false;
+  state.goalReason[sid] = String(r.reason || '');
+  state.goalEditing = false;
+  if (isCurrent(sid)) {
+    renderGoalBar();
+    const m = $('#goalMsg');
+    if (m) { m.textContent = tr('goal.saved'); setTimeout(() => { if (m.isConnected) m.textContent = ''; }, 3000); }
+  }
+  return true;
+}
+
+/* ---------- 子代理面板（只读状态；唯一动作 = 停止本回合，含其子代理） ----------
+   事实（探针确认）：app-server 没有子代理控制 RPC —— 因此**不做** per-agent 终止/恢复，
+   界面上也不给"单独杀某个子代理"的暗示。停止走既有 interrupt 通道（stopCurrent）。 */
+const SUB_STATES = ['running', 'waiting', 'spawned', 'done', 'closed'];
+const SUB_ACTIVE = new Set(['running', 'waiting', 'spawned']);
+
+function subListOf(sid) {
+  const m = (sid && state.subagents[sid]) || {};
+  return Object.values(m).sort((a, b) => {
+    const d = SUB_STATES.indexOf(a.state) - SUB_STATES.indexOf(b.state);
+    return d !== 0 ? d : ((b.ts || 0) - (a.ts || 0));
+  });
+}
+function subStateLabel(st) {
+  return { spawned: tr('sub.stateSpawned'), running: tr('sub.stateRunning'), waiting: tr('sub.stateWaiting'),
+    done: tr('sub.stateDone'), closed: tr('sub.stateClosed') }[st] || tr('sub.stateRunning');
+}
+/** SSE kind=subagent 的落库点：按 agentId upsert（同一子代理的多次事件只更新一行） */
+function upsertSubagent(d) {
+  if (!d || !d.sessionId || !d.id) return;
+  const m = (state.subagents[d.sessionId] = state.subagents[d.sessionId] || {});
+  const prev = m[d.id] || {};
+  const st = SUB_STATES.includes(d.state) ? d.state : (prev.state || 'running');
+  m[d.id] = {
+    id: String(d.id),
+    title: d.title !== undefined && d.title !== null && d.title !== '' ? String(d.title) : (prev.title || String(d.id)),
+    state: st,
+    lastText: d.lastText !== undefined ? String(d.lastText) : (prev.lastText || ''),
+    ts: Date.now(),
+  };
+  if (SUB_ACTIVE.has(st)) state.subOpen = true;   // 出现活动子代理 → 自动展开
+  if (isCurrent(d.sessionId)) renderSubPanel();
+}
+/** 回合已结束（turn/中断）时收尾：还在 running/waiting 的行不可能再收到事件，
+    按"已完成"收口（引擎随后若补发 done/closed 会覆盖这里）。 */
+function settleSubagents(sid) {
+  const m = sid && state.subagents[sid];
+  if (!m) return;
+  let changed = false;
+  for (const a of Object.values(m)) if (SUB_ACTIVE.has(a.state)) { a.state = 'done'; a.ts = Date.now(); changed = true; }
+  if (changed && isCurrent(sid)) renderSubPanel();
+}
+function renderSubPanel() {
+  const panel = $('#subPanel');
+  if (!panel) return;
+  const s = state.currentSession;
+  const arr = s ? subListOf(s.id) : [];
+  // 引擎未接线：只在"回合进行中"给一行说明（此时用户才会期待子代理出现）；
+  // 空闲时不占用界面，且**从不**宣称"暂无子代理"。
+  const unsupported = !!(s && state.subSupported[s.id] === false && curBusy());
+  if (!arr.length && !unsupported) { panel.hidden = true; panel.classList.remove('open'); return; }
+  const running = arr.filter((a) => SUB_ACTIVE.has(a.state)).length;
+  const waiting = arr.filter((a) => a.state === 'waiting').length;
+  const done = arr.filter((a) => a.state === 'done' || a.state === 'closed').length;
+  panel.hidden = false;
+  panel.classList.toggle('open', !!state.subOpen || (unsupported && !arr.length));
+  const sum = $('#subSummary');
+  if (sum) {
+    sum.textContent = unsupported && !arr.length
+      ? tr('sub.unsupported').replace('{r}', state.subReason[s.id] || tr('native.unavailable'))
+      : tr('sub.summary').replace('{a}', String(arr.length))
+        .replace('{r}', String(running)).replace('{w}', String(waiting)).replace('{d}', String(done));
+    sum.title = tr('sub.title');
+  }
+  const stop = $('#subStop');
+  // 与 #stopBtn 同一真相：只有"本回合在跑"且"仍有活动子代理"时才提供停止，
+  // 绝不允许出现「回合已结束但子代理面板还亮着停止」这种与 #stopBtn 不一致的状态。
+  if (stop) stop.hidden = !(running > 0 && curBusy());
+  const clear = $('#subClear');
+  if (clear) clear.hidden = done === 0;
+  const list = $('#subList');
+  if (!list) return;
+  if (!arr.length) {
+    list.innerHTML = `<div class="sub-row"><span class="sr-last">${esc(tr('sub.unsupported').replace('{r}', state.subReason[s.id] || tr('native.unavailable')))}</span></div>`;
+    return;
+  }
+  list.innerHTML = arr.map((a) => `<div class="sub-row ${esc(a.state)}" data-agent-id="${esc(a.id)}">
+      <span class="sr-name" title="${esc(a.title || a.id)}">${esc(a.title || a.id)}</span>
+      <span class="sr-state ${esc(a.state)}">${esc(subStateLabel(a.state))}</span>
+      <span class="sr-last">${esc(a.lastText || tr('sub.lastNone'))}</span>
+    </div>`).join('');
+}
+/** 进会话时与服务端对账：{ok, supported, subagents[], reason}。
+    supported:false（引擎未接线）→ 记住原因：回合进行中会在面板里明写"引擎未接线"，
+    而不是给人一个空洞的面板（空面板本身也从不宣称"暂无子代理"）。 */
+async function loadSubagents(sid) {
+  if (!sid) return;
+  let r = null;
+  try { r = await api('GET', '/api/sessions/' + sid + '/subagents'); } catch { r = null; }
+  if (!r || r.error) return;   // 路由未就绪：只靠 SSE，不刷错误
+  state.subSupported[sid] = r.supported !== false;
+  state.subReason[sid] = String(r.reason || '');
+  const list = Array.isArray(r.subagents) ? r.subagents : (Array.isArray(r.agents) ? r.agents : (Array.isArray(r) ? r : []));
+  const m = {};
+  for (const a of list) {
+    if (!a || !a.id) continue;
+    const st = SUB_STATES.includes(a.state) ? a.state : 'running';
+    m[String(a.id)] = { id: String(a.id), title: a.title ? String(a.title) : String(a.id), state: st,
+      lastText: a.lastText !== undefined ? String(a.lastText) : '', ts: Date.now() };
+  }
+  state.subagents[sid] = m;
+  if (isCurrent(sid)) renderSubPanel();
+}
+function clearFinishedSubagents() {
+  const s = state.currentSession;
+  if (!s || !state.subagents[s.id]) return;
+  const m = state.subagents[s.id];
+  for (const [id, a] of Object.entries(m)) if (a.state === 'done' || a.state === 'closed') delete m[id];
+  renderSubPanel();
+}
+
 /* ---------- SSE ---------- */
 
 function connectSSE() {
@@ -2013,6 +2424,40 @@ function connectSSE() {
         if (d.window) state.currentSession.contextWindow = d.window;
         renderCtxHint();
       }
+      return;
+    }
+    if (d.kind === 'goal') {
+      // 目标是服务端/引擎权威：无论是否正在看该会话都先缓存（切回来即最新）；不重渲染消息流
+      state.goals[d.sessionId] = d.goal === undefined ? null : d.goal;
+      state.goalSupported[d.sessionId] = true;
+      if (isCurrent(d.sessionId)) renderGoalBar();
+      return;
+    }
+    if (d.kind === 'window-reset') {
+      // 引擎自发压缩 → 换上下文窗口（检查点）。契约：{sessionId, count, reason:'engine-compaction'}，
+      // **没有窗口 id**（引擎只发"发生了续接"这一事实）。这里只追加一条提示行，
+      // 绝不引用 compactingSessions / ctxHint —— 换窗口不是压缩蒙版那条链路。
+      const rec = {
+        t: 'win-reset',
+        v: {
+          count: Number.isFinite(Number(d.count)) && Number(d.count) > 0 ? Math.round(Number(d.count)) : 1,
+          reason: d.reason ? String(d.reason) : 'engine-compaction',
+        },
+        ts: Date.now(),
+      };
+      if (isCurrent(d.sessionId)) {
+        state.currentSession.messages.push(rec);
+        appendFeedEvent(d);   // 行内已含说明文案，不再额外插 sys-row（避免重复提示）
+      } else if (d.sessionId) {
+        // 后台会话先记着：切到该会话时补进消息流（提示不丢）
+        if (!state.winResetPending[d.sessionId]) state.winResetPending[d.sessionId] = [];
+        state.winResetPending[d.sessionId].push(rec);
+      }
+      return;
+    }
+    if (d.kind === 'subagent') {
+      // 子代理状态：后台会话也要收（切回时会话列表/面板已是新的）；只更新面板，不碰消息流
+      upsertSubagent(d);
       return;
     }
     // ② 其余事件只影响"正在看的那个会话"
@@ -2128,6 +2573,7 @@ function connectSSE() {
     const d = JSON.parse(e.data);
     // busy 状态按会话记录：无论当前是否正在看该会话都先解除任务标记
     clearBusy(d.sessionId);
+    settleSubagents(d.sessionId);   // 回合结束：仍在"运行中"的子代理行按已完成收口（不再有事件会来）
     flushQueue(d.sessionId);   // 有排队消息则接着发（本轮结束不再空转）
     closeStaleModals(d.sessionId);   // 回合已结束：该会话没来得及应答的审批弹窗必须撤掉
     if (!state.currentSession || d.sessionId !== state.currentSession.id) return;
@@ -2153,7 +2599,7 @@ function connectSSE() {
 /* ---------- 设置弹窗（左侧导航） ---------- */
 
 let smNav = 'model';
-const NAV_TITLES = { model: 'nav.model', prompt: 'nav.prompt', memory: 'nav.memory', roles: 'nav.roles', skills: 'nav.skills', mcp: 'nav.mcp', usage: 'nav.usage', general: 'nav.general', env: 'nav.env' };
+const NAV_TITLES = { model: 'nav.model', prompt: 'nav.prompt', memory: 'nav.memory', roles: 'nav.roles', skills: 'nav.skills', mcp: 'nav.mcp', usage: 'nav.usage', general: 'nav.general', native: 'nav.native', env: 'nav.env' };
 let settingsCache = null; // GET /api/settings 缓存
 
 function openSettings(nav) {
@@ -2210,6 +2656,7 @@ function renderPanel() {
   else if (smNav === 'mcp') renderMcpPanel(body);
   else if (smNav === 'usage') renderUsagePanel(body);
   else if (smNav === 'general') renderGeneralPanel(body);
+  else if (smNav === 'native') renderNativePanel(body);
   else if (smNav === 'env') renderEnvPanel(body);
 }
 
@@ -2267,8 +2714,20 @@ function renderGeneralPanel(body) {
     </label>`;
   // 自动压缩阈值（%）：窗口解析（用户声明 > 引擎实测 > 家族默认）由服务端算好，见 /api/settings.contextWindows
   const g = (state.settings && state.settings.global) || {};
+  const gw = g.web || {};
   const acp = Number.isFinite(Number(g.autoCompactPercent)) ? Number(g.autoCompactPercent) : 80;
   const l0 = Number.isFinite(Number(g.toolOutputTokenLimit)) ? Number(g.toolOutputTokenLimit) : 8000;
+  // 关窗行为：hide（默认，关窗后任务继续）/ quit（关窗即走退出流程）。两种都先做退出前任务确认。
+  const closeVal = g.closeBehavior === 'quit' ? 'quit' : 'hide';
+  const closeOpts = [
+    { v:'hide', label: tr('gen.closeHide'), desc: tr('gen.closeHideDesc') },
+    { v:'quit', label: tr('gen.closeQuit'), desc: tr('gen.closeQuitDesc') },
+  ];
+  // task-12：内置搜索 MCP 是否就位（nativeSupport.searchMcp）→ 就位/降级都照实说，不假装可用
+  const sm = (state.settings && state.settings.nativeSupport && state.settings.nativeSupport.searchMcp) || null;
+  const smOk = !!(sm && sm.supported === true);
+  const smNote = !sm ? ''
+    : (smOk ? '✓ ' + tr('web.mcpOk') : '⚠ ' + tr('web.mcpDown').replace('{r}', sm.reason || tr('native.unavailable')));
   const cw = (state.settings && state.settings.contextWindows) || {};
   body.innerHTML = `
     <div class="sp-section">
@@ -2295,6 +2754,28 @@ function renderGeneralPanel(body) {
         <button class="btn" id="acpSave" style="padding:5px 12px;font-size:12px">${tr('gen.ctxSave')}</button>
         <span class="hint" id="acpMsg" style="font-size:11.5px;color:var(--faint)"></span>
       </div>
+    </div>
+    <div class="sp-section" id="closeBehaviorRow">
+      <h4>${tr('gen.closeTitle')}</h4>
+      <div style="display:flex;gap:10px;max-width:470px;margin-top:8px">
+        ${closeOpts.map((o) => card(o, 'closeBehavior', closeVal === o.v)).join('')}
+      </div>
+      <p class="hint" id="closeNote" style="font-size:11.5px;color:var(--faint);margin:9px 0 0">${tr('gen.closeNote')}</p>
+      <span class="hint" id="closeMsg" style="font-size:11.5px;color:var(--faint)"></span>
+    </div>
+    <div class="sp-section">
+      <h4>${tr('web.backendTitle')}</h4>
+      <p class="hint" style="font-size:11.5px;color:var(--faint);margin:0 0 8px">${tr('web.backendHint')}</p>
+      <div style="display:flex;align-items:center;gap:10px;max-width:640px;flex-wrap:wrap;margin-top:8px">
+        <label for="webProv" class="gen-lbl">${tr('web.provider')}</label>
+        <select id="webProv" style="padding:5px 8px;border:1px solid var(--border);border-radius:8px;background:var(--panel);color:var(--text);font-family:inherit">
+          ${['auto','bing','searxng','tavily','brave','exa','ddg'].map((v) => `<option value="${v}" ${(gw.provider || 'auto') === v ? 'selected' : ''}>${v === 'auto' ? tr('web.auto') : v}</option>`).join('')}
+        </select>
+        <input type="text" id="webKey" placeholder="${esc(tr('web.keyPh'))}" value="${esc(gw.searxngUrl || '')}" style="flex:1;min-width:180px;padding:5px 8px;border:1px solid var(--border);border-radius:8px;background:var(--panel);color:var(--text);font-family:inherit">
+        <button class="btn" id="webSave" style="padding:5px 12px;font-size:12px">${tr('gen.ctxSave')}</button>
+        <span class="hint" id="webMsg" style="font-size:11.5px;color:var(--faint)"></span>
+      </div>
+      <p class="hint" id="webMcpState" style="font-size:11.5px;color:${smOk ? 'var(--ok)' : 'var(--warn)'};margin:8px 0 0"${smNote ? '' : ' hidden'}>${esc(smNote)}</p>
     </div>`;
   body.querySelectorAll('input[name="theme"]').forEach((r) => r.addEventListener('change', async () => {
     if (!r.checked) return;
@@ -2304,6 +2785,22 @@ function renderGeneralPanel(body) {
     if (!r.checked) return;
     await setLang(r.value); renderGeneralPanel(body);
   }));
+  const webSave = body.querySelector('#webSave');
+  if (webSave) webSave.addEventListener('click', async () => {
+    const prov = body.querySelector('#webProv').value;
+    const val = body.querySelector('#webKey').value.trim();
+    // 只保存"搜索后端"：联网本身由模型自行调用内置 web_search 工具，无开关、无 enabled 字段
+    const web = { provider: prov };
+    // 输入框按所选源解释：SearXNG 填地址；tavily/brave/exa 填 key
+    if (prov === 'searxng') web.searxngUrl = val;
+    else if (['tavily', 'brave', 'exa'].includes(prov)) web.keys = { [prov]: val };
+    applyConfigWarnings(await api('PUT', '/api/settings', { global: { web } }), tr('web.backendTitle'));
+    const fresh = await api('GET', '/api/settings');
+    state.settings = { ...(state.settings || {}), ...fresh };
+    renderGeneralPanel(body);
+    const m = body.querySelector('#webMsg');
+    if (m) { m.textContent = tr('gen.ctxSaved'); setTimeout(() => { m.textContent = ''; }, 4000); }
+  });
   const acpBtn = body.querySelector('#acpSave');
   if (acpBtn) acpBtn.addEventListener('click', async () => {
     const inp = body.querySelector('#acpInput');
@@ -2315,12 +2812,110 @@ function renderGeneralPanel(body) {
     const l0El = body.querySelector('#l0Input');
     const l0v = Math.round(Number(l0El && l0El.value));
     const l0ok = Number.isFinite(l0v) && l0v >= 500 && l0v <= 200000;
-    await api('PUT', '/api/settings', { global: { autoCompactPercent: v, ...(l0ok ? { toolOutputTokenLimit: l0v } : {}) } });
+    applyConfigWarnings(await api('PUT', '/api/settings', { global: { autoCompactPercent: v, ...(l0ok ? { toolOutputTokenLimit: l0v } : {}) } }), tr('gen.ctxTitle'));
     state.settings = state.settings || {}; state.settings.global = { ...(state.settings.global || {}), autoCompactPercent: v, ...(l0ok ? { toolOutputTokenLimit: l0v } : {}) };
     if (!state.settings.contextWindows) state.settings.contextWindows = {};
     renderGeneralPanel(body);
     const m = body.querySelector('#acpMsg');
     if (m) { m.textContent = tr('gen.ctxSaved'); setTimeout(() => { m.textContent = ''; }, 4000); }
+  });
+  // 关窗行为：立即落盘（与主题/语言同为"改即生效"的偏好项）
+  body.querySelectorAll('input[name="closeBehavior"]').forEach((r) => r.addEventListener('change', async () => {
+    if (!r.checked) return;
+    const val = r.value === 'quit' ? 'quit' : 'hide';
+    state.settings = state.settings || {}; state.settings.global = { ...(state.settings.global || {}), closeBehavior: val };
+    try { applyConfigWarnings(await api('PUT', '/api/settings', { global: { closeBehavior: val } }), tr('gen.closeTitle')); } catch {}
+    renderGeneralPanel(body);
+    const m = body.querySelector('#closeMsg');
+    if (m) { m.textContent = tr('gen.ctxSaved'); setTimeout(() => { m.textContent = ''; }, 4000); }
+  }));
+}
+
+/* ---------- 引擎配置（单轮 token 预算 + 引擎配置告警） ----------
+   hooks 已按裁定**整块删除**：引擎判 untrusted 且不执行、无信任 RPC，展示一个永不生效的能力是误导。
+   保留：① 单轮 token 预算（禁用态 + 0.152.1 原因，仍是有效信息）；
+        ② configWarnings —— PUT /api/settings 回包里"某项能力不生效"的可读原因，与 hooks 无关。 */
+/** 后端能力位：`nativeSupport.rolloutTokenLimit = {supported, reason, requested}`（另兼容
+    {capabilities|native|nativeCaps}.rolloutBudget）。拿不到就当"不支持"（当前引擎事实如此），
+    并把原因与"已保存值"照实显示 —— 绝不假装能生效。 */
+function rolloutBudgetCap() {
+  const s = state.settings || {};
+  const ns = (s.nativeSupport && s.nativeSupport.rolloutTokenLimit) || null;
+  if (ns && typeof ns === 'object') {
+    const req = Number(ns.requested);
+    return {
+      supported: ns.supported === true,
+      reason: String(ns.reason || ''),
+      requested: (ns.requested !== null && ns.requested !== undefined && Number.isFinite(req) && req > 0) ? req : null,
+    };
+  }
+  const caps = s.capabilities || s.native || s.nativeCaps || {};
+  const c = (caps && (caps.rolloutBudget || caps.rollout_budget)) || null;
+  if (c && typeof c === 'object' && c.supported === true) return { supported: true, reason: String(c.reason || ''), requested: null };
+  return { supported: false, reason: (c && typeof c === 'object' && c.reason) ? String(c.reason) : '', requested: null };
+}
+
+/** 把 PUT /api/settings 回包的 configWarnings / engineRegression 收集起来，在「引擎配置」页照实显示 */
+function applyConfigWarnings(r, source) {
+  if (!r || typeof r !== 'object') return [];
+  const warns = Array.isArray(r.configWarnings) ? r.configWarnings.filter(Boolean).map(String) : [];
+  if (r.engineRegression && r.error) warns.unshift(tr('native.engineRegression') + String(r.error));
+  state.configWarnings = warns.length ? { at: Date.now(), source: String(source || ''), items: warns } : null;
+  renderCfgWarn();
+  return warns;
+}
+function renderCfgWarn() {
+  const el = $('#cfgWarn');
+  if (!el) return;
+  const w = state.configWarnings;
+  if (!w || !w.items.length) {
+    el.className = 'hint';
+    el.textContent = tr('native.cfgWarnNone');
+    return;
+  }
+  el.className = 'cfg-warn';
+  const from = w.source ? ' ' + tr('native.cfgWarnFrom').replace('{s}', w.source) : '';
+  el.textContent = '⚠ ' + w.items.join('；') + from;
+}
+
+function renderNativePanel(body) {
+  const g = (state.settings && state.settings.global) || {};
+  const rl = Number.isFinite(Number(g.rolloutTokenLimit)) && Number(g.rolloutTokenLimit) > 0 ? Number(g.rolloutTokenLimit) : '';
+  const cap = rolloutBudgetCap();
+  const budgetNote = cap.supported
+    ? ''
+    : ((cap.reason || tr('native.budgetUnsupported')) + (cap.requested ? ' ' + tr('native.budgetRequested').replace('{n}', fmtTokens(cap.requested)) : ''));
+  body.innerHTML = `
+    <div class="sp-section">
+      <h4>${tr('native.budget')}</h4>
+      <p class="hint" style="font-size:11.5px;color:var(--faint);margin:0 0 10px">${tr('native.budgetDesc')}</p>
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+        <input type="number" id="rolloutInput" min="1" step="1000" value="${rl}" placeholder="${esc(tr('native.budgetPh'))}"${cap.supported ? '' : ' disabled'} style="width:150px;padding:5px 8px;border:1px solid var(--border);border-radius:8px;background:var(--panel);color:var(--text);font-family:inherit">
+        <button class="btn" id="rolloutSave" style="padding:5px 12px;font-size:12px"${cap.supported ? '' : ' disabled'}>${tr('native.save')}</button>
+        <span class="hint" id="rolloutMsg" style="font-size:11.5px;color:${cap.supported ? 'var(--faint)' : 'var(--warn)'}">${esc(budgetNote)}</span>
+      </div>
+    </div>
+    <div class="sp-section">
+      <h4>${tr('native.cfgWarnTitle')}</h4>
+      <p class="hint" style="font-size:11.5px;color:var(--faint);margin:0 0 8px">${tr('native.cfgWarnHint')}</p>
+      <div id="cfgWarn" class="hint" style="font-size:11.5px;color:var(--faint)"></div>
+    </div>`;
+  renderCfgWarn();
+  const rlSave = body.querySelector('#rolloutSave');
+  if (rlSave) rlSave.addEventListener('click', async () => {
+    if (!cap.supported) return;   // 禁用态：不写盘、不假装成功
+    const inp = body.querySelector('#rolloutInput');
+    const msg = body.querySelector('#rolloutMsg');
+    const v = Math.round(Number(inp && inp.value));
+    if (!Number.isFinite(v) || v <= 0) {
+      uiDialog({ title: tr('dial.hint'), message: tr('native.budgetBad'), buttons: [{ label: tr('dial.gotit'), value: true, primary: true }] });
+      return;
+    }
+    const r = await api('PUT', '/api/settings', { global: { rolloutTokenLimit: v } });
+    applyConfigWarnings(r, tr('native.budget'));
+    state.settings = state.settings || {}; state.settings.global = { ...(state.settings.global || {}), rolloutTokenLimit: v };
+    renderGoalBar();
+    if (msg) { msg.textContent = tr('native.saved'); setTimeout(() => { if (msg.isConnected) msg.textContent = ''; }, 4000); }
   });
 }
 
@@ -3791,6 +4386,21 @@ async function polishEditor(btn, ta, statusEl) {
   $('#stopBtn').addEventListener('click', () => stopCurrent());
   const ctxEl = $('#ctxHint');
   if (ctxEl) ctxEl.addEventListener('click', () => compactContext());
+  // 会话目标：◎ 按钮 = 打开目标栏编辑态（无目标时用于手动新建）
+  const goalEl = $('#goalBtn');
+  if (goalEl) goalEl.addEventListener('click', () => openGoalEditor());
+  // 子代理面板：表头折叠 / 停止本回合（含子代理）/ 清空已完成
+  const subHead = $('#subHead');
+  if (subHead) subHead.addEventListener('click', (e) => {
+    if (e.target && e.target.closest && e.target.closest('button')) return;   // 点按钮不算折叠
+    state.subOpen = !state.subOpen;
+    renderSubPanel();
+  });
+  const subStopEl = $('#subStop');
+  if (subStopEl) subStopEl.addEventListener('click', () => stopCurrent());
+  const subClearEl = $('#subClear');
+  if (subClearEl) subClearEl.addEventListener('click', () => clearFinishedSubagents());
+  renderSubPanel();
   $('#input').addEventListener('keydown', (e) => {
     // 指令面板打开时接管方向键/Tab/Enter/Esc（对齐 dsh 的命令面板交互）
     const box = $('#cmdPicker');
