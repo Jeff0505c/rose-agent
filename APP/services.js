@@ -544,8 +544,6 @@ function nativeSupportOf(report, keys, re) {
       supported: v.supported !== false,
       trustStatus: v.trustStatus || null,
       reason: v.reason || null,
-      // rollout_budget.requested：引擎按当前设置按需计算（数字=用户已请求的 token 上限；null=未设置）
-      ...(typeof v.requested === 'number' || v.requested === null ? { requested: v.requested } : {}),
     }
     : null);
   for (const k of keys) { const hit = pick(report[k]); if (hit) return hit; }   // 1) 精确键名（camelCase/snake_case 别名）
@@ -1115,7 +1113,7 @@ function maintenanceModule() {
   try { return require('./core/maintenance'); } catch { return null; }
 }
 
-function buildDiagnostics() {
+function buildDiagnostics(support) {
   const cur = currentSettings();
   const L = [];
   L.push('=== ROSE 诊断报告 ===');
@@ -1204,7 +1202,11 @@ function buildDiagnostics() {
   L.push('');
   L.push('--- 原生能力（子代理/目标/窗口续接）---');
   L.push('关窗行为     ' + getCloseBehavior() + '（缺省 hide；消费方 = main.js close 分支）');
-  L.push('rollout 单轮上限 ' + ((cur.global || {}).rolloutTokenLimit || '（未设置）'));
+  const rts = (support && support.rollout) || NATIVE_SUPPORT_FALLBACK.rolloutTokenLimit;
+  L.push('rollout 单轮上限 ' + ((cur.global || {}).rolloutTokenLimit || '（未设置）')
+    + `（引擎支持：${rts.supported ? '是' : '否'}${rts.reason ? ' — ' + rts.reason : ''}）`);
+  const sms = (support && support.search) || NATIVE_SUPPORT_FALLBACK.searchMcp;
+  L.push('内置搜索工具 ' + (sms.supported ? '就位' : '未就位') + (sms.reason ? `（${sms.reason}）` : ''));
   L.push('最近配置警告 ' + (nativeConfigWarning ? JSON.stringify(nativeConfigWarning) : '（无）'));
   L.push('原生事件（最近 20 条）：');
   L.push(nativeAudit.length
@@ -1496,7 +1498,9 @@ route('GET', /^\/api\/envcheck$/, async (ctx) => {
 
 // #1e GET /api/diagnostics —— 诊断包（文本，已脱敏）：给用户贴 issue 用
 route('GET', /^\/api\/diagnostics$/, async () => {
-  return { status: 200, body: { filename: diagFilename(), text: buildDiagnostics() } };
+  // 事实信息写进诊断（UI 不再消费，但排查"引擎是否支持单轮预算/内置搜索工具"要看它）
+  const support = { rollout: await nativeSupportFor('rollout'), search: await nativeSupportFor('search') };
+  return { status: 200, body: { filename: diagFilename(), text: buildDiagnostics(support) } };
 });
 // #2 GET /api/running —— 当前有任务进行中的会话 id 列表（刷新后对账用）
 route('GET', /^\/api\/running$/, () => {
@@ -2017,7 +2021,8 @@ route('PUT', /^\/api\/settings$/, async (ctx) => {
     else if (CLOSE_BEHAVIORS.includes(oldCB)) nextGlobal.closeBehavior = oldCB;
     else delete nextGlobal.closeBehavior;
   }
-  // 单轮 rollout 硬上限（codex [features] rollout_budget.limit_tokens）：正整数校验，非法忽略（保留旧值）
+  // 单轮 rollout 硬上限（codex [features] rollout_budget.limit_tokens）：页面已删除，保留 API 级防御性校验；
+  // 正整数校验，非法忽略（保留旧值）
   if (body.global && body.global.rolloutTokenLimit !== undefined) {
     const n = Number(body.global.rolloutTokenLimit);
     const oldRT = (cur.global || {}).rolloutTokenLimit;
@@ -2048,9 +2053,9 @@ route('PUT', /^\/api\/settings$/, async (ctx) => {
   // rolloutTokenLimit 是与 config.toml 相关的项（将来引擎真支持时）：改动需先确认引擎接受，
   // 被拒则不落盘 —— 否则整份配置回落默认（模型/厂商/persona 全丢，v0.24.2 旧坑）
   const rolloutChanged = nextGlobal.rolloutTokenLimit !== (cur.global || {}).rolloutTokenLimit;
-  // ④ rolloutTokenLimit：字段保留与校验照旧，但**引擎不写进 config.toml**（写 rollout_budget
-  // 会连带 reminder_at_remaining_tokens 让整份配置被拒）→ 回包 supported:false，让 UI 如实说"不支持"，
-  // 且此变更不触发 invalidateProcs（配置没变，没必要重启 codex 进程）。
+  // rolloutTokenLimit：**设置页「引擎配置」已整体删除**（用户裁定），UI 不再写这个字段；
+  // 服务层保留它只为两件事：① API 级防御性校验（非法值不入库）；② 若仍有调用方写它，
+  // 且引擎报 supported:true 才走 validateConfig 防线（被拒则不落盘）。引擎不支持时配置没变 → 不 invalidate。
   const rolloutSupport = rolloutChanged ? await nativeSupportFor('rollout') : null;
   const nativeConfigChanged = rolloutChanged && !!(rolloutSupport && rolloutSupport.supported);
   let nativeVerify = null;
@@ -2080,8 +2085,6 @@ route('PUT', /^\/api\/settings$/, async (ctx) => {
   // 无需重启：Provider/提示词/记忆 都是下一轮即时生效（不再要求用户重启应用）
   return { status: 200, body: {
     ok: true, restart: false, providersChanged,
-    // rollout 变更：如实回报引擎是否支持（0.152.1 = false；字段仍保存，未来版本可用）
-    ...(rolloutSupport ? { rollout: rolloutSupport } : {}),
     // 配置类变更时显式报告"引擎是否确认接受"（无 validateConfig 时为 false + 可读原因）
     ...(nativeVerify ? {
       configVerified: nativeVerify.verified,

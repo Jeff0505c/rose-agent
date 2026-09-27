@@ -30,8 +30,9 @@ const I18N = {
     'roles.h4':'角色管理','roles.intro':'为不同专业或身份创建本地角色，并定义各自的人格与提示词；会话用到的沙箱、审批、模型在对话界面单独选择。','roles.add':'新增角色','roles.edit':'编辑','roles.delete':'删除','roles.delTitle':'删除角色','roles.delQ':'删除角色','roles.delWarn':'将同时删除该角色名下所有会话与其工作区，不可恢复。','roles.skillTitle':'专用技能','roles.skillKeep':'保留技能','roles.skillDel':'一并删除', 'roles.skillMsg':'该角色下有 {n} 个专用技能。是否一并删除？\n确定=一并删除技能；取消=保留技能（转为未激活）。',
 'common.delete':'删除','common.cancel':'取消',
 
-    'nav.model':'模型配置','nav.prompt':'全局提示词','nav.memory':'记忆','nav.roles':'角色管理','nav.skills':'技能','nav.mcp':'MCP 工具','nav.usage':'用量','nav.general':'通用','nav.native':'引擎配置','nav.env':'环境与诊断',
-    'native.cfgWarnTitle':'引擎配置告警','native.cfgWarnHint':'保存设置后，引擎若拒绝某项能力（例如某个开关在当前版本不生效），可读原因会显示在这里。','native.cfgWarnNone':'无告警（最近一次保存未报告配置问题）','native.cfgWarnFrom':'（来自 {s}）','native.engineRegression':'引擎配置生成异常（请反馈维护者，不是你的配置问题）：','native.budgetRequested':'（已保存 {n}，当前引擎不支持）','native.unavailable':'该能力当前不可用（服务或引擎未就绪）','native.budget':'单轮 token 预算','native.budgetDesc':'单轮硬上限（rollout_budget.limit_tokens）：一轮对话累计超过即停止。与"自动压缩阈值"不是同一件事。','native.budgetPh':'例如 200000','native.budgetUnsupported':'当前引擎版本（0.152.1）不支持该项：写 limit_tokens 不生效，写启用所需的 reminder_at_remaining_tokens 会让整份配置被拒。ROSE 不会写入它。','native.save':'保存','native.saved':'✓ 已保存（下次引擎进程启动生效）','native.budgetBad':'请输入正整数（tokens）',
+    'nav.model':'模型配置','nav.prompt':'全局提示词','nav.memory':'记忆','nav.roles':'角色管理','nav.skills':'技能','nav.mcp':'MCP 工具','nav.usage':'用量','nav.general':'通用','nav.env':'环境与诊断',
+    'common.unavailable':'该能力当前不可用（服务或引擎未就绪）','cfgWarn.from':'（来自 {s}）','cfgWarn.engineRegression':'引擎配置生成异常（请反馈维护者，不是你的配置问题）：',
+    
     'env.check':'环境自检','env.checkDesc':'检查运行时、数据目录、codex 二进制与已启用 MCP 的命令是否可用。只读检测，不修改任何文件。',
     'env.run':'重新检测','env.running':'检测中…','env.allOk':'全部通过','env.failCount':'{n} 项需要处理','env.warnCount':'{n} 项提示',
     'env.sandbox':'Windows 沙箱','env.sandboxDesc':'codex 在 Windows 上自带原生沙箱。elevated 创建独立低权限用户并配置防火墙（需一次管理员授权），unelevated 用受限令牌，网络隔离较弱。',
@@ -51,7 +52,7 @@ const I18N = {
     'gen.appearance':'外观 · 主题','gen.light':'浅色主题','gen.lightDesc':'明亮清爽，默认','gen.dark':'深色主题','gen.darkDesc':'暗色背景，夜间更护眼','gen.system':'跟随系统','gen.systemDesc':'随操作系统外观自动切换',
     'gen.lang':'界面语言 · Language',
     'gen.closeTitle':'关窗行为','gen.closeHide':'隐藏（默认）','gen.closeHideDesc':'关窗后应用与任务继续运行；点 Dock 图标或再次启动即可找回窗口','gen.closeQuit':'完全关闭','gen.closeQuitDesc':'关窗即退出应用；退出前会先确认运行中的任务','gen.closeNote':'两种行为都会在退出前确认运行中的任务，不会静默中断正在执行的工作。',
-    'goal.title':'会话目标','goal.localTag':'本地目标（引擎不可用）','goal.edit':'编辑','goal.save':'保存','goal.cancel':'取消','goal.clear':'清除目标','goal.clearConfirm':'清除本会话的目标？','goal.statusPending':'待开始','goal.statusActive':'进行中','goal.statusDone':'已完成','goal.tokens':'已用 {u} / 预算 {l} tokens','goal.tokensNoBudget':'已用 {u} tokens','goal.capNote':'单轮上限 {l}','goal.editPh':'用一句话描述这个会话要达成的目标…','goal.saved':'✓ 目标已保存','goal.saveFail':'目标保存失败：','goal.unavailable':'目标服务当前不可用（引擎未就绪）；这不影响正常对话。','goal.needSession':'请先打开或新建一个会话，再设置目标',
+    'goal.title':'会话目标','goal.localTag':'本地目标（引擎不可用）','goal.edit':'编辑','goal.save':'保存','goal.cancel':'取消','goal.clear':'清除目标','goal.clearConfirm':'清除本会话的目标？','goal.statusPending':'待开始','goal.statusActive':'进行中','goal.statusDone':'已完成','goal.tokens':'已用 {u} / 预算 {l} tokens','goal.tokensNoBudget':'已用 {u} tokens','goal.editPh':'用一句话描述这个会话要达成的目标…','goal.saved':'✓ 目标已保存','goal.saveFail':'目标保存失败：','goal.unavailable':'目标服务当前不可用（引擎未就绪）；这不影响正常对话。','goal.needSession':'请先打开或新建一个会话，再设置目标',
     'win.reset':'已换窗口 · 检查点','win.resetCount':'已换窗口 · 检查点（第 {n} 次）','win.note':'引擎到达上下文上限后自动续接（不是手动压缩）；压缩环与压缩蒙版不受影响。',
     'sub.title':'子代理','sub.summary':'子代理 {a} 个 · 运行中 {r} · 等待 {w} · 已完成 {d}','sub.unsupported':'引擎未接线（{r}）','sub.stopTurn':'停止本回合（含子代理）','sub.stopTurnHint':'会中断整个回合（含其全部子代理）；app-server 不支持单独结束某一个子代理','sub.clearDone':'清空已完成','sub.stateSpawned':'已派出','sub.stateRunning':'运行中','sub.stateWaiting':'等待中','sub.stateDone':'已完成','sub.stateClosed':'已结束','sub.lastNone':'（暂无输出）',
     'feed.empty':'选择左侧会话，或新建一个','feed.you':'你','session.newChat':'新建会话','session.rename':'重命名','session.delete':'删除','session.noMatch':'无匹配会话','ask.allDone':'全部已答','ask.done':'已答 {a}/{n} 题',
@@ -63,7 +64,7 @@ const I18N = {
     'mode.needSess':'先打开或新建一个会话，再选择模式','mode.select':'选择会话模式','mode.plan':'✦ 计划','mode.default':'默认','mode.free':'零监管','mode.planT':'✦ 计划模式','mode.planD':'只读研究 · 产出计划 · 确认后实施（复杂任务建议）','mode.defaultT':'默认模式','mode.defaultD':'可写工作区 · 命令需审批 · 大改动前先说明方案','mode.freeT':'零监管模式','mode.freeD':'完全访问 · 自动执行 · 不审批（仅信任模型时使用）','search.clear':'清除','model.select':'选择本次对话使用的模型',
     'model.enableFirst':'（请先在 设置→模型配置 启用模型）','model.noModelTitle':'尚未配置模型','model.noModelMsg':'还没有启用任何模型。请先在「设置 → 模型配置」新增 Provider、填入 API Key 并启用模型。','model.goSettings':'去配置','att.remove':'移除','att.file':'附件','att.tooBig':'文件过大（>20MB）：','att.upload':'上传图片 / 文件','skill.choose':'选用技能','model.addProvTitle':'新增模型配置 · 选择厂商预设',
     'skill.noSess':'请先打开或新建一个会话，再选用技能','skill.noAvail':'当前会话暂无可用技能','skill.noAvailSub':'未导入/未激活；角色专用技能仅对绑定角色可见','skill.pickTitle':'选用技能（本次对话）',
-    'dial.hint':'提示','dial.gotit':'知道了','sm.sub':'配置','stop.title':'停止当前任务（Esc×2）','send.title':'发送（⏎）','queue.title':'排队中（本轮结束后依次发送）','queue.edit':'编辑','queue.del':'删除','queue.steer':'插话发送（直接送进正在执行的任务）','queue.steerFail':'插话失败：','modal.from':'来自：{r} · {s}','modal.queuedMore':'还有 {n} 条来自其它会话的请求在排队','gen.ctxTitle':'上下文与自动压缩','gen.ctxPct':'自动压缩阈值（%）','gen.l0Unit':'tokens','gen.ctxPctShort':'压缩阈值','gen.l0Short':'工具输出上限','gen.l0Label':'单条工具输出上限（tokens）','gen.ctxSave':'保存','gen.ctxSaved':'已保存（下次引擎进程启动生效）','cfg.badTitle':'引擎配置有误','ctx.none':'上下文 —','ctx.usedTok':'已用 {n} tokens','ctx.noWindow':'窗口大小未实测（跑一轮后补全，届时显示百分比）','ctx.noneTip':'该会话还没跑过对话；跑过一轮后这里会显示上下文占用比例，点击可压缩','cfg.badMsg':'ROSE 生成的 config.toml 未被引擎接受，codex 已回落默认配置（模型/厂商/人格/MCP 都不生效，对话基本跑不通）。信息：','ws.pickTitle':'选择这个会话的工作目录','ws.fail':'创建会话失败：','ws.locked':'工作目录创建后不可更改（要换目录请新建会话）','ctx.title':'上下文占用 · 点击压缩上下文','ctx.used':'上下文 {p}%','ctx.compact':'压缩上下文','ctx.compacting':'正在压缩…','ctx.done':'上下文已压缩','ctx.maskTitle':'正在压缩上下文…','ctx.maskSub':'压缩完成后本会话自动恢复；期间可以切换到其他会话继续工作。','ctx.maskElapsed':'已用 {n} 秒','ctx.fail':'压缩失败：','ctx.busy':'有任务进行中，请先停止再压缩上下文','ctx.timeout':'压缩等待超时，已解除本会话的等待状态（如仍需要压缩，可再次点击圆环重试）。','settings':'设置','nav.settings':'设置','side.collapse':'收起侧栏','side.expand':'展开侧栏','common.on':'开','common.off':'关','cmd.head':'指令','cmd.panelOpened':'已打开对应面板','cmd.fail':'执行失败：','cmd.needArg':'缺少参数：{n}','cmd.needSession':'请先打开一个会话再使用该指令','feed.noText':'（本轮无文本输出）','web.backendTitle':'搜索后端','web.mcpOk':'内置搜索工具已就位（模型可自行调用 web_search）','web.mcpDown':'内置搜索工具当前不可用：{r}','web.toolBadge':'内置搜索','web.backendHint':'联网由模型自行调用内置 `web_search` 工具，无需开关；这里只配置搜索后端（留空则用免 Key 的默认源）。','web.sources':'联网搜索 · {p} · {n} 条来源','web.none':'联网搜索没有返回结果','web.provider':'搜索源','web.keyPh':'SearXNG 地址或 API Key（可留空）','web.auto':'自动（推荐）','cmd.web.desc':'联网搜索并给出源链接','cmd.web.needArg':'用法：/web 关键词',
+    'dial.hint':'提示','dial.gotit':'知道了','sm.sub':'配置','stop.title':'停止当前任务（Esc×2）','send.title':'发送（⏎）','queue.title':'排队中（本轮结束后依次发送）','queue.edit':'编辑','queue.del':'删除','queue.steer':'插话发送（直接送进正在执行的任务）','queue.steerFail':'插话失败：','modal.from':'来自：{r} · {s}','modal.queuedMore':'还有 {n} 条来自其它会话的请求在排队','gen.ctxTitle':'上下文与自动压缩','gen.ctxPct':'自动压缩阈值（%）','gen.l0Unit':'tokens','gen.ctxPctShort':'压缩阈值','gen.l0Short':'工具输出上限','gen.l0Label':'单条工具输出上限（tokens）','gen.ctxSave':'保存','gen.ctxSaved':'已保存（下次引擎进程启动生效）','cfg.badTitle':'引擎配置有误','ctx.none':'上下文 —','ctx.usedTok':'已用 {n} tokens','ctx.noWindow':'窗口大小未实测（跑一轮后补全，届时显示百分比）','ctx.noneTip':'该会话还没跑过对话；跑过一轮后这里会显示上下文占用比例，点击可压缩','cfg.badMsg':'ROSE 生成的 config.toml 未被引擎接受，codex 已回落默认配置（模型/厂商/人格/MCP 都不生效，对话基本跑不通）。信息：','ws.pickTitle':'选择这个会话的工作目录','ws.fail':'创建会话失败：','ws.locked':'工作目录创建后不可更改（要换目录请新建会话）','ctx.title':'上下文占用 · 点击压缩上下文','ctx.used':'上下文 {p}%','ctx.compacting':'正在压缩…','ctx.done':'上下文已压缩','ctx.maskTitle':'正在压缩上下文…','ctx.maskSub':'压缩完成后本会话自动恢复；期间可以切换到其他会话继续工作。','ctx.maskElapsed':'已用 {n} 秒','ctx.fail':'压缩失败：','ctx.busy':'有任务进行中，请先停止再压缩上下文','ctx.timeout':'压缩等待超时，已解除本会话的等待状态（如仍需要压缩，可再次点击圆环重试）。','settings':'设置','nav.settings':'设置','side.collapse':'收起侧栏','side.expand':'展开侧栏','common.on':'开','common.off':'关','cmd.head':'指令','cmd.panelOpened':'已打开对应面板','cmd.fail':'执行失败：','cmd.needArg':'缺少参数：{n}','cmd.needSession':'请先打开一个会话再使用该指令','feed.noText':'（本轮无文本输出）','web.backendTitle':'搜索后端','web.mcpOk':'内置搜索工具已就位（模型可自行调用 web_search）','web.mcpDown':'内置搜索工具当前不可用：{r}','web.toolBadge':'内置搜索','web.backendHint':'联网由模型自行调用内置 `web_search` 工具，无需开关；这里只配置搜索后端（留空则用免 Key 的默认源）。','web.sources':'联网搜索 · {p} · {n} 条来源','web.none':'联网搜索没有返回结果','web.provider':'搜索源','web.keyPh':'SearXNG 地址或 API Key（可留空）','web.auto':'自动（推荐）','cmd.web.desc':'联网搜索并给出源链接','cmd.web.needArg':'用法：/web 关键词',
     'cmd.compact.desc':'压缩上下文（codex 官方 thread/compact/start）','cmd.compact.done':'已发起压缩，完成后占用会刷新',
     'cmd.model.desc':'查看/切换本会话模型','cmd.model.none':'没有已启用的模型（去 设置→模型配置 启用）','cmd.model.list':'已启用模型：','cmd.model.current':'当前','cmd.model.unknown':'没有匹配的模型：{n}','cmd.model.set':'本会话模型已切到 {n}（下一轮生效）',
     'cmd.approvals.desc':'查看/切换审批策略','cmd.approvals.cur':'当前审批策略：{n}','cmd.approvals.onRequest':'按需审批（推荐）','cmd.approvals.never':'从不审批（高危）','cmd.approvals.bad':'取值只能是 on-request 或 never','cmd.approvals.set':'审批策略已切到 {n}（下一轮生效）',
@@ -97,8 +98,9 @@ const I18N = {
     'roles.h4':'Roles','roles.intro':'Create local roles for different professions or identities and define each persona & prompt; the sandbox, approval and model used per chat are chosen in the conversation view.','roles.add':'Add Role','roles.edit':'Edit','roles.delete':'Delete','roles.delTitle':'Delete Role','roles.delQ':'Delete role','roles.delWarn':'This also deletes all sessions of this role and its workspace. This cannot be undone.','roles.skillTitle':'Role-specific Skills','roles.skillKeep':'Keep skills','roles.skillDel':'Delete too', 'roles.skillMsg':'This role has {n} role-specific skill(s). Delete them too?\nDelete = also remove skills · Keep = keep skills (inactive).',
 'common.delete':'Delete','common.cancel':'Cancel',
 
-    'nav.model':'Model','nav.prompt':'Prompt','nav.memory':'Memory','nav.roles':'Roles','nav.skills':'Skills','nav.mcp':'MCP Tools','nav.usage':'Usage','nav.general':'General','nav.native':'Engine config','nav.env':'Environment',
-    'native.cfgWarnTitle':'Engine config warnings','native.cfgWarnHint':'After saving settings, any capability the engine rejects (for example a switch that has no effect on this version) is reported here with a readable reason.','native.cfgWarnNone':'No warnings (the last save reported no config problems)','native.cfgWarnFrom':'(from {s})','native.engineRegression':'The engine failed to generate its config (please report this to the maintainer — it is not your settings): ','native.budgetRequested':'(saved {n}; unsupported by the current engine)','native.unavailable':'This capability is unavailable right now (service or engine not ready)','native.budget':'Per-turn token budget','native.budgetDesc':'Hard per-turn cap (rollout_budget.limit_tokens): a turn stops once its total exceeds this. This is not the auto-compact threshold.','native.budgetPh':'e.g. 200000','native.budgetUnsupported':'Unsupported by the current engine (0.152.1): limit_tokens has no effect, and the enabling key reminder_at_remaining_tokens makes the engine reject the whole config. ROSE will not write it.','native.save':'Save','native.saved':'✓ Saved (applies when the engine process restarts)','native.budgetBad':'Please enter a positive integer (tokens)',
+    'nav.model':'Model','nav.prompt':'Prompt','nav.memory':'Memory','nav.roles':'Roles','nav.skills':'Skills','nav.mcp':'MCP Tools','nav.usage':'Usage','nav.general':'General','nav.env':'Environment',
+    'common.unavailable':'This capability is unavailable right now (service or engine not ready)','cfgWarn.from':'(from {s})','cfgWarn.engineRegression':'The engine failed to generate its config (please report this to the maintainer — it is not your settings): ',
+    
     'env.check':'Environment check','env.checkDesc':'Verifies runtime, data directory, codex binary and the commands used by enabled MCP servers. Read-only, changes nothing.',
     'env.run':'Re-check','env.running':'Checking…','env.allOk':'All good','env.failCount':'{n} issue(s) to fix','env.warnCount':'{n} warning(s)',
     'env.sandbox':'Windows sandbox','env.sandboxDesc':'codex ships a native Windows sandbox. "elevated" creates dedicated low-privilege users plus firewall rules (needs one admin approval); "unelevated" uses a restricted token with weaker network isolation.',
@@ -118,7 +120,7 @@ const I18N = {
     'gen.appearance':'Appearance & Theme','gen.light':'Light','gen.lightDesc':'Bright & clean (default)','gen.dark':'Dark','gen.darkDesc':'Dark background, easier on the eyes at night','gen.system':'System','gen.systemDesc':'Follow the OS appearance automatically',
     'gen.lang':'Interface Language',
     'gen.closeTitle':'Closing the window','gen.closeHide':'Hide (default)','gen.closeHideDesc':'The app and running tasks keep going; click the Dock icon or launch again to bring the window back','gen.closeQuit':'Quit completely','gen.closeQuitDesc':'Closing the window quits the app; running tasks are confirmed before quitting','gen.closeNote':'Both behaviours confirm running tasks before exiting — work is never interrupted silently.',
-    'goal.title':'Session goal','goal.localTag':'Local goal (engine unavailable)','goal.edit':'Edit','goal.save':'Save','goal.cancel':'Cancel','goal.clear':'Clear goal','goal.clearConfirm':'Clear the goal for this session?','goal.statusPending':'Pending','goal.statusActive':'In progress','goal.statusDone':'Done','goal.tokens':'{u} used / {l} budget tokens','goal.tokensNoBudget':'{u} tokens used','goal.capNote':'per-turn cap {l}','goal.editPh':'Describe what this session should achieve, in one sentence…','goal.saved':'✓ Goal saved','goal.saveFail':'Could not save the goal: ','goal.unavailable':'The goal service is unavailable right now (engine not ready); chatting is unaffected.','goal.needSession':'Open or start a session first, then set a goal',
+    'goal.title':'Session goal','goal.localTag':'Local goal (engine unavailable)','goal.edit':'Edit','goal.save':'Save','goal.cancel':'Cancel','goal.clear':'Clear goal','goal.clearConfirm':'Clear the goal for this session?','goal.statusPending':'Pending','goal.statusActive':'In progress','goal.statusDone':'Done','goal.tokens':'{u} used / {l} budget tokens','goal.tokensNoBudget':'{u} tokens used','goal.editPh':'Describe what this session should achieve, in one sentence…','goal.saved':'✓ Goal saved','goal.saveFail':'Could not save the goal: ','goal.unavailable':'The goal service is unavailable right now (engine not ready); chatting is unaffected.','goal.needSession':'Open or start a session first, then set a goal',
     'win.reset':'Window switched · checkpoint','win.resetCount':'Window switched · checkpoint ({n})','win.note':'The engine carried the context over automatically after hitting its context limit — this is not a manual compaction, and the context ring and mask are unaffected.',
     'sub.title':'Sub-agents','sub.summary':'{a} sub-agent(s) · running {r} · waiting {w} · done {d}','sub.unsupported':'Engine not wired ({r})','sub.stopTurn':'Stop this turn (and its sub-agents)','sub.stopTurnHint':'Interrupts the whole turn, including every sub-agent; app-server has no per-sub-agent control RPC','sub.clearDone':'Clear finished','sub.stateSpawned':'Spawned','sub.stateRunning':'Running','sub.stateWaiting':'Waiting','sub.stateDone':'Done','sub.stateClosed':'Ended','sub.lastNone':'(no output yet)',
     'feed.empty':'Select a session on the left, or start a new one','feed.you':'You','session.newChat':'New chat','session.rename':'Rename','session.delete':'Delete','session.noMatch':'No matching sessions','ask.allDone':'All answered','ask.done':'{a}/{n} answered',
@@ -130,7 +132,7 @@ const I18N = {
     'mode.needSess':'Open or start a session first, then pick a mode','mode.select':'Choose session mode','mode.plan':'✦ Plan','mode.default':'Default','mode.free':'Auto-run','mode.planT':'✦ Plan mode','mode.planD':'Read-only research · produce a plan · confirm before executing (recommended for complex tasks)','mode.defaultT':'Default mode','mode.defaultD':'Writable workspace · commands need approval · explain big changes first','mode.freeT':'Auto-run mode','mode.freeD':'Full access · auto-execute · no approvals (only when you trust the model)','search.clear':'Clear','model.select':'Choose the model used for this conversation',
     'model.enableFirst':'(Enable a model first in Settings → Models)','model.noModelTitle':'No model configured','model.noModelMsg':'No model is enabled yet. Add a provider, enter its API key, and enable a model in Settings → Models.','model.goSettings':'Open settings','att.remove':'Remove','att.file':'Attachment','att.tooBig':'File too large (>20MB): ','att.upload':'Upload image / file','skill.choose':'Choose skills','model.addProvTitle':'Add provider · choose a preset',
     'skill.noSess':'Open or start a session first, then pick skills','skill.noAvail':'No usable skills for the current session','skill.noAvailSub':'Not imported/activated; role-specific skills are visible only to their bound role','skill.pickTitle':'Choose skills (this chat)',
-    'dial.hint':'Notice','dial.gotit':'Got it','sm.sub':'config','stop.title':'Stop current task (Esc×2)','send.title':'Send (⏎)','queue.title':'Queued (sent in order when this task ends)','queue.edit':'Edit','queue.del':'Delete','queue.steer':'Interject now (inject into the running task)','queue.steerFail':'Interject failed: ','modal.from':'From: {r} · {s}','modal.queuedMore':'{n} more request(s) from other sessions queued','gen.ctxTitle':'Context & auto-compact','gen.ctxPct':'Auto-compact threshold (%)','gen.l0Unit':'tokens','gen.ctxPctShort':'Compact at','gen.l0Short':'Tool output cap','gen.l0Label':'Tool output cap (tokens)','gen.ctxSave':'Save','gen.ctxSaved':'Saved (applies when the engine process restarts)','cfg.badTitle':'Engine config rejected','ctx.none':'Context —','ctx.usedTok':'{n} tokens used','ctx.noWindow':'Window size not measured yet (shows a percentage after one turn)','ctx.noneTip':'No turn has run in this session yet; after one turn this shows context usage (click to compact)','cfg.badMsg':'codex rejected the config.toml ROSE generated and fell back to defaults (model/provider/persona/MCP are inactive, which usually breaks conversations). Detail:','ws.pickTitle':'Choose the working directory for this session','ws.fail':'Failed to create session: ','ws.locked':'The working directory is fixed once created (start a new session to change it)','ctx.title':'Context usage · click to compact','ctx.used':'Context {p}%','ctx.compact':'Compact context','ctx.compacting':'Compacting…','ctx.done':'Context compacted','ctx.maskTitle':'Compacting context…','ctx.maskSub':'This session resumes automatically once compaction finishes; you can switch to another session meanwhile.','ctx.maskElapsed':'{n}s elapsed','ctx.fail':'Compaction failed: ','ctx.busy':'A task is running — stop it before compacting','ctx.timeout':'Timed out waiting for compaction; this session is released (click the ring to retry if needed).','settings':'Settings','nav.settings':'Settings','side.collapse':'Collapse sidebar','side.expand':'Expand sidebar','common.on':'on','common.off':'off','cmd.head':'Commands','cmd.panelOpened':'Panel opened','cmd.fail':'Failed: ','cmd.needArg':'Missing argument: {n}','cmd.needSession':'Open a session first to use this command','feed.noText':'(no text output this turn)','web.backendTitle':'Search backend','web.mcpOk':'Built-in search tool is ready (the model may call web_search)','web.mcpDown':'Built-in search tool is unavailable: {r}','web.toolBadge':'built-in search','web.backendHint':'The model calls the built-in `web_search` tool on its own — no switch needed. Configure the search backend here (leave empty for the keyless default).','web.sources':'Web search · {p} · {n} sources','web.none':'Web search returned no results','web.provider':'Search provider','web.keyPh':'SearXNG URL or API key (optional)','web.auto':'Auto (recommended)','cmd.web.desc':'Web search and cite sources','cmd.web.needArg':'Usage: /web <query>',
+    'dial.hint':'Notice','dial.gotit':'Got it','sm.sub':'config','stop.title':'Stop current task (Esc×2)','send.title':'Send (⏎)','queue.title':'Queued (sent in order when this task ends)','queue.edit':'Edit','queue.del':'Delete','queue.steer':'Interject now (inject into the running task)','queue.steerFail':'Interject failed: ','modal.from':'From: {r} · {s}','modal.queuedMore':'{n} more request(s) from other sessions queued','gen.ctxTitle':'Context & auto-compact','gen.ctxPct':'Auto-compact threshold (%)','gen.l0Unit':'tokens','gen.ctxPctShort':'Compact at','gen.l0Short':'Tool output cap','gen.l0Label':'Tool output cap (tokens)','gen.ctxSave':'Save','gen.ctxSaved':'Saved (applies when the engine process restarts)','cfg.badTitle':'Engine config rejected','ctx.none':'Context —','ctx.usedTok':'{n} tokens used','ctx.noWindow':'Window size not measured yet (shows a percentage after one turn)','ctx.noneTip':'No turn has run in this session yet; after one turn this shows context usage (click to compact)','cfg.badMsg':'codex rejected the config.toml ROSE generated and fell back to defaults (model/provider/persona/MCP are inactive, which usually breaks conversations). Detail:','ws.pickTitle':'Choose the working directory for this session','ws.fail':'Failed to create session: ','ws.locked':'The working directory is fixed once created (start a new session to change it)','ctx.title':'Context usage · click to compact','ctx.used':'Context {p}%','ctx.compacting':'Compacting…','ctx.done':'Context compacted','ctx.maskTitle':'Compacting context…','ctx.maskSub':'This session resumes automatically once compaction finishes; you can switch to another session meanwhile.','ctx.maskElapsed':'{n}s elapsed','ctx.fail':'Compaction failed: ','ctx.busy':'A task is running — stop it before compacting','ctx.timeout':'Timed out waiting for compaction; this session is released (click the ring to retry if needed).','settings':'Settings','nav.settings':'Settings','side.collapse':'Collapse sidebar','side.expand':'Expand sidebar','common.on':'on','common.off':'off','cmd.head':'Commands','cmd.panelOpened':'Panel opened','cmd.fail':'Failed: ','cmd.needArg':'Missing argument: {n}','cmd.needSession':'Open a session first to use this command','feed.noText':'(no text output this turn)','web.backendTitle':'Search backend','web.mcpOk':'Built-in search tool is ready (the model may call web_search)','web.mcpDown':'Built-in search tool is unavailable: {r}','web.toolBadge':'built-in search','web.backendHint':'The model calls the built-in `web_search` tool on its own — no switch needed. Configure the search backend here (leave empty for the keyless default).','web.sources':'Web search · {p} · {n} sources','web.none':'Web search returned no results','web.provider':'Search provider','web.keyPh':'SearXNG URL or API key (optional)','web.auto':'Auto (recommended)','cmd.web.desc':'Web search and cite sources','cmd.web.needArg':'Usage: /web <query>',
     'cmd.compact.desc':'Compact context (codex thread/compact/start)','cmd.compact.done':'Compaction started; usage refreshes when it finishes',
     'cmd.model.desc':'Show or switch this session\'s model','cmd.model.none':'No model enabled (Settings → Models)','cmd.model.list':'Enabled models:','cmd.model.current':'current','cmd.model.unknown':'No matching model: {n}','cmd.model.set':'Session model switched to {n} (applies next turn)',
     'cmd.approvals.desc':'Show or switch the approval policy','cmd.approvals.cur':'Approval policy: {n}','cmd.approvals.onRequest':'ask on request (recommended)','cmd.approvals.never':'never ask (risky)','cmd.approvals.bad':'Value must be on-request or never','cmd.approvals.set':'Approval policy switched to {n} (applies next turn)',
@@ -2146,18 +2148,15 @@ function goalStatusLabel(g) {
   const s = goalStatusOf(g);
   return s === 'pending' ? tr('goal.statusPending') : (s === 'done' ? tr('goal.statusDone') : tr('goal.statusActive'));
 }
-/** token 用量文案：预算优先取 goal.tokenBudget（目标自己的预算）。
-    缺失时只报"已用"，另附 global.rolloutTokenLimit —— 那是**单轮硬上限**、语义不同，
-    仅作文案兜底，绝不能顶替目标预算。 */
+/** token 用量文案：预算只取 goal.tokenBudget（目标自己的预算）。
+    缺失时只报"已用"，绝不用其它字段顶替（单轮硬上限已随「引擎配置」页一并删除）。 */
 function goalMetaText(g) {
   if (!g) return '';
   const used = Number.isFinite(Number(g.tokensUsed)) ? Number(g.tokensUsed) : null;
   const budget = Number.isFinite(Number(g.tokenBudget)) ? Number(g.tokenBudget) : 0;
-  const cap = Number(((state.settings && state.settings.global) || {}).rolloutTokenLimit);
   if (budget > 0) return tr('goal.tokens').replace('{u}', used === null ? '—' : fmtTokens(used)).replace('{l}', fmtTokens(budget));
   if (used === null) return '';
-  const base = tr('goal.tokensNoBudget').replace('{u}', fmtTokens(used));
-  return (Number.isFinite(cap) && cap > 0) ? base + ' · ' + tr('goal.capNote').replace('{l}', fmtTokens(cap)) : base;
+  return tr('goal.tokensNoBudget').replace('{u}', fmtTokens(used));
 }
 
 /** 目标栏渲染（唯一入口）：无目标且非编辑态时整体隐藏。
@@ -2346,7 +2345,7 @@ function renderSubPanel() {
   const sum = $('#subSummary');
   if (sum) {
     sum.textContent = unsupported && !arr.length
-      ? tr('sub.unsupported').replace('{r}', state.subReason[s.id] || tr('native.unavailable'))
+      ? tr('sub.unsupported').replace('{r}', state.subReason[s.id] || tr('common.unavailable'))
       : tr('sub.summary').replace('{a}', String(arr.length))
         .replace('{r}', String(running)).replace('{w}', String(waiting)).replace('{d}', String(done));
     sum.title = tr('sub.title');
@@ -2360,7 +2359,7 @@ function renderSubPanel() {
   const list = $('#subList');
   if (!list) return;
   if (!arr.length) {
-    list.innerHTML = `<div class="sub-row"><span class="sr-last">${esc(tr('sub.unsupported').replace('{r}', state.subReason[s.id] || tr('native.unavailable')))}</span></div>`;
+    list.innerHTML = `<div class="sub-row"><span class="sr-last">${esc(tr('sub.unsupported').replace('{r}', state.subReason[s.id] || tr('common.unavailable')))}</span></div>`;
     return;
   }
   list.innerHTML = arr.map((a) => `<div class="sub-row ${esc(a.state)}" data-agent-id="${esc(a.id)}">
@@ -2599,7 +2598,7 @@ function connectSSE() {
 /* ---------- 设置弹窗（左侧导航） ---------- */
 
 let smNav = 'model';
-const NAV_TITLES = { model: 'nav.model', prompt: 'nav.prompt', memory: 'nav.memory', roles: 'nav.roles', skills: 'nav.skills', mcp: 'nav.mcp', usage: 'nav.usage', general: 'nav.general', native: 'nav.native', env: 'nav.env' };
+const NAV_TITLES = { model: 'nav.model', prompt: 'nav.prompt', memory: 'nav.memory', roles: 'nav.roles', skills: 'nav.skills', mcp: 'nav.mcp', usage: 'nav.usage', general: 'nav.general', env: 'nav.env' };
 let settingsCache = null; // GET /api/settings 缓存
 
 function openSettings(nav) {
@@ -2656,7 +2655,6 @@ function renderPanel() {
   else if (smNav === 'mcp') renderMcpPanel(body);
   else if (smNav === 'usage') renderUsagePanel(body);
   else if (smNav === 'general') renderGeneralPanel(body);
-  else if (smNav === 'native') renderNativePanel(body);
   else if (smNav === 'env') renderEnvPanel(body);
 }
 
@@ -2727,9 +2725,10 @@ function renderGeneralPanel(body) {
   const sm = (state.settings && state.settings.nativeSupport && state.settings.nativeSupport.searchMcp) || null;
   const smOk = !!(sm && sm.supported === true);
   const smNote = !sm ? ''
-    : (smOk ? '✓ ' + tr('web.mcpOk') : '⚠ ' + tr('web.mcpDown').replace('{r}', sm.reason || tr('native.unavailable')));
+    : (smOk ? '✓ ' + tr('web.mcpOk') : '⚠ ' + tr('web.mcpDown').replace('{r}', sm.reason || tr('common.unavailable')));
   const cw = (state.settings && state.settings.contextWindows) || {};
   body.innerHTML = `
+    <div id="cfgWarn" class="cfg-warn" hidden></div>
     <div class="sp-section">
       <h4>${tr('gen.appearance')}</h4>
       <div style="display:flex;gap:9px;margin-top:8px">
@@ -2777,6 +2776,7 @@ function renderGeneralPanel(body) {
       </div>
       <p class="hint" id="webMcpState" style="font-size:11.5px;color:${smOk ? 'var(--ok)' : 'var(--warn)'};margin:8px 0 0"${smNote ? '' : ' hidden'}>${esc(smNote)}</p>
     </div>`;
+  renderCfgWarn();   // 常驻告警条：进通用页即按最近一次保存结果刷新
   body.querySelectorAll('input[name="theme"]').forEach((r) => r.addEventListener('change', async () => {
     if (!r.checked) return;
     await setTheme(r.value); renderGeneralPanel(body);
@@ -2835,88 +2835,28 @@ function renderGeneralPanel(body) {
    hooks 已按裁定**整块删除**：引擎判 untrusted 且不执行、无信任 RPC，展示一个永不生效的能力是误导。
    保留：① 单轮 token 预算（禁用态 + 0.152.1 原因，仍是有效信息）；
         ② configWarnings —— PUT /api/settings 回包里"某项能力不生效"的可读原因，与 hooks 无关。 */
-/** 后端能力位：`nativeSupport.rolloutTokenLimit = {supported, reason, requested}`（另兼容
-    {capabilities|native|nativeCaps}.rolloutBudget）。拿不到就当"不支持"（当前引擎事实如此），
-    并把原因与"已保存值"照实显示 —— 绝不假装能生效。 */
-function rolloutBudgetCap() {
-  const s = state.settings || {};
-  const ns = (s.nativeSupport && s.nativeSupport.rolloutTokenLimit) || null;
-  if (ns && typeof ns === 'object') {
-    const req = Number(ns.requested);
-    return {
-      supported: ns.supported === true,
-      reason: String(ns.reason || ''),
-      requested: (ns.requested !== null && ns.requested !== undefined && Number.isFinite(req) && req > 0) ? req : null,
-    };
-  }
-  const caps = s.capabilities || s.native || s.nativeCaps || {};
-  const c = (caps && (caps.rolloutBudget || caps.rollout_budget)) || null;
-  if (c && typeof c === 'object' && c.supported === true) return { supported: true, reason: String(c.reason || ''), requested: null };
-  return { supported: false, reason: (c && typeof c === 'object' && c.reason) ? String(c.reason) : '', requested: null };
-}
-
-/** 把 PUT /api/settings 回包的 configWarnings / engineRegression 收集起来，在「引擎配置」页照实显示 */
+/* ---------- 引擎配置告警（configWarnings）----------
+   「引擎配置」页已按用户裁定**整页删除**（含单轮 token 上限：该项不可写，展示无意义）。
+   但 configWarnings 必须保住：它是"引擎拒绝配置 → 回落默认（模型/厂商/人格全不生效）"的**唯一可见信号**，
+   现常驻在 设置 → 通用 顶部。 */
+/** 收集 PUT /api/settings 回包的 configWarnings / engineRegression，并立即刷新通用页顶部的告警条 */
 function applyConfigWarnings(r, source) {
   if (!r || typeof r !== 'object') return [];
   const warns = Array.isArray(r.configWarnings) ? r.configWarnings.filter(Boolean).map(String) : [];
-  if (r.engineRegression && r.error) warns.unshift(tr('native.engineRegression') + String(r.error));
+  if (r.engineRegression && r.error) warns.unshift(tr('cfgWarn.engineRegression') + String(r.error));
   state.configWarnings = warns.length ? { at: Date.now(), source: String(source || ''), items: warns } : null;
   renderCfgWarn();
   return warns;
 }
+/** 告警条渲染（#cfgWarn 常驻在通用页顶部；无告警时隐藏，不占版面也不说谎） */
 function renderCfgWarn() {
   const el = $('#cfgWarn');
   if (!el) return;
   const w = state.configWarnings;
-  if (!w || !w.items.length) {
-    el.className = 'hint';
-    el.textContent = tr('native.cfgWarnNone');
-    return;
-  }
-  el.className = 'cfg-warn';
-  const from = w.source ? ' ' + tr('native.cfgWarnFrom').replace('{s}', w.source) : '';
+  if (!w || !w.items.length) { el.hidden = true; el.textContent = ''; return; }
+  el.hidden = false;
+  const from = w.source ? ' ' + tr('cfgWarn.from').replace('{s}', w.source) : '';
   el.textContent = '⚠ ' + w.items.join('；') + from;
-}
-
-function renderNativePanel(body) {
-  const g = (state.settings && state.settings.global) || {};
-  const rl = Number.isFinite(Number(g.rolloutTokenLimit)) && Number(g.rolloutTokenLimit) > 0 ? Number(g.rolloutTokenLimit) : '';
-  const cap = rolloutBudgetCap();
-  const budgetNote = cap.supported
-    ? ''
-    : ((cap.reason || tr('native.budgetUnsupported')) + (cap.requested ? ' ' + tr('native.budgetRequested').replace('{n}', fmtTokens(cap.requested)) : ''));
-  body.innerHTML = `
-    <div class="sp-section">
-      <h4>${tr('native.budget')}</h4>
-      <p class="hint" style="font-size:11.5px;color:var(--faint);margin:0 0 10px">${tr('native.budgetDesc')}</p>
-      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
-        <input type="number" id="rolloutInput" min="1" step="1000" value="${rl}" placeholder="${esc(tr('native.budgetPh'))}"${cap.supported ? '' : ' disabled'} style="width:150px;padding:5px 8px;border:1px solid var(--border);border-radius:8px;background:var(--panel);color:var(--text);font-family:inherit">
-        <button class="btn" id="rolloutSave" style="padding:5px 12px;font-size:12px"${cap.supported ? '' : ' disabled'}>${tr('native.save')}</button>
-        <span class="hint" id="rolloutMsg" style="font-size:11.5px;color:${cap.supported ? 'var(--faint)' : 'var(--warn)'}">${esc(budgetNote)}</span>
-      </div>
-    </div>
-    <div class="sp-section">
-      <h4>${tr('native.cfgWarnTitle')}</h4>
-      <p class="hint" style="font-size:11.5px;color:var(--faint);margin:0 0 8px">${tr('native.cfgWarnHint')}</p>
-      <div id="cfgWarn" class="hint" style="font-size:11.5px;color:var(--faint)"></div>
-    </div>`;
-  renderCfgWarn();
-  const rlSave = body.querySelector('#rolloutSave');
-  if (rlSave) rlSave.addEventListener('click', async () => {
-    if (!cap.supported) return;   // 禁用态：不写盘、不假装成功
-    const inp = body.querySelector('#rolloutInput');
-    const msg = body.querySelector('#rolloutMsg');
-    const v = Math.round(Number(inp && inp.value));
-    if (!Number.isFinite(v) || v <= 0) {
-      uiDialog({ title: tr('dial.hint'), message: tr('native.budgetBad'), buttons: [{ label: tr('dial.gotit'), value: true, primary: true }] });
-      return;
-    }
-    const r = await api('PUT', '/api/settings', { global: { rolloutTokenLimit: v } });
-    applyConfigWarnings(r, tr('native.budget'));
-    state.settings = state.settings || {}; state.settings.global = { ...(state.settings.global || {}), rolloutTokenLimit: v };
-    renderGoalBar();
-    if (msg) { msg.textContent = tr('native.saved'); setTimeout(() => { if (msg.isConnected) msg.textContent = ''; }, 4000); }
-  });
 }
 
 // ---------- 模型配置：Provider 卡片（折叠）+ 获取模型 + 已启用模型 ----------
