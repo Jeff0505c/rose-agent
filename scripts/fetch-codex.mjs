@@ -246,10 +246,18 @@ export function assertColocated(vendorDir, names) {
  * 而这一步正是当初缺的（坏二进制要等用户跑起来才以 `spawn Unknown system error -88` 暴露）。
  * 仅当目标平台 == 当前平台时执行（交叉取资产无法在本机运行）。失败即删掉坏文件并抛错。
  */
+/** 只有主 CLI 能用 `--version` 探活。Windows 的沙箱/命令执行辅助件要求参数是 base64 载荷，
+ *  传 `--version` 会被它自己判为非法（`helper_request_args_failed ... Invalid symbol 45`）——
+ *  那不是二进制坏，而是自检用错了探活方式（2026-09-27 Windows 真机踩到）。 */
+export function isCliAsset(finalName) {
+  return finalName === 'codex' || finalName === 'codex.exe' || finalName === 'codex-aarch64-apple-darwin';
+}
+
 function verifyInstalled(dest, finalName, key) {
   // ⚠️ 用字面量比较，不要用 targetKey()：后者在不支持的宿主（如 linux/x64）上会 throw，
   // 于是文档里的 `--target win32-x64` 交叉准备会在写完第一个资产后崩掉。
   if (key !== `${process.platform}-${process.arch}`) { console.log('  · 交叉平台资产，跳过可执行自检'); return; }
+  if (!isCliAsset(finalName)) { console.log('  · 辅助二进制（非 CLI，参数为 base64 载荷），跳过 --version 自检；完整性以 pin 校验为准'); return; }
   let r;
   try {
     r = spawnSync(dest, ['--version'], { encoding: 'utf8', timeout: 20000 });
